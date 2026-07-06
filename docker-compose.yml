@@ -1,0 +1,68 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/development.Dockerfile
+
+    container_name: fluxus_app
+
+    working_dir: /rails
+
+    volumes:
+      - .:/rails
+      - bundle_cache:/usr/local/bundle
+      - node_modules:/rails/node_modules
+
+    ports:
+      - "3000:3000"
+
+    environment:
+      RAILS_ENV: development
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_NAME: fluxus_development
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    stdin_open: true
+    tty: true
+
+    command:
+    - bash
+    - -c
+    - |
+        bundle check || bundle install
+        yarn install
+        bin/rails db:prepare
+        exec bin/dev
+
+  postgres:
+    image: postgres:16-alpine
+
+    container_name: fluxus_postgres
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: fluxus_development
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  bundle_cache:
+  node_modules:
