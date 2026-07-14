@@ -84,6 +84,26 @@ graph TB
 
 A arquitetura foi organizada em módulos independentes, permitindo que alterações em um módulo causem o mínimo impacto possível nos demais.
 
+## Stack Tecnológica e Versões
+
+| Camada | Tecnologia | Versão |
+|----------|------------|--------|
+| Runtime | Ruby | 3.4.10 |
+| Framework Web | Ruby on Rails | 8.1.3 |
+| Servidor Web | Puma | >= 5.0 |
+| Frontend | React | 19.2.7 |
+| Linguagem Frontend | TypeScript | 6.0.3 |
+| Editor Visual | @xyflow/react (React Flow) | 12.11.1 |
+| Bundler JS | esbuild | 0.28.1 |
+| Estilização | Tailwind CSS | 4.3.2 |
+| Hotwire (Turbo) | @hotwired/turbo-rails | 8.0.23 |
+| Hotwire (Stimulus) | @hotwired/stimulus | 3.2.2 |
+| Banco de Dados | PostgreSQL | 16 |
+| Driver BD | pg gem | ~> 1.1 |
+| Deploy | Kamal | - |
+| Versionamento | Git + GitHub | - |
+| Containerização | Docker + Docker Compose | - |
+
 ---
 
 # 5. Componentes do Sistema
@@ -307,23 +327,288 @@ sequenceDiagram
     M->>TM: Atualiza snapshot
 ```
 
-# 10. Teste de Mesa
+# 10. Sistema para Simulação de Teste de Mesa em Diagrama de Blocos
 
-O teste de mesa representa a execução do algoritmo de forma sequencial.
+O **Sistema para Simulação de Teste de Mesa em Diagrama de Blocos** é o motor central da plataforma Blade. Ele interpreta o diagrama construído pelo usuário, executa as instruções do algoritmo, gerencia o estado da memória e produz toda a saída didática da plataforma: teste de mesa, explicações e código-fonte.
 
-Cada linha corresponde à execução de um bloco e registra:
+## 10.1. Arquitetura do Motor de Execução
 
-- passo executado;
-- bloco atual;
-- operação realizada;
-- valores das variáveis;
-- resultado produzido.
+```mermaid
+graph TB
+    subgraph Input["Entrada"]
+        DIAGRAM[JSON do Diagrama]
+    end
 
-Essa representação permite acompanhar toda a evolução do algoritmo durante sua execução.
+    subgraph Parser["Camada de Parsing"]
+        VAL[Validador Estrutural]
+        AST[Gerador de AST<br/>Abstract Syntax Tree]
+        GRAPH[Construtor de Grafo<br/>de Execução]
+    end
+
+    subgraph Engine["Motor de Execução"]
+        CTL[Controlador de<br/>Fluxo]
+        INTERP[Interpretador<br/>de Blocos]
+        MEM[Gerenciador<br/>de Memória]
+        SNAP[Gerador de<br/>Snapshots]
+    end
+
+    subgraph Output["Saída"]
+        DT[Teste de Mesa<br/>Desk Check Table]
+        EXP[Explicações<br/>Textuais]
+        CODE[Código JavaScript]
+        HIGHLIGHT[Bloco Destacado<br/>na Interface]
+    end
+
+    subgraph User["Interação"]
+        USER[Usuário]
+        CONTROLS[Controles<br/>Avançar / Retroceder /<br/>Reiniciar / Ir para]
+        INPUT_VAL[Entrada de<br/>Valores]
+    end
+
+    DIAGRAM --> VAL
+    VAL --> AST
+    AST --> GRAPH
+    GRAPH --> CTL
+
+    CTL --> INTERP
+    INTERP <--> MEM
+    MEM --> SNAP
+    SNAP --> DT
+
+    INTERP --> EXP
+    INTERP --> CODE
+    CTL --> HIGHLIGHT
+
+    USER --> CONTROLS
+    CONTROLS --> CTL
+    USER --> INPUT_VAL
+    INPUT_VAL --> INTERP
+
+    style Engine fill:#bbf,stroke:#333,stroke-width:2px
+    style Parser fill:#dfd,stroke:#333
+    style Output fill:#fdf,stroke:#333
+```
+
+O motor de execução é composto por quatro subsistemas que trabalham em conjunto:
+
+### Controlador de Fluxo
+
+Responsável por determinar qual bloco deve ser executado a cada passo. Ele percorre o grafo de execução seguindo as arestas, avaliando condições em blocos de decisão e gerenciando laços de repetição.
+
+Funcionalidades:
+- Navegação sequencial entre blocos;
+- Avaliação de expressões condicionais para desvios;
+- Gerenciamento de iteração em laços (Enquanto, Para);
+- Detecção de término de execução.
+
+### Interpretador de Blocos
+
+Responsável por executar a operação específica de cada tipo de bloco. Cada tipo de bloco possui um handler especializado que sabe como interpretar sua operação.
+
+Tipos de blocos interpretados:
+
+| Tipo de Bloco | Operação |
+|----------------|----------|
+| Início | Marca o ponto de partida |
+| Entrada | Solicita valor ao usuário e armazena em variável |
+| Processo | Executa expressão de atribuição |
+| Decisão | Avalia condição booleana |
+| Enquanto | Avalia condição e controla loop |
+| Para | Inicializa, testa e incrementa variável de controle |
+| Saída | Exibe valor ou mensagem |
+| Término | Finaliza a execução |
+
+### Gerenciador de Memória
+
+Mantém o estado atual de todas as variáveis do algoritmo durante a execução.
+
+Estrutura:
+
+```json
+{
+  "variables": {
+    "n": 10,
+    "soma": 15,
+    "contador": 3
+  },
+  "initialized_at": ["n", "soma", "contador"],
+  "types": {
+    "n": "number",
+    "soma": "number",
+    "contador": "number"
+  }
+}
+```
+
+Operações:
+- **Inicializar variável**: registra nova variável com seu valor inicial;
+- **Atualizar variável**: modifica o valor de uma variável existente;
+- **Consultar variável**: retorna o valor corrente de uma variável;
+- **Verificar inicialização**: valida se a variável foi inicializada antes do uso.
+
+### Gerador de Snapshots
+
+A cada passo da execução, o sistema captura o estado completo e o armazena como um snapshot imutável.
+
+Estrutura de um snapshot:
+
+```json
+{
+  "step": 3,
+  "block_id": "3",
+  "block_type": "process",
+  "operation": "soma = n + 10",
+  "timestamp": 1710456789000,
+  "variables": {
+    "n": 10,
+    "soma": 20
+  },
+  "output": null,
+  "explanation": "Atribuindo à variável 'soma' o valor de 'n' (10) + 10, resultando em 20."
+}
+```
+
+O conjunto de snapshots forma o histórico completo da execução, permitindo navegação bidirecional entre passos.
 
 ---
 
-# 11. Conversão para Código
+## 10.2. Fluxo de Execução Detalhado
+
+```mermaid
+sequenceDiagram
+    participant User as Usuário
+    participant UI as Interface
+    participant Engine as Motor de Execução
+    participant Memory as Memória
+    participant Snapshots as Snapshots
+
+    User->>UI: Clicar "Avançar"
+    UI->>Engine: nextStep()
+    Engine->>Engine: Identifica próximo bloco
+    Engine->>Engine: Interpreta operação do bloco
+
+    alt Bloco de Entrada
+        Engine->>UI: Solicitar valor
+        UI->>User: Exibir prompt
+        User->>UI: Informar valor
+        UI->>Engine: Fornecer valor
+    end
+
+    Engine->>Memory: Atualizar variáveis
+    Memory->>Snapshots: Registrar snapshot
+    Snapshots->>Engine: Snapshot registrado
+    Engine->>UI: Retornar novo estado
+    UI->>UI: Atualizar teste de mesa
+    UI->>UI: Destacar bloco atual
+    UI->>UI: Atualizar explicação
+    UI->>User: Exibir resultado
+```
+
+Cada interação do usuário com os controles de execução dispara uma sequência de operações no motor.
+
+---
+
+## 10.3. Pipeline de Processamento
+
+O pipeline completo de processamento de um diagrama até a geração dos resultados didáticos segue as etapas abaixo:
+
+```mermaid
+flowchart LR
+    A[JSON do<br/>Diagrama] --> B[Parser<br/>Validação]
+    B --> C{Caso Válido?}
+    C -->|Sim| D[Construção<br/>do Grafo]
+    C -->|Não| E[Erro<br/>Estrutural]
+    D --> F[Execução<br/>Passo a Passo]
+    F --> G[Snapshot<br/>da Memória]
+    G --> H[Atualizar<br/>Teste de Mesa]
+    G --> I[Gerar<br/>Explicação]
+    H --> J{Avançar?}
+    I --> J
+    J -->|Sim| F
+    J -->|Não| K[Aguardar<br/>Usuário]
+    K --> J
+
+    style C fill:#ffd,stroke:#333
+    style J fill:#ffd,stroke:#333
+```
+
+---
+
+## 10.4. Teste de Mesa (Desk Check Table)
+
+O teste de mesa é a representação tabular da execução do algoritmo, construída automaticamente a partir da sequência de snapshots registrados.
+
+Cada linha do teste de mesa registra:
+
+- **Passo**: número sequencial da execução;
+- **Bloco**: identificador e tipo do bloco executado;
+- **Operação**: descrição textual da operação realizada pelo bloco;
+- **Variáveis**: valores de **todas** as variáveis após a execução do passo (cada variável em sua coluna);
+- **Saída**: resultado produzido (para blocos de saída de dados);
+
+Exemplo de teste de mesa gerado:
+
+| Passo | Bloco | Operação | n | soma | contador | Saída |
+|-------|-------|----------|---|---|----------|-------|
+| 1 | Início | Iniciar algoritmo | - | - | - | - |
+| 2 | Entrada | Ler valor para n | 10 | - | - | - |
+| 3 | Processo | soma = n + 10 | 10 | 20 | - | - |
+| 4 | Saída | Exibir soma | 10 | 20 | - | 20 |
+| 5 | Término | Finalizar execução | 10 | 20 | - | - |
+
+As colunas de variáveis são dinâmicas: novas colunas aparecem conforme variáveis são criadas durante a execução.
+
+---
+
+## 10.5. Geração de Explicações
+
+Cada snapshot inclui uma explicação textual gerada automaticamente. A explicação é contextual e depende do tipo de bloco executado:
+
+- **Entrada**: "Solicitando ao usuário um valor para a variável 'n'.";
+- **Processo**: "Calculando a expressão 'soma = n + 10': substituindo 'n' por 10, obtendo soma = 20.";
+- **Decisão**: "Avaliando condição 'n > 5': como 10 > 5 é verdadeiro, seguindo pelo ramo SIM.";
+- **Saída**: "Exibindo o valor da variável 'soma': 20.";
+- **Enquanto**: "Iniciando iteração: condição 'contador < 5' é verdadeira (contador = 0), executando corpo do laço.";
+
+---
+
+## 10.6. Sistema de Navegação entre Passos
+
+O sistema permite que o usuário navegue livremente pelo histórico da execução:
+
+- **Avançar (next)**: executa o próximo bloco e adiciona um novo snapshot ao histórico;
+- **Retroceder (prev)**: restaura o estado a partir do snapshot anterior (o snapshot atual não é descartado);
+- **Reiniciar (reset)**: descarta todos os snapshots e reinicia a execução a partir do bloco inicial;
+- **Ir para passo N**: restaura o estado exato do snapshot N, permitindo que o usuário "pule" para qualquer ponto da execução.
+
+A navegação não altera os snapshots já registrados, garantindo a integridade do histórico de execução.
+
+---
+
+## 10.7. Detecção de Erros
+
+O sistema detecta e reporta dois tipos de erros:
+
+### Erros Estruturais (pré-execução)
+
+- Ausência de bloco de início ou término;
+- Blocos desconectados do fluxo principal;
+- Blocos de decisão com número incorreto de arestas de saída;
+- Laços sem bloco de término ou condição adequada.
+
+### Erros de Execução (durante a simulação)
+
+- Uso de variável não inicializada;
+- Divisão por zero;
+- Expressões inválidas ou malformadas;
+- Tipo de dado incompatível com a operação;
+- Limite máximo de passos excedido (proteção contra loop infinito).
+
+Quando um erro é detectado, a execução é interrompida e uma mensagem descritiva é exibida ao usuário, indicando o bloco onde o erro ocorreu e a natureza do problema.
+
+---
+
+## 10.8. Conversão para Código
 
 Além da execução visual, o Blade realiza a conversão do algoritmo para código-fonte.
 
@@ -342,9 +627,7 @@ Exemplos:
 
 O objetivo é facilitar a transição entre programação visual e programação textual.
 
----
-
-# 12. Divisão dos Módulos
+# 11. Divisão dos Módulos
 
 Para fins de desenvolvimento do Trabalho de Conclusão de Curso, a plataforma foi dividida em dois módulos.
 
@@ -380,7 +663,7 @@ Embora desenvolvidos separadamente, ambos os módulos compõem uma única aplica
 
 ---
 
-# 13. Considerações Finais
+# 12. Considerações Finais
 
 A arquitetura proposta para o Blade foi organizada de forma modular, permitindo a separação entre a construção dos algoritmos e sua execução.
 

@@ -128,7 +128,97 @@ Responsável por validar, interpretar, executar e converter os algoritmos constr
 
 ---
 
-# 🛡️ 6. Regras de Negócio
+# 🧩 6. Sistema para Simulação de Teste de Mesa em Diagrama de Blocos
+
+O **Sistema para Simulação de Teste de Mesa em Diagrama de Blocos** é o componente central do Blade. Ele é responsável por interpretar, executar e simular algoritmos representados visualmente, permitindo que o usuário acompanhe cada etapa da execução e compreenda o comportamento do algoritmo.
+
+## Funcionamento Geral
+
+O sistema opera em ciclos de execução controlados pelo usuário. A cada ciclo, o motor de execução:
+
+1. Identifica o bloco atual a ser processado com base no fluxo do diagrama;
+2. Interpreta o tipo de bloco e sua operação específica;
+3. Executa a operação, atualizando o estado da memória;
+4. Registra um snapshot completo do estado após a execução;
+5. Gera uma explicação textual da operação realizada;
+6. Aguarda a solicitação do usuário para avançar ao próximo passo.
+
+Esse ciclo se repete até que o bloco de término seja alcançado ou um erro seja detectado.
+
+## Motor de Execução
+
+O motor de execução é o núcleo do sistema. Ele recebe como entrada a estrutura do diagrama parseada e percorre os blocos respeitando as conexões definidas.
+
+Suas principais responsabilidades são:
+
+- **Navegação entre blocos**: segue as arestas do grafo para determinar o próximo bloco, respeitando desvios condicionais;
+- **Interpretação de operações**: executa atribuições, expressões aritméticas, decisões lógicas, laços de repetição, entrada e saída de dados;
+- **Gerenciamento de estado**: mantém e atualiza a memória com todas as variáveis do algoritmo;
+- **Controle de fluxo**: avalia condições em blocos de decisão para determinar o caminho a seguir;
+- **Detecção de erros**: identifica erros estruturais e de execução, interrompendo a simulação quando necessário.
+
+## Gerenciamento de Memória
+
+A memória do sistema é uma estrutura que armazena todas as variáveis criadas durante a execução. Ela funciona como um dicionário mutável que é atualizado a cada operação.
+
+Características da memória:
+
+- **Inicialização tardia**: variáveis só são registradas após sua primeira atribuição;
+- **Imutabilidade de snapshots**: uma vez registrado, um snapshot não pode ser alterado;
+- **Tipagem dinâmica**: as variáveis assumem o tipo do valor atribuído no momento da execução;
+- **Escopo único**: todas as variáveis compartilham o mesmo escopo global do algoritmo.
+
+## Sistema de Snapshots
+
+A cada passo da execução, o sistema captura o estado completo da memória e armazena como um snapshot imutável.
+
+Cada snapshot contém:
+
+- Identificador único do passo;
+- Bloco executado;
+- Estado completo das variáveis no momento;
+- Operação realizada;
+- Resultado da operação.
+
+Os snapshots permitem que o usuário navegue livremente entre os passos da execução, retrocedendo ou avançando sem perder o histórico.
+
+## Geração do Teste de Mesa
+
+O teste de mesa é construído automaticamente a partir da sequência de snapshots registrados. Ele é apresentado como uma tabela onde cada linha representa um passo da execução.
+
+A tabela do teste de mesa exibe:
+
+- Número do passo;
+- Bloco executado (tipo e identificador);
+- Operação realizada (descrição textual);
+- Valores de todas as variáveis após a execução;
+- Resultado ou saída produzida (se aplicável).
+
+## Interação com o Usuário
+
+Quando a execução encontra um bloco do tipo **Entrada**, o sistema interrompe a execução e solicita que o usuário informe um valor. Após o usuário fornecer o dado, a execução prossegue normalmente.
+
+O sistema oferece as seguintes ações de controle ao usuário:
+
+- **Avançar passo**: executa o próximo bloco e registra um novo snapshot;
+- **Retroceder passo**: retorna ao estado do snapshot anterior;
+- **Reiniciar**: reinicializa a execução desde o primeiro bloco;
+- **Ir para passo específico**: restaura o estado de qualquer snapshot anterior.
+
+## Geração de Explicações
+
+Para cada passo executado, o sistema gera automaticamente uma explicação textual didática, descrevendo:
+
+- O que o bloco faz;
+- Qual operação está sendo realizada;
+- Qual o impacto nas variáveis;
+- Qual o próximo passo esperado.
+
+As explicações são dinâmicas e dependem do tipo de bloco e dos valores correntes das variáveis, permitindo que o aluno compreenda o raciocínio por trás de cada operação.
+
+---
+
+# 🛡️ 7. Regras de Negócio
 
 ### RN01
 
@@ -184,7 +274,7 @@ O motor de execução não poderá modificar o diagrama original.
 
 ---
 
-# 🚫 7. Fora de Escopo
+# 🚫 8. Fora de Escopo
 
 Nesta versão da plataforma não serão implementados:
 
@@ -197,7 +287,7 @@ Nesta versão da plataforma não serão implementados:
 
 ---
 
-# ⚙️ 8. Requisitos Não Funcionais
+# ⚙️ 9. Requisitos Não Funcionais
 
 ## Desempenho
 
@@ -229,20 +319,33 @@ Nesta versão da plataforma não serão implementados:
 
 ---
 
-# 🛠️ 9. Diretrizes Tecnológicas
+# 🛠️ 10. Diretrizes Tecnológicas
 
-| Camada | Tecnologia |
-|----------|------------|
-| Frontend | React |
-| Linguagem | TypeScript |
-| Editor Visual | React Flow |
-| Backend | Ruby on Rails |
-| Banco de Dados | PostgreSQL |
-| Versionamento | Git + GitHub |
+| Camada | Tecnologia | Versão |
+|----------|------------|--------|
+| Runtime | Ruby | 3.4.10 |
+| Framework Web | Ruby on Rails | 8.1.3 |
+| Servidor Web | Puma | >= 5.0 |
+| Frontend | React | 19.2.7 |
+| Linguagem Frontend | TypeScript | 6.0.3 |
+| Editor Visual | @xyflow/react (React Flow) | 12.11.1 |
+| Bundler JS | esbuild | 0.28.1 |
+| Estilização | Tailwind CSS | 4.3.2 |
+| Hotwire (Turbo) | @hotwired/turbo-rails | 8.0.23 |
+| Hotwire (Stimulus) | @hotwired/stimulus | 3.2.2 |
+| Banco de Dados | PostgreSQL | 16 |
+| Driver BD | pg gem | ~> 1.1 |
+| Cache | solid_cache | - |
+| Fila | solid_queue | - |
+| WebSocket | solid_cable | - |
+| Processamento Imagens | image_processing | ~> 1.2 |
+| Deploy | Kamal | - |
+| Versionamento | Git + GitHub | - |
+| Containerização | Docker + Docker Compose | - |
 
 ---
 
-# 👨‍💻 10. Divisão de Responsabilidades
+# 👨‍💻 11. Divisão de Responsabilidades
 
 O desenvolvimento da plataforma foi dividido em dois módulos para fins acadêmicos.
 
@@ -277,7 +380,7 @@ Responsabilidades:
 
 ---
 
-# ✅ 11. Critérios de Aceitação
+# ✅ 12. Critérios de Aceitação
 
 O Blade será considerado funcional quando for capaz de:
 
