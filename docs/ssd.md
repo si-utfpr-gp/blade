@@ -95,6 +95,7 @@ A arquitetura foi organizada em módulos independentes, permitindo que alteraç�
 | Linguagem Frontend | TypeScript | 6.0.3 |
 | Editor Visual | @xyflow/react (React Flow) | 12.11.1 |
 | Bundler JS | esbuild | 0.28.1 |
+| Testes Frontend | Vitest | 4.1.10 |
 | Estilização | Tailwind CSS | 4.3.2 |
 | Hotwire (Turbo) | @hotwired/turbo-rails | 8.0.23 |
 | Hotwire (Stimulus) | @hotwired/stimulus | 3.2.2 |
