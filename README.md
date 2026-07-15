@@ -74,6 +74,12 @@ O sistema é dividido em dois módulos principais:
 
 Detalhes completos em [docs/ssd.md](docs/ssd.md)
 
+## Documentação
+
+- [PRD — Product Requirements Document](docs/prd.md)
+- [SSD — Software Design Document](docs/ssd.md)
+- [Contributing — Guia de contribuição](docs/contributing.md)
+
 ## Branches
 
 ```
