@@ -2,14 +2,28 @@
   "name": "app",
   "private": true,
   "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "esbuild": "^0.28.1",
-    "typescript": "^6.0.3"
+    "eslint": "^9.0.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "jsdom": "^29.1.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.64.0",
+    "vitest": "^4.1.10"
   },
   "scripts": {
     "build": "esbuild app/javascript/application.js --bundle --sourcemap --format=esm --outdir=app/assets/builds --loader:.ts=ts --loader:.tsx=tsx --jsx=automatic --jsx-import-source=react",
-    "build:css": "npx @tailwindcss/cli -i ./app/assets/stylesheets/application.tailwind.css -o ./app/assets/builds/application.css --minify"
+    "build:css": "npx @tailwindcss/cli -i ./app/assets/stylesheets/application.tailwind.css -o ./app/assets/builds/application.css --minify",
+    "lint": "eslint app/javascript/",
+    "lint:fix": "eslint app/javascript/ --fix",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@hotwired/stimulus": "^3.2.2",
