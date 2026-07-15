@@ -41,7 +41,7 @@ export default function SimulatorPanel(_props: SimulatorPanelProps) {
             <div className="h-full border border-dashed border-gray-300 rounded-lg flex items-center justify-center">
               <div className="text-center">
                 <p className="text-sm text-gray-400">Nenhum passo executado</p>
-                <p className="text-xs text-gray-300 mt-1">Clique em "Iniciar Execução" para começar</p>
+                <p className="text-xs text-gray-300 mt-1">Clique em &ldquo;Iniciar Execu&ccedil;&atilde;o&rdquo; para come&ccedil;ar</p>
               </div>
             </div>
           </div>

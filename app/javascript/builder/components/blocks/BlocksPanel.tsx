@@ -2,7 +2,7 @@ export interface BlocksPanelProps {
   errors: string[]
 }
 
-export default function BlocksPanel({ errors }: BlocksPanelProps) {
+export default function BlocksPanel({ errors: _errors }: BlocksPanelProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b text-center">
