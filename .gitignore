@@ -40,5 +40,7 @@
 /node_modules
 
 # Superpowers agent artifacts
-/docs/superpowers/
-.superpowers/
+/docs/superpowers/*
+!/docs/superpowers/.gitkeep
+.superpowers/*
+!.superpowers/.gitkeep
