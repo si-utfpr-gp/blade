@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { render, screen } from "@testing-library/react"
-import { SimulatorProvider } from "./SimulatorContext"
-import SimulatorStatusBar from "./SimulatorStatusBar"
+import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
+import SimulatorStatusBar from "../../components/simulator/SimulatorStatusBar"
 
 function renderStatusBar() {
   return render(

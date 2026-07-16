@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { render, screen } from "@testing-library/react"
-import { SimulatorProvider } from "./SimulatorContext"
-import SimulatorHeader from "./SimulatorHeader"
+import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
+import SimulatorHeader from "../../components/simulator/SimulatorHeader"
 
 function renderWithState(_overrides?: Partial<import("../../interfaces/simulator").SimulatorState>) {
   return render(

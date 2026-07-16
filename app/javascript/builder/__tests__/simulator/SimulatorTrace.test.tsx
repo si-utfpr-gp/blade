@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest"
 import { render, screen, fireEvent } from "@testing-library/react"
-import { SimulatorProvider } from "./SimulatorContext"
-import { TooltipProvider } from "../ui/tooltip"
-import SimulatorTrace from "./SimulatorTrace"
-import SimulatorControl from "./SimulatorControl"
+import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
+import { TooltipProvider } from "../../components/ui/tooltip"
+import SimulatorTrace from "../../components/simulator/SimulatorTrace"
+import SimulatorControl from "../../components/simulator/SimulatorControl"
 
 function renderTrace() {
   return render(

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { nodeTypeLabel } from "./labels"
+import { nodeTypeLabel } from "../../components/simulator/labels"
 
 describe("nodeTypeLabel", () => {
   it("returns 'Início/Fim' for startEnd", () => {

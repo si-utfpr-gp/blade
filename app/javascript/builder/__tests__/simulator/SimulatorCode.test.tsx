@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { render, screen, fireEvent } from "@testing-library/react"
-import { SimulatorProvider } from "./SimulatorContext"
-import SimulatorCode from "./SimulatorCode"
+import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
+import SimulatorCode from "../../components/simulator/SimulatorCode"
 
 describe("SimulatorCode", () => {
   it("renders JS and TS toggle buttons", () => {
