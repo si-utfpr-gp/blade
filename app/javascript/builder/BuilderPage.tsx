@@ -9,7 +9,7 @@ export default function BuilderPage() {
       header={<Header title="Construa seu algoritmo" />}
       sidebar={<BlocksPanel errors={[]} />}
       canvas={<ConstructorCanvas />}
-      inspector={<SimulatorPanel nodes={[]} edges={[]} />}
+      inspector={<SimulatorPanel />}
     />
   )
 }
