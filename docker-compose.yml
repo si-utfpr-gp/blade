@@ -38,6 +38,7 @@ services:
         bundle check || bundle install
         yarn install
         bin/rails db:prepare
+        rm -f tmp/pids/server.pid
         exec bin/dev
 
   postgres:

@@ -1,68 +1,42 @@
-import { useState } from "react"
-import type { Node, Edge } from "@xyflow/react"
+import { TooltipProvider } from "../ui/tooltip";
+import { SimulatorProvider, useSimulator } from "./SimulatorContext";
+import SimulatorHeader from "./SimulatorHeader";
+import SimulatorControl from "./SimulatorControl";
+import SimulatorTabs from "./SimulatorTabs";
+import SimulatorTrace from "./SimulatorTrace";
+import SimulatorExplain from "./SimulatorExplain";
+import SimulatorCode from "./SimulatorCode";
+import SimulatorStatusBar from "./SimulatorStatusBar";
+import type { SimulatorCallbacks } from "../../interfaces/simulator";
 
 export interface SimulatorPanelProps {
-  nodes: Node[]
-  edges: Edge[]
+  callbacks?: SimulatorCallbacks;
 }
 
-type Tab = "trace" | "explain" | "code"
+export default function SimulatorPanel({ callbacks }: SimulatorPanelProps) {
+  return (
+    <SimulatorProvider callbacks={callbacks}>
+      <TooltipProvider delayDuration={200}>
+      <div className="flex flex-col h-full bg-card border-l border-border">
+        <SimulatorHeader />
+        <SimulatorControl />
+        <SimulatorTabs />
+        <SimulatorPanelContent />
+        <SimulatorStatusBar />
+      </div>
+      </TooltipProvider>
+    </SimulatorProvider>
+  );
+}
 
-export default function SimulatorPanel(_props: SimulatorPanelProps) {
-  const [activeTab, setActiveTab] = useState<Tab>("trace")
-
-  const tabs: { id: Tab; label: string }[] = [
-    { id: "trace", label: "Teste de Mesa" },
-    { id: "explain", label: "Explicação" },
-    { id: "code", label: "Código" },
-  ]
+function SimulatorPanelContent() {
+  const { activeTab } = useSimulator();
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex border-b shrink-0">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 py-3 text-xs font-semibold uppercase tracking-widest transition-colors ${
-              activeTab === tab.id
-                ? "text-blue-600 border-b-2 border-blue-600"
-                : "text-gray-400 hover:text-gray-600"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex-1 relative min-h-0">
-        {activeTab === "trace" && (
-          <div className="absolute inset-0 p-4">
-            <div className="h-full border border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-sm text-gray-400">Nenhum passo executado</p>
-                <p className="text-xs text-gray-300 mt-1">Clique em &ldquo;Iniciar Execu&ccedil;&atilde;o&rdquo; para come&ccedil;ar</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === "explain" && (
-          <div className="absolute inset-0 p-4">
-            <div className="h-full border border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-              <p className="text-sm text-gray-400">Aguardando execução...</p>
-            </div>
-          </div>
-        )}
-
-        {activeTab === "code" && (
-          <div className="absolute inset-0 p-4">
-            <div className="h-full border border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-              <p className="text-sm text-gray-400">O código será gerado aqui</p>
-            </div>
-          </div>
-        )}
-      </div>
+    <div className="flex-1 overflow-auto">
+      {activeTab === "trace" && <SimulatorTrace />}
+      {activeTab === "explain" && <SimulatorExplain />}
+      {activeTab === "code" && <SimulatorCode />}
     </div>
-  )
+  );
 }
