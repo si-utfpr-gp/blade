@@ -1,1 +1,8 @@
 export { default, type SimulatorPanelProps } from "./SimulatorPanel"
+export { default as SimulatorHeader, type SimulatorHeaderProps } from "./SimulatorHeader"
+export { default as SimulatorControl, type SimulatorControlProps } from "./SimulatorControl"
+export { default as SimulatorTabs, type SimulatorTabsProps } from "./SimulatorTabs"
+export { default as SimulatorTrace, type SimulatorTraceProps } from "./SimulatorTrace"
+export { default as SimulatorExplain, type SimulatorExplainProps } from "./SimulatorExplain"
+export { default as SimulatorCode, type SimulatorCodeProps } from "./SimulatorCode"
+export { default as SimulatorStatusBar, type SimulatorStatusBarProps } from "./SimulatorStatusBar"

@@ -1,68 +1,115 @@
 import { useState } from "react"
-import type { Node, Edge } from "@xyflow/react"
+import type { ExecutionStep } from "../../interfaces"
+import SimulatorHeader from "./SimulatorHeader"
+import SimulatorControl from "./SimulatorControl"
+import SimulatorTabs from "./SimulatorTabs"
+import SimulatorTrace from "./SimulatorTrace"
+import SimulatorExplain from "./SimulatorExplain"
+import SimulatorCode from "./SimulatorCode"
+import SimulatorStatusBar from "./SimulatorStatusBar"
 
 export interface SimulatorPanelProps {
-  nodes: Node[]
-  edges: Edge[]
+  steps: ExecutionStep[]
+  currentStepIndex: number
+  outputs: string[]
+  isRunning: boolean
+  isFinished: boolean
+  isStarted: boolean
+  error: string | null
+  onStart: () => void
+  onStepForward: () => void
+  onStepBack: () => void
+  onRunAll: () => void
+  onStop: () => void
+  onReset: () => void
+  speed: number
+  onSpeedChange: (speed: number) => void
+  onVariableEdit?: (stepIndex: number, varName: string, newValue: string) => void
+  jsCode: string
+  tsCode: string
 }
 
 type Tab = "trace" | "explain" | "code"
 
-export default function SimulatorPanel(_props: SimulatorPanelProps) {
+export default function SimulatorPanel({
+  steps,
+  currentStepIndex,
+  outputs,
+  isRunning,
+  isFinished,
+  isStarted,
+  error,
+  onStart,
+  onStepForward,
+  onStepBack,
+  onRunAll,
+  onStop,
+  onReset,
+  speed,
+  onSpeedChange,
+  onVariableEdit,
+  jsCode,
+  tsCode,
+}: SimulatorPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>("trace")
 
-  const tabs: { id: Tab; label: string }[] = [
-    { id: "trace", label: "Teste de Mesa" },
-    { id: "explain", label: "Explicação" },
-    { id: "code", label: "Código" },
-  ]
+  const canStepBack = isStarted && currentStepIndex > 0 && !isRunning
+  const canStepForward = isStarted && !isFinished && !isRunning
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex border-b shrink-0">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 py-3 text-xs font-semibold uppercase tracking-widest transition-colors ${
-              activeTab === tab.id
-                ? "text-blue-600 border-b-2 border-blue-600"
-                : "text-gray-400 hover:text-gray-600"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+    <div className="flex flex-col h-full bg-card border-l border-border">
+      <SimulatorHeader isRunning={isRunning} isFinished={isFinished} isStarted={isStarted} />
 
-      <div className="flex-1 relative min-h-0">
+      <SimulatorControl
+        isStarted={isStarted}
+        isRunning={isRunning}
+        isFinished={isFinished}
+        canStepBack={canStepBack}
+        canStepForward={canStepForward}
+        speed={speed}
+        onStart={onStart}
+        onReset={onReset}
+        onStepBack={onStepBack}
+        onStepForward={onStepForward}
+        onRunAll={onRunAll}
+        onStop={onStop}
+        onSpeedChange={onSpeedChange}
+      />
+
+      <SimulatorTabs activeTab={activeTab} onTabChange={setActiveTab} />
+
+      <div className="flex-1 overflow-auto">
         {activeTab === "trace" && (
-          <div className="absolute inset-0 p-4">
-            <div className="h-full border border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-sm text-gray-400">Nenhum passo executado</p>
-                <p className="text-xs text-gray-300 mt-1">Clique em &ldquo;Iniciar Execu&ccedil;&atilde;o&rdquo; para come&ccedil;ar</p>
-              </div>
-            </div>
-          </div>
+          <SimulatorTrace
+            steps={steps}
+            currentStepIndex={currentStepIndex}
+            outputs={outputs}
+            isStarted={isStarted}
+            isRunning={isRunning}
+            isFinished={isFinished}
+            error={error}
+            onVariableEdit={onVariableEdit}
+          />
         )}
-
         {activeTab === "explain" && (
-          <div className="absolute inset-0 p-4">
-            <div className="h-full border border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-              <p className="text-sm text-gray-400">Aguardando execução...</p>
-            </div>
-          </div>
+          <SimulatorExplain
+            steps={steps}
+            currentStepIndex={currentStepIndex}
+            isStarted={isStarted}
+            isFinished={isFinished}
+          />
         )}
-
         {activeTab === "code" && (
-          <div className="absolute inset-0 p-4">
-            <div className="h-full border border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-              <p className="text-sm text-gray-400">O código será gerado aqui</p>
-            </div>
-          </div>
+          <SimulatorCode jsCode={jsCode} tsCode={tsCode} />
         )}
       </div>
+
+      <SimulatorStatusBar
+        steps={steps}
+        currentStepIndex={currentStepIndex}
+        isStarted={isStarted}
+        outputs={outputs}
+      />
     </div>
   )
 }
