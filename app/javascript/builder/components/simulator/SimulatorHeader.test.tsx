@@ -1,0 +1,24 @@
+import { describe, it, expect } from "vitest"
+import { render, screen } from "@testing-library/react"
+import { SimulatorProvider } from "./SimulatorContext"
+import SimulatorHeader from "./SimulatorHeader"
+
+function renderWithState(overrides?: Partial<import("../../interfaces/simulator").SimulatorState>) {
+  return render(
+    <SimulatorProvider>
+      <SimulatorHeader />
+    </SimulatorProvider>
+  )
+}
+
+describe("SimulatorHeader", () => {
+  it('shows "Pronto" when not started', () => {
+    renderWithState()
+    expect(screen.getByText("Pronto")).toBeInTheDocument()
+  })
+
+  it("shows the Terminal icon", () => {
+    renderWithState()
+    expect(screen.getByText("Depurador")).toBeInTheDocument()
+  })
+})
