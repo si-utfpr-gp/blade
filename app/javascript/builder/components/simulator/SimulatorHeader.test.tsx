@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react"
 import { SimulatorProvider } from "./SimulatorContext"
 import SimulatorHeader from "./SimulatorHeader"
 
-function renderWithState(overrides?: Partial<import("../../interfaces/simulator").SimulatorState>) {
+function renderWithState(_overrides?: Partial<import("../../interfaces/simulator").SimulatorState>) {
   return render(
     <SimulatorProvider>
       <SimulatorHeader />
