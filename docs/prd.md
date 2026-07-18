@@ -6,7 +6,7 @@
 - Lucas Gontarz Fajardo
 - Emanuel Oliveira Andrade
 
-**Versão:** 1.0.0
+**Versão:** 2.0.0
 
 **Status:** 🟡 Em Desenvolvimento
 
@@ -54,13 +54,22 @@ Desenvolver uma plataforma integrada para construção, interpretação e simula
 |--------|-----------|
 | Diagrama | Representação gráfica de um algoritmo. |
 | Bloco | Elemento que representa uma instrução do algoritmo. |
+| startEnd | Bloco que representa início ou término, diferenciado pela propriedade `variant` (`'start'` ou `'end'`). |
+| memory | Bloco de declaração de variáveis com tipo e nome. Não gera passo de execução. |
+| input | Bloco de entrada de dados pelo usuário. |
+| output | Bloco de saída/exibição de dados. |
+| process | Bloco de atribuição ou processamento. |
+| decision | Bloco de desvio condicional. |
+| connector | Bloco de roteamento de fluxo. Não gera passo de execução. |
+| subroutine | Bloco de chamada de sub-rotina/função. |
+| variant | Propriedade do bloco `startEnd` que indica início (`'start'`) ou término (`'end'`). |
 | Fluxo | Conexão entre blocos. |
 | Parser | Componente responsável por interpretar o diagrama. |
 | Contexto de Execução | Estado atual do algoritmo durante a execução. |
 | Memória | Estrutura que armazena todas as variáveis. |
 | Snapshot | Registro completo da memória em determinado instante. |
 | Teste de Mesa | Simulação passo a passo do algoritmo. |
-| Passo | Execução individual de um bloco. |
+| Passo | Execução individual de um bloco (blocos `memory` e `connector` não geram passos). |
 | Explicação | Descrição textual da ação realizada em um passo. |
 | Conversão | Transformação do diagrama para código-fonte. |
 
@@ -137,13 +146,14 @@ O **Sistema para Simulação de Teste de Mesa em Diagrama de Blocos** é o compo
 O sistema opera em ciclos de execução controlados pelo usuário. A cada ciclo, o motor de execução:
 
 1. Identifica o bloco atual a ser processado com base no fluxo do diagrama;
-2. Interpreta o tipo de bloco e sua operação específica;
-3. Executa a operação, atualizando o estado da memória;
-4. Registra um snapshot completo do estado após a execução;
-5. Gera uma explicação textual da operação realizada;
-6. Aguarda a solicitação do usuário para avançar ao próximo passo.
+2. Se o bloco for `connector` ou `memory`, o motor **não gera passo** — apenas avança para o próximo bloco;
+3. Interpreta o tipo de bloco e sua operação específica;
+4. Executa a operação, atualizando o estado da memória;
+5. Registra um snapshot completo do estado após a execução;
+6. Gera uma explicação textual da operação realizada;
+7. Aguarda a solicitação do usuário para avançar ao próximo passo.
 
-Esse ciclo se repete até que o bloco de término seja alcançado ou um erro seja detectado.
+Esse ciclo se repete até que o bloco `startEnd` com `variant = 'end'` seja alcançado ou um erro seja detectado.
 
 ## Motor de Execução
 
@@ -163,9 +173,11 @@ A memória do sistema é uma estrutura que armazena todas as variáveis criadas 
 
 Características da memória:
 
-- **Inicialização tardia**: variáveis só são registradas após sua primeira atribuição;
+- **Declaração explícita**: as variáveis são declaradas no bloco `memory` com nome e tipo (`inteiro`, `real`, `caractere`, `logico`);
+- **Inicialização tardia**: variáveis só recebem valor após sua primeira atribuição (bloco `input` ou `process`);
+- **Tipagem declarativa com execução dinâmica**: o tipo declarado no bloco `memory` serve como documentação e validação, mas o valor é tratado dinamicamente durante a execução;
+- **Suporte a vetores**: variáveis indexadas são declaradas como `nome[tamanho]` (ex: `notas[5]`);
 - **Imutabilidade de snapshots**: uma vez registrado, um snapshot não pode ser alterado;
-- **Tipagem dinâmica**: as variáveis assumem o tipo do valor atribuído no momento da execução;
 - **Escopo único**: todas as variáveis compartilham o mesmo escopo global do algoritmo.
 
 ## Sistema de Snapshots
@@ -222,19 +234,19 @@ As explicações são dinâmicas e dependem do tipo de bloco e dos valores corre
 
 ### RN01
 
-Todo algoritmo deve possuir exatamente um bloco de início.
+Todo algoritmo deve possuir exatamente um bloco `startEnd` com `variant = 'start'`.
 
 ### RN02
 
-Todo algoritmo deve possuir exatamente um bloco de término.
+Todo algoritmo deve possuir exatamente um bloco `startEnd` com `variant = 'end'`.
 
 ### RN03
 
-Todo bloco deve estar conectado ao fluxo principal.
+Todo bloco deve estar conectado ao fluxo principal, exceto `connector` que pode ser ponto de convergência intermediário.
 
 ### RN04
 
-A execução inicia obrigatoriamente no bloco inicial.
+A execução inicia obrigatoriamente no bloco `startEnd` com `variant = 'start'`.
 
 ### RN05
 
@@ -242,11 +254,11 @@ A execução segue exclusivamente as conexões existentes.
 
 ### RN06
 
-Blocos de decisão devem possuir exatamente dois caminhos de saída.
+Blocos de decisão devem possuir exatamente dois caminhos de saída, identificados pelos handles `'yes'` (VERDADEIRO) e `'no'` (FALSO).
 
 ### RN07
 
-Cada passo executado gera um snapshot da memória.
+Cada passo executado gera um snapshot da memória. Blocos `memory` e `connector` **não geram passos nem snapshots**.
 
 ### RN08
 
@@ -254,7 +266,7 @@ A memória deve representar fielmente o estado do algoritmo.
 
 ### RN09
 
-Variáveis somente podem ser utilizadas após sua inicialização.
+Variáveis somente podem ser utilizadas após sua declaração no bloco `memory` e inicialização via `input` ou `process`.
 
 ### RN10
 
@@ -271,6 +283,18 @@ A execução deve ser interrompida caso sejam encontrados erros estruturais.
 ### RN13
 
 O motor de execução não poderá modificar o diagrama original.
+
+### RN14
+
+Blocos `connector` devem possuir exatamente uma aresta de entrada e uma aresta de saída.
+
+### RN15
+
+Blocos `startEnd` com `variant = 'start'` possuem apenas aresta de saída. Blocos `startEnd` com `variant = 'end'` possuem apenas aresta de entrada.
+
+### RN16
+
+A expressão em blocos `process` pode conter múltiplos statements separados por `;` (ex: `soma = 0; i = 0`), que são executados sequencialmente em um único passo.
 
 ---
 
