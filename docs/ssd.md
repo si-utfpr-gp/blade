@@ -6,7 +6,7 @@
 - Lucas Gontarz Fajardo
 - Emanuel Oliveira Andrade
 
-**Versão:** 1.0.0
+**Versão:** 2.0.0
 
 **Status:** 🟡 Em Desenvolvimento
 
@@ -58,7 +58,7 @@ graph TB
 
     subgraph BUILDER["Módulo de Construção"]
         B[Editor Visual<br/>React Flow]
-        C[Blocos<br/>Entrada, Processo, Saída,<br/>Decisão, Enquanto, Para]
+        C[Blocos<br/>startEnd, memory, input,<br/>process, output, decision,<br/>connector, subroutine]
     end
 
     subgraph EXECUTION["Módulo de Execução"]
@@ -287,22 +287,72 @@ A cada instrução executada, a memória é atualizada e novos resultados são p
 
 # 9.1. Formato JSON do Diagrama
 
-O construtor envia o diagrama ao módulo de execução no seguinte formato:
+O construtor envia o diagrama ao módulo de execução com formato compatível com `@xyflow/react` (React Flow). Os nós (`nodes`) seguem o tipo `Node` da biblioteca, e as arestas (`edges`) seguem o tipo `Edge`, com campos adicionais de handle e label para controle de fluxo.
+
+**Tipos de bloco:**
+
+| `type` | `variant` | Gera passo? | Descrição |
+|----------|-----------|-------------|-----------|
+| `startEnd` | `'start'` | Sim | Início do algoritmo |
+| `startEnd` | `'end'` | Sim | Término do algoritmo |
+| `memory` | — | **Não** | Declaração de variáveis (tipo + nome) |
+| `input` | — | Sim | Entrada de dados do usuário |
+| `output` | — | Sim | Exibição de dados |
+| `process` | — | Sim | Atribuição / processamento |
+| `decision` | — | Sim | Desvio condicional (handles `'yes'`/`'no'`) |
+| `connector` | — | **Não** | Roteamento de fluxo (1 entrada, 1 saída) |
+| `subroutine` | — | Sim | Chamada de sub-rotina |
+
+**Formato dos nós:**
+
+```typescript
+interface Node {
+  id: string              // ex: "n1", "n2"
+  type: string            // "startEnd" | "memory" | "input" | "output" | "process" | "decision" | "connector" | "subroutine"
+  position: { x: number; y: number }
+  data: {
+    label?: string        // Texto exibido no bloco
+    variant?: 'start' | 'end'  // Apenas para type = "startEnd"
+    rows?: Array<{        // Apenas para type = "memory"
+      type: string        // "inteiro" | "real" | "caractere" | "logico"
+      variables: string   // "num1, num2, soma" ou "notas[5], i"
+    }>
+  }
+}
+```
+
+**Formato das arestas:**
+
+```typescript
+interface Edge {
+  id: string              // ex: "e1", "e2"
+  source: string          // id do nó origem
+  target: string          // id do nó destino
+  sourceHandle?: string   // "yes" | "no" (decisão) | "bottom-out" | "right-in" | etc
+  targetHandle?: string   // "top-in" | "left-in" | "right-in" | etc
+  label?: string          // "VERDADEIRO" | "FALSO" (exibido na aresta)
+  type?: string           // "default" | "smoothstep"
+}
+```
+
+**Exemplo completo (soma de dois números):**
 
 ```json
 {
   "nodes": [
-    { "id": "1", "type": "start", "position": { "x": 0, "y": 0 }, "data": {} },
-    { "id": "2", "type": "input", "position": { "x": 100, "y": 100 }, "data": { "variable": "n" } },
-    { "id": "3", "type": "process", "position": { "x": 200, "y": 200 }, "data": { "expression": "soma = n + 10" } },
-    { "id": "4", "type": "output", "position": { "x": 300, "y": 300 }, "data": { "message": "soma" } },
-    { "id": "5", "type": "end", "position": { "x": 400, "y": 400 }, "data": {} }
+    { "id": "n1", "type": "startEnd", "position": { "x": 250, "y": 0 }, "data": { "label": "Início", "variant": "start" } },
+    { "id": "n2", "type": "memory", "position": { "x": 220, "y": 80 }, "data": { "label": "Memória", "rows": [{ "type": "inteiro", "variables": "num1, num2, soma" }] } },
+    { "id": "n3", "type": "input", "position": { "x": 240, "y": 200 }, "data": { "label": "num1, num2" } },
+    { "id": "n4", "type": "process", "position": { "x": 230, "y": 310 }, "data": { "label": "soma = num1 + num2" } },
+    { "id": "n5", "type": "output", "position": { "x": 240, "y": 420 }, "data": { "label": "\"A soma é: \" + soma" } },
+    { "id": "n6", "type": "startEnd", "position": { "x": 250, "y": 530 }, "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
-    { "id": "e1-2", "source": "1", "target": "2" },
-    { "id": "e2-3", "source": "2", "target": "3" },
-    { "id": "e3-4", "source": "3", "target": "4" },
-    { "id": "e4-5", "source": "4", "target": "5" }
+    { "id": "e1", "source": "n1", "target": "n2" },
+    { "id": "e2", "source": "n2", "target": "n3" },
+    { "id": "e3", "source": "n3", "target": "n4" },
+    { "id": "e4", "source": "n4", "target": "n5" },
+    { "id": "e5", "source": "n5", "target": "n6" }
   ]
 }
 ```
@@ -398,8 +448,8 @@ Responsável por determinar qual bloco deve ser executado a cada passo. Ele perc
 
 Funcionalidades:
 - Navegação sequencial entre blocos;
-- Avaliação de expressões condicionais para desvios;
-- Gerenciamento de iteração em laços (Enquanto, Para);
+- Avaliação de expressões condicionais para desvios (handles `'yes'`/`'no'`);
+- Detecção de ciclos no grafo para implementação de laços (while/for) via `decision` + arestas de retorno + `connector`;
 - Detecção de término de execução.
 
 ### Interpretador de Blocos
@@ -408,20 +458,23 @@ Responsável por executar a operação específica de cada tipo de bloco. Cada t
 
 Tipos de blocos interpretados:
 
-| Tipo de Bloco | Operação |
-|----------------|----------|
-| Início | Marca o ponto de partida |
-| Entrada | Solicita valor ao usuário e armazena em variável |
-| Processo | Executa expressão de atribuição |
-| Decisão | Avalia condição booleana |
-| Enquanto | Avalia condição e controla loop |
-| Para | Inicializa, testa e incrementa variável de controle |
-| Saída | Exibe valor ou mensagem |
-| Término | Finaliza a execução |
+| Node `type` | Tipo | `variant` | Gera passo? | Operação |
+|--------------|------|-----------|-------------|----------|
+| `startEnd` | Início | `'start'` | Sim | Marca o ponto de partida |
+| `memory` | Memória | — | **Não** | Declara variáveis com tipo e nome (não gera snapshot) |
+| `input` | Entrada | — | Sim | Solicita valor ao usuário e armazena em variável |
+| `process` | Processo | — | Sim | Executa expressão de atribuição (pode conter múltiplos statements separados por `;`) |
+| `decision` | Decisão | — | Sim | Avalia condição booleana; saídas pelos handles `'yes'` (VERDADEIRO) e `'no'` (FALSO) |
+| `output` | Saída | — | Sim | Exibe valor ou mensagem |
+| `subroutine` | Sub-rotina | — | Sim | Executa chamada de sub-rotina/função |
+| `connector` | Conector | — | **Não** | Roteia fluxo (1 entrada, 1 saída; não gera snapshot) |
+| `startEnd` | Término | `'end'` | Sim | Finaliza a execução |
 
 ### Gerenciador de Memória
 
-Mantém o estado atual de todas as variáveis do algoritmo durante a execução.
+Mantém o estado atual de todas as variáveis do algoritmo durante a execução. As variáveis são **declaradas** no bloco `memory` (com tipo e nome) e **inicializadas** posteriormente via blocos `input` ou `process`.
+
+Variáveis indexadas (vetores) são declaradas como `nome[tamanho]` (ex: `notas[5]`) e acessadas via índice (ex: `notas[i]`).
 
 Estrutura:
 
@@ -432,17 +485,19 @@ Estrutura:
     "soma": 15,
     "contador": 3
   },
+  "declared": ["n", "soma", "contador"],
   "initialized_at": ["n", "soma", "contador"],
   "types": {
-    "n": "number",
-    "soma": "number",
-    "contador": "number"
+    "n": "inteiro",
+    "soma": "real",
+    "contador": "inteiro"
   }
 }
 ```
 
 Operações:
-- **Inicializar variável**: registra nova variável com seu valor inicial;
+- **Declarar variável**: registra variável a partir do bloco `memory` (nome, tipo, e se é vetor);
+- **Inicializar variável**: atribui valor pela primeira vez (via `input` ou `process`);
 - **Atualizar variável**: modifica o valor de uma variável existente;
 - **Consultar variável**: retorna o valor corrente de uma variável;
 - **Verificar inicialização**: valida se a variável foi inicializada antes do uso.
@@ -565,11 +620,16 @@ As colunas de variáveis são dinâmicas: novas colunas aparecem conforme variá
 
 Cada snapshot inclui uma explicação textual gerada automaticamente. A explicação é contextual e depende do tipo de bloco executado:
 
-- **Entrada**: "Solicitando ao usuário um valor para a variável 'n'.";
-- **Processo**: "Calculando a expressão 'soma = n + 10': substituindo 'n' por 10, obtendo soma = 20.";
-- **Decisão**: "Avaliando condição 'n > 5': como 10 > 5 é verdadeiro, seguindo pelo ramo SIM.";
-- **Saída**: "Exibindo o valor da variável 'soma': 20.";
-- **Enquanto**: "Iniciando iteração: condição 'contador < 5' é verdadeira (contador = 0), executando corpo do laço.";
+- **startEnd (start)**: "Iniciando o algoritmo.";
+- **startEnd (end)**: "Algoritmo finalizado.";
+- **input**: "Solicitando ao usuário um valor para a variável 'n'.";
+- **process**: "Calculando a expressão 'soma = n + 10': substituindo 'n' por 10, obtendo soma = 20.";
+- **process (múltiplos)**: "Executando: soma = 0; i = 1. Variáveis atualizadas.";
+- **decision**: "Avaliando condição 'n > 5': como 10 > 5 é verdadeiro, seguindo pelo ramo VERDADEIRO (handle 'yes').";
+- **output**: "Exibindo o valor da variável 'soma': 20.";
+- **subroutine**: "Chamando sub-rotina 'fatorial(n)' com n = 5.";
+- **memory**: *(não gera explicação — bloco declarativo, sem passo)*;
+- **connector**: *(não gera explicação — bloco de roteamento, sem passo)*;
 
 ---
 
@@ -592,14 +652,21 @@ O sistema detecta e reporta dois tipos de erros:
 
 ### Erros Estruturais (pré-execução)
 
-- Ausência de bloco de início ou término;
+- Ausência de bloco `startEnd` com `variant = 'start'` ou com `variant = 'end'`;
+- Múltiplos blocos `startEnd` com mesmo `variant`;
 - Blocos desconectados do fluxo principal;
-- Blocos de decisão com número incorreto de arestas de saída;
+- Blocos `decision` com número incorreto de handles de saída (deve ter exatamente 2: `'yes'` e `'no'`);
+- Blocos `connector` com mais de uma aresta de entrada ou mais de uma aresta de saída;
+- Blocos `startEnd (start)` com arestas de entrada;
+- Blocos `startEnd (end)` com arestas de saída;
+- Variável declarada no bloco `memory` com nome duplicado;
 - Laços sem bloco de término ou condição adequada.
 
 ### Erros de Execução (durante a simulação)
 
-- Uso de variável não inicializada;
+- Uso de variável não declarada no bloco `memory`;
+- Uso de variável declarada mas não inicializada;
+- Acesso a índice fora dos limites do vetor declarado;
 - Divisão por zero;
 - Expressões inválidas ou malformadas;
 - Tipo de dado incompatível com a operação;
@@ -617,14 +684,17 @@ Cada bloco do diagrama possui um equivalente na linguagem de programação.
 
 Exemplos:
 
-| Bloco | Código |
-|--------|--------|
-| Processo | Atribuição |
-| Decisão | if |
-| Enquanto | while |
-| Para | for |
-| Entrada | Entrada de dados |
-| Saída | Impressão de dados |
+| Node `type` | Bloco | Código Gerado |
+|--------------|--------|---------------|
+| `startEnd (start)` | Início | `// Início do algoritmo` (comentário) |
+| `memory` | Memória | `let num1, num2, soma;` (declaração `let`, ou `let notas = new Array(5);` para vetores) |
+| `input` | Entrada | `num1 = parseInt(prompt(""));` (ou `parseFloat` conforme tipo) |
+| `process` | Processo | `soma = num1 + num2;` (atribuição direta) |
+| `decision` | Decisão | `if (condição) { } else { }` |
+| `output` | Saída | `console.log("A soma é: " + soma);` |
+| `subroutine` | Sub-rotina | `resultado = fatorial(n);` |
+| `connector` | Conector | *(nada — apenas roteamento de fluxo)* |
+| `startEnd (end)` | Término | `// Fim do algoritmo` (comentário) |
 
 O objetivo é facilitar a transição entre programação visual e programação textual.
 
