@@ -33,7 +33,7 @@
     "@radix-ui/react-tooltip": "^1.2.12",
     "@tailwindcss/cli": "^4.3.2",
     "@xyflow/react": "^12.11.1",
-    "@xyflow/system": "0.0.78",
+    "@xyflow/system": "0.0.79",
     "class-variance-authority": "^0.7.1",
     "classcat": "^5.0.5",
     "clsx": "^2.1.1",
