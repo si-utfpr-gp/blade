@@ -56,8 +56,8 @@ graph TB
         A[Aluno]
     end
     subgraph BUILDER["Módulo de Construção"]
-        B[Editor Visual<br/>React Flow]
-        C[Blocos<br/>startEnd, memory, input,<br/>process, output, decision,<br/>connector, subroutine]
+        B[Editor Visual React Flow]
+        C[Blocos startEnd, memory, input, process, output, decision, connector, subroutine]
         V[Validador Estrutural]
     end
     subgraph EXECUTION["Módulo de Execução"]
@@ -70,7 +70,7 @@ graph TB
     end
     A --> B
     C --> V
-    V -- "JSON<br/>válido" --> D
+    V -- "JSON válido" --> D
     D --> E
     E --> F
     E --> G
@@ -162,14 +162,14 @@ graph TB
         C --> V
     end
     subgraph Interpretação["Interpretação"]
-        P[Parser<br/>JSON → AST]
+        P[Parser JSON para AST]
     end
     subgraph Execução["Execução"]
-        M[Motor de Execução<br/>AST → Estado]
-        MEM[Memória<br/>Variáveis + Snapshots]
-        TM[Teste de Mesa<br/>Solicitando Dados → Executando]
-        EXP[Explicação<br/>Texto Descritivo]
-        CODE[Código<br/>JavaScript]
+        M[Motor de Execucao]
+        MEM[Memoria]
+        TM[Teste de Mesa]
+        EXP[Explicação Texto Descritivo]
+        CODE[Código JavaScript]
     end
     V --> P
     P --> M
@@ -227,16 +227,16 @@ Durante a execução o sistema:
 graph TB
     subgraph Input["Fluxo de Entrada"]
         JSON[JSON do Diagrama]
-        INPUT_BLOCK[Blocos de Entrada<br/>Detectados]
+        INPUT_BLOCK[Blocos de Entrada Detectados]
     end
     subgraph Processing["Processamento"]
-        P[Parser<br/>Constrói Grafo]
+        P[Parser Constrói Grafo]
         GRAPH[Grafo de Execução]
     end
     subgraph Execution["Execução Interativa"]
         EXE[Motor de Execução]
-        MEM[(Memória<br/>Variáveis)]
-        TM[Teste de Mesa<br/>Passo a Passo]
+        MEM[(Memória Variáveis)]
+        TM[Teste de Mesa Passo a Passo]
         EXP[Gerador de Explicação]
         CODE[Gerador de Código]
     end
@@ -371,25 +371,25 @@ graph TB
         DIAGRAM --> VAL
     end
     subgraph Parser["Camada de Parsing"]
-        AST[Gerador de AST<br/>Abstract Syntax Tree]
-        GRAPH[Construtor de Grafo<br/>de Execução]
+        AST[Gerador de AST Abstract Syntax Tree]
+        GRAPH[Construtor de Grafo de Execução]
     end
     subgraph Engine["Motor de Execução"]
-        CTL[Controlador de<br/>Fluxo]
-        INTERP[Interpretador<br/>de Blocos]
-        MEM[Gerenciador<br/>de Memória]
-        SNAP[Gerador de<br/>Snapshots]
+        CTL[Controlador de Fluxo]
+        INTERP[Interpretador de Blocos]
+        MEM[Gerenciador de Memória]
+        SNAP[Gerador de Snapshots]
     end
     subgraph Output["Saída"]
-        DT[Teste de Mesa<br/>Desk Check Table]
-        EXP[Explicações<br/>Textuais]
+        DT[Teste de Mesa Desk Check Table]
+        EXP[Explicações Textuais]
         CODE[Código JavaScript]
-        HIGHLIGHT[Bloco Destacado<br/>na Interface]
+        HIGHLIGHT[Bloco Destacado na Interface]
     end
     subgraph User["Interação"]
         USER[Usuário]
-        CONTROLS[Controles<br/>Avançar / Retroceder /<br/>Reiniciar / Ir para]
-        INPUT_VAL[Entrada de<br/>Valores]
+        CONTROLS[Controles Avançar / Retroceder / Reiniciar / Ir para]
+        INPUT_VAL[Entrada de Valores]
     end
     VAL --> AST
     AST --> GRAPH
@@ -537,16 +537,16 @@ O pipeline completo de processamento de um diagrama até a geração dos resulta
 
 ```mermaid
 graph LR
-    A[JSON do<br/>Diagrama] --> B[Parser<br/>Grafo]
-    B --> C[Grafo<br/>de Execução]
-    C --> D[Execução<br/>Passo a Passo]
-    D --> E[Snapshot<br/>da Memória]
-    E --> F[Atualizar<br/>Teste de Mesa]
-    E --> G[Gerar<br/>Explicação]
+    A[JSON do Diagrama] --> B[Parser Grafo]
+    B --> C[Grafo de Execução]
+    C --> D[Execução Passo a Passo]
+    D --> E[Snapshot da Memória]
+    E --> F[Atualizar Teste de Mesa]
+    E --> G[Gerar Explicação]
     F --> H{Avançar?}
     G --> H
     H -->|Sim| D
-    H -->|Não| I[Aguardar<br/>Usuário]
+    H -->|Não| I[Aguardar Usuário]
     I --> H
 ```
 
