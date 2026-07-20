@@ -31,8 +31,9 @@
     "@hotwired/turbo-rails": "^8.0.23",
     "@radix-ui/react-slot": "^1.3.0",
     "@radix-ui/react-tooltip": "^1.2.12",
+<<<<<<< HEAD
     "@tailwindcss/cli": "^4.3.3",
-    "@xyflow/react": "^12.11.1",
+    "@xyflow/react": "^12.11.2",
     "@xyflow/system": "0.0.78",
     "class-variance-authority": "^0.7.1",
     "classcat": "^5.0.5",
