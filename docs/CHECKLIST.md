@@ -1,7 +1,7 @@
 # Checklist - Blade
 
 **Versao:** 2.0.0
-**Atualizado em:** 2026-07-20
+**Atualizado em:** 2026-07-20 (Parser concluído)
 
 ---
 
@@ -24,7 +24,7 @@
 
 | # | Issue | Tarefa | Status |
 |---|-------|--------|--------|
-| 1 | [#51](https://github.com/si-utfpr-gp/blade/issues/51) | Parser: JSON diagram → execution graph | 🟡 Em andamento |
+| 1 | [#51](https://github.com/si-utfpr-gp/blade/issues/51) | Parser: JSON diagram → execution graph | ✅ Feito |
 | 2 | [#52](https://github.com/si-utfpr-gp/blade/issues/52) | Execution Engine: flow controller + block interpreter | ⬜ Pendente |
 | 3 | [#53](https://github.com/si-utfpr-gp/blade/issues/53) | Expression Evaluator (arithmetic/logical) | ⬜ Pendente |
 | 4 | [#54](https://github.com/si-utfpr-gp/blade/issues/54) | Memory Manager (variables, arrays, types) | ⬜ Pendente |

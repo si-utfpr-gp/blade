@@ -162,7 +162,7 @@ graph TB
         C --> V
     end
     subgraph Interpretação["Interpretação"]
-        P[Parser JSON para AST]
+        P[Parser JSON para Grafo]
     end
     subgraph Execução["Execução"]
         M[Motor de Execucao]
@@ -371,7 +371,6 @@ graph TB
         DIAGRAM --> VAL
     end
     subgraph Parser["Camada de Parsing"]
-        AST[Gerador de AST Abstract Syntax Tree]
         GRAPH[Construtor de Grafo de Execução]
     end
     subgraph Engine["Motor de Execução"]
@@ -391,8 +390,7 @@ graph TB
         CONTROLS[Controles Avançar / Retroceder / Reiniciar / Ir para]
         INPUT_VAL[Entrada de Valores]
     end
-    VAL --> AST
-    AST --> GRAPH
+    VAL --> GRAPH
     GRAPH --> CTL
     CTL --> INTERP
     INTERP <--> MEM
