@@ -120,7 +120,7 @@ Responsável por validar, interpretar, executar e converter os algoritmos constr
 | US02 | Aluno | Inserir blocos no diagrama. | 🔥 Crítica |
 | US03 | Aluno | Conectar blocos. | 🔥 Crítica |
 | US04 | Aluno | Editar propriedades dos blocos. | 🔥 Alta |
-| US05 | Sistema | Validar a estrutura do diagrama. | 🔥 Crítica |
+| US05 | Sistema | Validar a estrutura do diagrama (pré-execução). | 🔥 Crítica |
 | US06 | Sistema | Interpretar o diagrama. | 🔥 Crítica |
 | US07 | Aluno | Executar o algoritmo passo a passo. | 🔥 Crítica |
 | US08 | Aluno | Avançar para o próximo passo. | 🔥 Alta |
@@ -278,7 +278,7 @@ O código gerado deve ser semanticamente equivalente ao algoritmo representado n
 
 ### RN12
 
-A execução deve ser interrompida caso sejam encontrados erros estruturais.
+Erros estruturais devem ser detectados pelo módulo de construção antes do envio ao módulo de execução.
 
 ### RN13
 
@@ -384,6 +384,7 @@ Responsabilidades:
 - Inserção de blocos;
 - Conexões;
 - Manipulação do diagrama;
+- Validação estrutural (pré-execução);
 - Interface de modelagem.
 
 ---
@@ -396,7 +397,6 @@ Responsabilidades:
 
 - Interpretação do diagrama;
 - Parser;
-- Validação estrutural;
 - Motor de execução;
 - Teste de mesa;
 - Gerenciamento da memória;
