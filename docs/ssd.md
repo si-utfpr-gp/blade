@@ -55,12 +55,11 @@ graph TB
     subgraph UI["Interface do Usuário"]
         A[Aluno]
     end
-
     subgraph BUILDER["Módulo de Construção"]
-        B[Editor Visual<br/>React Flow]
-        C[Blocos<br/>startEnd, memory, input,<br/>process, output, decision,<br/>connector, subroutine]
+        B[Editor Visual React Flow]
+        C[Blocos startEnd, memory, input, process, output, decision, connector, subroutine]
+        V[Validador Estrutural]
     end
-
     subgraph EXECUTION["Módulo de Execução"]
         D[Parser]
         E[Motor de Execução]
@@ -69,17 +68,14 @@ graph TB
         H[Explicação]
         I[Código Gerado]
     end
-
     A --> B
-    B -- "JSON\nDiagrama" --> D
+    C --> V
+    V -- "JSON válido" --> D
     D --> E
     E --> F
     E --> G
     E --> H
     E --> I
-
-    style BUILDER fill:#f9f,stroke:#333
-    style EXECUTION fill:#bbf,stroke:#333
 ```
 
 A arquitetura foi organizada em módulos independentes, permitindo que alterações em um módulo causem o mínimo impacto possível nos demais.
@@ -143,7 +139,6 @@ Responsável por interpretar o diagrama recebido.
 
 Este módulo realiza:
 
-- validação;
 - interpretação;
 - execução passo a passo;
 - atualização da memória;
@@ -158,30 +153,24 @@ Este módulo realiza:
 O funcionamento do Blade ocorre conforme o fluxo abaixo.
 
 ```mermaid
-flowchart TB
+graph TB
     subgraph Construção["Construção do Diagrama"]
         B[Editor Visual]
         C[Blocos Disponíveis]
-        B --> C
-    end
-
-    subgraph Validação["Validação"]
         V[Validador Estrutural]
+        B --> C
+        C --> V
     end
-
     subgraph Interpretação["Interpretação"]
-        P[Parser<br/>JSON → AST]
+        P[Parser JSON para Grafo]
     end
-
     subgraph Execução["Execução"]
-        M[Motor de Execução<br/>AST → Estado]
-        MEM[Memória<br/>Variáveis + Snapshots]
-        TM[Teste de Mesa<br/>Solicitando Dados → Executando]
-        EXP[Explicação<br/>Texto Descritivo]
-        CODE[Código<br/>JavaScript]
+        M[Motor de Execucao]
+        MEM[Memoria]
+        TM[Teste de Mesa]
+        EXP[Explicação Texto Descritivo]
+        CODE[Código JavaScript]
     end
-
-    C --> V
     V --> P
     P --> M
     M <--> MEM
@@ -189,13 +178,11 @@ flowchart TB
     TM <-.->|"Input do Usuário"| A[Aluno]
     M --> EXP
     M --> CODE
-
-    style TM fill:#ffd,stroke:#333
 ```
 
-Após a construção do algoritmo, o sistema realiza sua validação estrutural.
+Após a construção do algoritmo, o módulo de construção realiza sua validação estrutural.
 
-Caso o diagrama seja considerado válido, inicia-se a interpretação do algoritmo.
+Caso o diagrama seja considerado válido, o módulo de execução inicia a interpretação do algoritmo.
 
 Durante a execução, o sistema atualiza continuamente a memória, gera o teste de mesa, produz explicações textuais e disponibiliza o código equivalente.
 
@@ -237,30 +224,26 @@ Durante a execução o sistema:
 # 9. Fluxo de Execução
 
 ```mermaid
-flowchart TB
+graph TB
     subgraph Input["Fluxo de Entrada"]
         JSON[JSON do Diagrama]
-        INPUT_BLOCK[Blocos de Entrada<br/>Detectados]
+        INPUT_BLOCK[Blocos de Entrada Detectados]
     end
-
     subgraph Processing["Processamento"]
-        P[Parser<br/>Valida + Constrói Grafo]
-        GRAPH[(Grafo de Execução)]
+        P[Parser Constrói Grafo]
+        GRAPH[Grafo de Execução]
     end
-
     subgraph Execution["Execução Interativa"]
         EXE[Motor de Execução]
-        MEM[(Memória<br/>Variáveis)]
-        TM[Teste de Mesa<br/>Passo a Passo]
+        MEM[(Memória Variáveis)]
+        TM[Teste de Mesa Passo a Passo]
         EXP[Gerador de Explicação]
         CODE[Gerador de Código]
     end
-
     subgraph UI["Interface"]
         A[Aluno]
         INPUT_UI[Solicitação de Dados]
     end
-
     JSON --> P
     P --> GRAPH
     GRAPH --> EXE
@@ -272,9 +255,6 @@ flowchart TB
     EXE <-.->|"InputRequest"| A
     A --> INPUT_UI
     INPUT_UI -->|"Valor Inserido"| EXE
-
-    style TM fill:#ffd,stroke:#333
-    style INPUT_UI fill:#ffd,stroke:#333
 ```
 
 O diagrama é inicialmente interpretado pelo Parser.
@@ -369,7 +349,6 @@ sequenceDiagram
     participant E as Executor
     participant M as Memória
     participant TM as Teste de Mesa
-
     E->>TM: Executa passo
     TM->>E: Detecta bloco Input
     E->>A: Solicita valor (prompt)
@@ -386,58 +365,44 @@ O **Sistema para Simulação de Teste de Mesa em Diagrama de Blocos** é o motor
 
 ```mermaid
 graph TB
-    subgraph Input["Entrada"]
+    subgraph Builder["Módulo de Construção"]
         DIAGRAM[JSON do Diagrama]
-    end
-
-    subgraph Parser["Camada de Parsing"]
         VAL[Validador Estrutural]
-        AST[Gerador de AST<br/>Abstract Syntax Tree]
-        GRAPH[Construtor de Grafo<br/>de Execução]
+        DIAGRAM --> VAL
     end
-
+    subgraph Parser["Camada de Parsing"]
+        GRAPH[Construtor de Grafo de Execução]
+    end
     subgraph Engine["Motor de Execução"]
-        CTL[Controlador de<br/>Fluxo]
-        INTERP[Interpretador<br/>de Blocos]
-        MEM[Gerenciador<br/>de Memória]
-        SNAP[Gerador de<br/>Snapshots]
+        CTL[Controlador de Fluxo]
+        INTERP[Interpretador de Blocos]
+        MEM[Gerenciador de Memória]
+        SNAP[Gerador de Snapshots]
     end
-
     subgraph Output["Saída"]
-        DT[Teste de Mesa<br/>Desk Check Table]
-        EXP[Explicações<br/>Textuais]
+        DT[Teste de Mesa Desk Check Table]
+        EXP[Explicações Textuais]
         CODE[Código JavaScript]
-        HIGHLIGHT[Bloco Destacado<br/>na Interface]
+        HIGHLIGHT[Bloco Destacado na Interface]
     end
-
     subgraph User["Interação"]
         USER[Usuário]
-        CONTROLS[Controles<br/>Avançar / Retroceder /<br/>Reiniciar / Ir para]
-        INPUT_VAL[Entrada de<br/>Valores]
+        CONTROLS[Controles Avançar / Retroceder / Reiniciar / Ir para]
+        INPUT_VAL[Entrada de Valores]
     end
-
-    DIAGRAM --> VAL
-    VAL --> AST
-    AST --> GRAPH
+    VAL --> GRAPH
     GRAPH --> CTL
-
     CTL --> INTERP
     INTERP <--> MEM
     MEM --> SNAP
     SNAP --> DT
-
     INTERP --> EXP
     INTERP --> CODE
     CTL --> HIGHLIGHT
-
     USER --> CONTROLS
     CONTROLS --> CTL
     USER --> INPUT_VAL
     INPUT_VAL --> INTERP
-
-    style Engine fill:#bbf,stroke:#333,stroke-width:2px
-    style Parser fill:#dfd,stroke:#333
-    style Output fill:#fdf,stroke:#333
 ```
 
 O motor de execução é composto por quatro subsistemas que trabalham em conjunto:
@@ -569,23 +534,18 @@ Cada interação do usuário com os controles de execução dispara uma sequênc
 O pipeline completo de processamento de um diagrama até a geração dos resultados didáticos segue as etapas abaixo:
 
 ```mermaid
-flowchart LR
-    A[JSON do<br/>Diagrama] --> B[Parser<br/>Validação]
-    B --> C{Caso Válido?}
-    C -->|Sim| D[Construção<br/>do Grafo]
-    C -->|Não| E[Erro<br/>Estrutural]
-    D --> F[Execução<br/>Passo a Passo]
-    F --> G[Snapshot<br/>da Memória]
-    G --> H[Atualizar<br/>Teste de Mesa]
-    G --> I[Gerar<br/>Explicação]
-    H --> J{Avançar?}
-    I --> J
-    J -->|Sim| F
-    J -->|Não| K[Aguardar<br/>Usuário]
-    K --> J
-
-    style C fill:#ffd,stroke:#333
-    style J fill:#ffd,stroke:#333
+graph LR
+    A[JSON do Diagrama] --> B[Parser Grafo]
+    B --> C[Grafo de Execução]
+    C --> D[Execução Passo a Passo]
+    D --> E[Snapshot da Memória]
+    E --> F[Atualizar Teste de Mesa]
+    E --> G[Gerar Explicação]
+    F --> H{Avançar?}
+    G --> H
+    H -->|Sim| D
+    H -->|Não| I[Aguardar Usuário]
+    I --> H
 ```
 
 ---
@@ -646,23 +606,9 @@ A navegação não altera os snapshots já registrados, garantindo a integridade
 
 ---
 
-## 10.7. Detecção de Erros
+## 10.7. Detecção de Erros de Execução
 
-O sistema detecta e reporta dois tipos de erros:
-
-### Erros Estruturais (pré-execução)
-
-- Ausência de bloco `startEnd` com `variant = 'start'` ou com `variant = 'end'`;
-- Múltiplos blocos `startEnd` com mesmo `variant`;
-- Blocos desconectados do fluxo principal;
-- Blocos `decision` com número incorreto de handles de saída (deve ter exatamente 2: `'yes'` e `'no'`);
-- Blocos `connector` com mais de uma aresta de entrada ou mais de uma aresta de saída;
-- Blocos `startEnd (start)` com arestas de entrada;
-- Blocos `startEnd (end)` com arestas de saída;
-- Variável declarada no bloco `memory` com nome duplicado;
-- Laços sem bloco de término ou condição adequada.
-
-### Erros de Execução (durante a simulação)
+O sistema detecta e reporta erros durante a simulação que impedem o algoritmo de prosseguir. Erros estruturais (pré-execução) são responsabilidade do módulo de construção.
 
 - Uso de variável não declarada no bloco `memory`;
 - Uso de variável declarada mas não inicializada;
@@ -712,6 +658,7 @@ Escopo:
 - Editor visual;
 - Inserção de blocos;
 - Conexões;
+- Validação estrutural (pré-execução);
 - Modelagem do algoritmo.
 
 ---
