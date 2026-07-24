@@ -1,13 +1,13 @@
 import { ArrowRight } from "lucide-react";
 import { useSimulator } from "./SimulatorContext";
 import { nodeTypeLabel } from "./labels";
-import type { ExecutionStep } from "../../interfaces";
+import type { IExecutionStep } from "../../interfaces";
 
 export default function SimulatorExplain() {
   const { state } = useSimulator();
   const { steps, currentStepIndex, isStarted, isFinished } = state;
 
-  const currentStep: ExecutionStep | null =
+  const currentStep: IExecutionStep | null =
     currentStepIndex >= 0 && currentStepIndex < steps.length
       ? steps[currentStepIndex]
       : null;

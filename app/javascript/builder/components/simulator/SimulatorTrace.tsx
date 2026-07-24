@@ -13,9 +13,9 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { useSimulator } from "./SimulatorContext";
 import { nodeTypeLabel } from "./labels";
-import type { ExecutionStep, Variable } from "../../interfaces";
+import type { IExecutionStep, IVariable } from "../../interfaces";
 
-function getAllVarNames(steps: ExecutionStep[], upTo: number): string[] {
+function getAllVarNames(steps: IExecutionStep[], upTo: number): string[] {
   const names = new Set<string>();
   for (let i = 0; i <= upTo && i < steps.length; i++) {
     for (const v of steps[i].variables) names.add(v.name);
@@ -23,11 +23,11 @@ function getAllVarNames(steps: ExecutionStep[], upTo: number): string[] {
   return Array.from(names);
 }
 
-function wasChanged(step: ExecutionStep, varName: string): boolean {
+function wasChanged(step: IExecutionStep, varName: string): boolean {
   return step.changes.some((c) => c.includes(varName));
 }
 
-function formatValue(v: Variable | undefined): string {
+function formatValue(v: IVariable | undefined): string {
   if (!v) return "";
   if (v.value === null || v.value === undefined) return "null";
   return v.value;
@@ -74,7 +74,7 @@ export default function SimulatorTrace() {
     setEditingVar(null);
   }, [editingVar, editValue, editVariable]);
 
-  const currentStep: ExecutionStep | null =
+  const currentStep: IExecutionStep | null =
     currentStepIndex >= 0 && currentStepIndex < steps.length
       ? steps[currentStepIndex]
       : null;

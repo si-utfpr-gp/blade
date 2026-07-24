@@ -1,7 +1,5 @@
-import type { Variable } from "../interfaces/execution";
-import type { ExecutionStep } from "../interfaces/execution";
-import type { ParserData } from "../parser/types";
-import type { ParserNode } from "../parser/types";
+import type { IVariable, IExecutionStep } from "../interfaces/execution";
+import type { IParserData, IParserNode } from "../parser/types";
 
 class MemoryManager {
     private vars = new Map<string, { type: string; value: string | null }>()
@@ -31,7 +29,7 @@ class MemoryManager {
         return this.vars.get(name.replace(/\[\d+\]$/, ""))?.value !== null;
     }
 
-    public snapshot(): Variable[] {
+    public snapshot(): IVariable[] {
         return Array.from(this.vars.entries()).map(([k, v]) => ({
             name: k,
             value: v.value,
@@ -104,7 +102,7 @@ class ExprEvaluator {
 export class ExecutionEngine {
     private memory = new MemoryManager();
     private expr = new ExprEvaluator(this.memory);
-    private steps: ExecutionStep[] = [];
+    private steps: IExecutionStep[] = [];
     private _idx = -1;
     private outputs: string[] = [];
     private _err: string | null = null;
@@ -112,9 +110,9 @@ export class ExecutionEngine {
     private current: string | null = null;
     private max = 10000;
 
-    public constructor(private graph: ParserData) { }
+    public constructor(private graph: IParserData) { }
 
-    public start(): ExecutionStep | null {
+    public start(): IExecutionStep | null {
         this.reset();
         this.current = this.graph.startNodeId;
         if (!this.current) {
@@ -123,7 +121,7 @@ export class ExecutionEngine {
         return this.advance();
     }
 
-    public step(input?: string): ExecutionStep | null {
+    public step(input?: string): IExecutionStep | null {
         if (this._done || !this.current) return null
         if (this.steps.length >= this.max) { this._err = "Limite de passos excedido"; return null }
         while (this.current) {
@@ -163,7 +161,7 @@ export class ExecutionEngine {
         this.current = null;
     }
 
-    public getSteps(): ExecutionStep[] { return this.steps; }
+    public getSteps(): IExecutionStep[] { return this.steps; }
 
     public get currentStepIndex(): number { return this._idx; }
 
@@ -179,7 +177,7 @@ export class ExecutionEngine {
         }
     }
 
-    private advance(): ExecutionStep | null {
+    private advance(): IExecutionStep | null {
         while (this.current) {
             const node = this.graph.nodes.get(this.current)
             if (!node) break
@@ -195,8 +193,8 @@ export class ExecutionEngine {
     }
 
 
-    private exec(node: ParserNode, input?: string): ExecutionStep | null {
-        const base = (): ExecutionStep => ({
+    private exec(node: IParserNode, input?: string): IExecutionStep | null {
+        const base = (): IExecutionStep => ({
             nodeId: node.id, nodeLabel: node.label ?? "", nodeType: node.type,
             variables: this.memory.snapshot(), log: "", output: undefined,
             waitingForInput: false, inputPrompt: undefined, inputType: undefined,
@@ -245,11 +243,11 @@ export class ExecutionEngine {
         }
     }
 
-    private processMemory(node: ParserNode): void {
+    private processMemory(node: IParserNode): void {
         node.rows?.forEach(r => r.variables.split(",").map(v => v.trim()).forEach(v => this.memory.declare(v, r.type)))
     }
 
-    private next(node: ParserNode): string | null {
+    private next(node: IParserNode): string | null {
         if (node.type === "decision") return this.graph.getNextNode(node.id, this.expr.condition(node.label ?? "") ? "yes" : "no")
         return this.graph.getNextNode(node.id)
     }

@@ -1,14 +1,14 @@
 import type { Node, Edge } from "@xyflow/react";
-import type { ParserNode, ParserEdge, ParserData } from "./types";
+import type { IParserNode, IParserEdge, IParserData } from "./types";
 
-export function parse(nodes: Node[], edges: Edge[]): ParserData {
-    const nodeMap = new Map<string, ParserNode>();
+export function parse(nodes: Node[], edges: Edge[]): IParserData {
+    const nodeMap = new Map<string, IParserNode>();
     let startNodeId: string | null = null;
     let endNodeId: string | null = null;
 
     for (const node of nodes) {
         const data = node.data as Record<string, unknown> | undefined
-        const parserNode: ParserNode = {
+        const parserNode: IParserNode = {
             id: node.id,
             type: node.type ?? "",
             variant: data?.variant as "start" | "end" | undefined,
@@ -25,10 +25,10 @@ export function parse(nodes: Node[], edges: Edge[]): ParserData {
         }
     }
 
-    const adjacency = new Map<string, ParserEdge[]>();
+    const adjacency = new Map<string, IParserEdge[]>();
 
     for (const edge of edges) {
-        const parserEdge: ParserEdge = {
+        const parserEdge: IParserEdge = {
             id: edge.id,
             source: edge.source,
             target: edge.target,

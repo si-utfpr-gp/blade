@@ -1,4 +1,4 @@
-export interface ParserNode {
+export interface IParserNode {
     id: string;
     type: string;
     variant?: "start" | "end"
@@ -6,7 +6,7 @@ export interface ParserNode {
     rows?: Array<{ type: string; variables: string}>
 }
 
-export interface ParserEdge {
+export interface IParserEdge {
     id: string;
     source: string;
     target: string;
@@ -14,8 +14,8 @@ export interface ParserEdge {
     targetHandle?: string;
 }
 
-export interface ParserData {
-    nodes: Map<string, ParserNode>
+export interface IParserData {
+    nodes: Map<string, IParserNode>
     startNodeId: string | null
     endNodeId: string | null
     getNextNode(currentId: string, handle?: string): string | null
