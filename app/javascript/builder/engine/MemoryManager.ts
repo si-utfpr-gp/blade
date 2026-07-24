@@ -19,7 +19,7 @@ export class MemoryManager implements IMemory {
         `Tipo inválido: '${type}'. Tipos válidos: ${VALID_TYPES.join(", ")}`
       )
     }
-    const arrayMatch = name.match(/^(\w+)\[(\d+)\]$/)
+    const arrayMatch = name.match(/^(\w+)\[(-?\d+)\]$/)
     if (arrayMatch) {
       const varName = arrayMatch[1]
       const size = parseInt(arrayMatch[2], 10)
