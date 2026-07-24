@@ -25,8 +25,8 @@
 | # | Issue | Tarefa | Status |
 |---|-------|--------|--------|
 | 1 | [#51](https://github.com/si-utfpr-gp/blade/issues/51) | Parser: JSON diagram → execution graph | ✅ Feito |
-| 2 | [#52](https://github.com/si-utfpr-gp/blade/issues/52) | Execution Engine: flow controller + block interpreter | ⬜ Pendente |
-| 3 | [#53](https://github.com/si-utfpr-gp/blade/issues/53) | Expression Evaluator (arithmetic/logical) | ⬜ Pendente |
+| 2 | [#52](https://github.com/si-utfpr-gp/blade/issues/52) | Execution Engine: flow controller + block interpreter | ✅ Feito |
+| 3 | [#53](https://github.com/si-utfpr-gp/blade/issues/53) | Expression Evaluator (arithmetic/logical) | ✅ Feito |
 | 4 | [#54](https://github.com/si-utfpr-gp/blade/issues/54) | Memory Manager (variables, arrays, types) | ⬜ Pendente |
 | 5 | [#55](https://github.com/si-utfpr-gp/blade/issues/55) | Snapshot System (capture/store/restore) | ⬜ Pendente |
 | 6 | [#56](https://github.com/si-utfpr-gp/blade/issues/56) | Explanation Generator (Portuguese text) | ⬜ Pendente |

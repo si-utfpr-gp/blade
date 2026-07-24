@@ -1,5 +1,6 @@
 import type { IVariable, IExecutionStep } from "../interfaces/execution";
 import type { IParserData, IParserNode } from "../parser/types";
+import { ExprEvaluator } from "./ExprEvaluator";
 
 class MemoryManager {
     private vars = new Map<string, { type: string; value: string | null }>()
@@ -39,63 +40,6 @@ class MemoryManager {
     }
 
     reset(): void { this.vars.clear() }
-}
-
-class ExprEvaluator {
-    public constructor(private memory: MemoryManager) { }
-
-    private resolve(expr: string): string {
-        let out = "";
-        let i = 0;
-
-        while (i < expr.length) {
-            if (expr[i] === '"' || expr[i] === "'") {
-                const q = expr[i];
-                let j = i + 1;
-                while (j < expr.length && expr[j] !== q) j++
-                out += expr.slice(i, j + 1); i = j + 1; continue;
-            }
-            const m = expr.slice(i).match(/^[a-zA-Z_]\w*(\[\d+\])?/);
-
-            if (m) {
-                const base = m[0].replace(/\[\d+\]$/, "");
-                const full = m[0];
-                if (!this.memory.has(base)) throw new Error(`Variável '${base}' não declarada`);
-                const val = this.memory.get(full);
-                if (val === null) throw new Error(`Variável '${base}' não inicializada`);
-                out += val; i += m[0].length; continue;
-            }
-            if (/^[eE](?!\w)/.test(expr.slice(i))) { out += "&&"; i += 1; continue; };
-            if (/^[oO][uU](?!\w)/.test(expr.slice(i))) { out += "||"; i += 2; continue; };
-            if (/^[nN][aA][oO](?!\w)/.test(expr.slice(i))) { out += "!"; i += 3; continue; };
-            if (/⁼=/.test(expr.slice(i))) { out += "==="; i += 2; continue; };
-            if (/⁼=/.test(expr.slice(i))) { out += "!=="; i += 2; continue; };
-            if (/⁼(?!\w)/.test(expr.slice(i))) { out += "==="; i += 1; continue; };
-            out += expr[i]; i += 1;
-        }
-        return out;
-    }
-
-    public assign(expr: string): string[] {
-        return expr.split(";").filter(Boolean).map(s => {
-            const [target, ...rest] = s.trim().split("=");
-            const src = rest.join("=").trim();
-            const res = String(new Function(`return ${this.resolve(src)}`)());
-            if (!this.memory.has(target.trim())) this.memory.declare(target.trim(), "desconhecido");
-            this.memory.set(target.trim(), res);
-            return `${target.trim()} = ${res}`;
-        });
-    }
-
-    public condition(expr: string): boolean {
-        return Boolean(new Function(`return (${this.resolve(expr)
-            .replace(/\bnao\s+/g, "!").replace(/\be\s+/g, "&&").replace(/\bou\s+/g, "||")
-            .replace(/\bverdadeiro\b/g, "true").replace(/\bfalso\b/g, "false")})`)());
-    }
-
-    public output(expr: string): string {
-        return String(new Function(`return ${this.resolve(expr)}`)());
-    }
 }
 
 
