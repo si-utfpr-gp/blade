@@ -1,6 +1,6 @@
 import type { Node, Edge } from "@xyflow/react"
 
-export interface AlgorithmExample {
+export interface IAlgorithmExample {
   id: string
   title: string
   description: string

@@ -1,1 +1,1 @@
-export { default, type BlocksPanelProps } from "./BlocksPanel"
+export { default, type IBlocksPanelProps } from "./BlocksPanel"

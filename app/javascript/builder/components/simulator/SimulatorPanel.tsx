@@ -7,13 +7,13 @@ import SimulatorTrace from "./SimulatorTrace";
 import SimulatorExplain from "./SimulatorExplain";
 import SimulatorCode from "./SimulatorCode";
 import SimulatorStatusBar from "./SimulatorStatusBar";
-import type { SimulatorCallbacks } from "../../interfaces/simulator";
+import type { ISimulatorCallbacks } from "../../interfaces/simulator";
 
-export interface SimulatorPanelProps {
-  callbacks?: SimulatorCallbacks;
+export interface ISimulatorPanelProps {
+  callbacks?: ISimulatorCallbacks;
 }
 
-export default function SimulatorPanel({ callbacks }: SimulatorPanelProps) {
+export default function SimulatorPanel({ callbacks }: ISimulatorPanelProps) {
   return (
     <SimulatorProvider callbacks={callbacks}>
       <TooltipProvider delayDuration={200}>

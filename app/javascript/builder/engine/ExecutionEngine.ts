@@ -1,7 +1,6 @@
-import type { Variable } from "../interfaces/execution";
-import type { ExecutionStep } from "../interfaces/execution";
-import type { ParserData } from "../parser/types";
-import type { ParserNode } from "../parser/types";
+import type { IVariable, IExecutionStep } from "../interfaces/execution";
+import type { IParserData, IParserNode } from "../parser/types";
+import { ExprEvaluator } from "./ExprEvaluator";
 
 class MemoryManager {
     private vars = new Map<string, { type: string; value: string | null }>()
@@ -31,7 +30,7 @@ class MemoryManager {
         return this.vars.get(name.replace(/\[\d+\]$/, ""))?.value !== null;
     }
 
-    public snapshot(): Variable[] {
+    public snapshot(): IVariable[] {
         return Array.from(this.vars.entries()).map(([k, v]) => ({
             name: k,
             value: v.value,
@@ -43,68 +42,11 @@ class MemoryManager {
     reset(): void { this.vars.clear() }
 }
 
-class ExprEvaluator {
-    public constructor(private memory: MemoryManager) { }
-
-    private resolve(expr: string): string {
-        let out = "";
-        let i = 0;
-
-        while (i < expr.length) {
-            if (expr[i] === '"' || expr[i] === "'") {
-                const q = expr[i];
-                let j = i + 1;
-                while (j < expr.length && expr[j] !== q) j++
-                out += expr.slice(i, j + 1); i = j + 1; continue;
-            }
-            const m = expr.slice(i).match(/^[a-zA-Z_]\w*(\[\d+\])?/);
-
-            if (m) {
-                const base = m[0].replace(/\[\d+\]$/, "");
-                const full = m[0];
-                if (!this.memory.has(base)) throw new Error(`Variável '${base}' não declarada`);
-                const val = this.memory.get(full);
-                if (val === null) throw new Error(`Variável '${base}' não inicializada`);
-                out += val; i += m[0].length; continue;
-            }
-            if (/^[eE](?!\w)/.test(expr.slice(i))) { out += "&&"; i += 1; continue; };
-            if (/^[oO][uU](?!\w)/.test(expr.slice(i))) { out += "||"; i += 2; continue; };
-            if (/^[nN][aA][oO](?!\w)/.test(expr.slice(i))) { out += "!"; i += 3; continue; };
-            if (/⁼=/.test(expr.slice(i))) { out += "==="; i += 2; continue; };
-            if (/⁼=/.test(expr.slice(i))) { out += "!=="; i += 2; continue; };
-            if (/⁼(?!\w)/.test(expr.slice(i))) { out += "==="; i += 1; continue; };
-            out += expr[i]; i += 1;
-        }
-        return out;
-    }
-
-    public assign(expr: string): string[] {
-        return expr.split(";").filter(Boolean).map(s => {
-            const [target, ...rest] = s.trim().split("=");
-            const src = rest.join("=").trim();
-            const res = String(new Function(`return ${this.resolve(src)}`)());
-            if (!this.memory.has(target.trim())) this.memory.declare(target.trim(), "desconhecido");
-            this.memory.set(target.trim(), res);
-            return `${target.trim()} = ${res}`;
-        });
-    }
-
-    public condition(expr: string): boolean {
-        return Boolean(new Function(`return (${this.resolve(expr)
-            .replace(/\bnao\s+/g, "!").replace(/\be\s+/g, "&&").replace(/\bou\s+/g, "||")
-            .replace(/\bverdadeiro\b/g, "true").replace(/\bfalso\b/g, "false")})`)());
-    }
-
-    public output(expr: string): string {
-        return String(new Function(`return ${this.resolve(expr)}`)());
-    }
-}
-
 
 export class ExecutionEngine {
     private memory = new MemoryManager();
     private expr = new ExprEvaluator(this.memory);
-    private steps: ExecutionStep[] = [];
+    private steps: IExecutionStep[] = [];
     private _idx = -1;
     private outputs: string[] = [];
     private _err: string | null = null;
@@ -112,9 +54,9 @@ export class ExecutionEngine {
     private current: string | null = null;
     private max = 10000;
 
-    public constructor(private graph: ParserData) { }
+    public constructor(private graph: IParserData) { }
 
-    public start(): ExecutionStep | null {
+    public start(): IExecutionStep | null {
         this.reset();
         this.current = this.graph.startNodeId;
         if (!this.current) {
@@ -123,7 +65,7 @@ export class ExecutionEngine {
         return this.advance();
     }
 
-    public step(input?: string): ExecutionStep | null {
+    public step(input?: string): IExecutionStep | null {
         if (this._done || !this.current) return null
         if (this.steps.length >= this.max) { this._err = "Limite de passos excedido"; return null }
         while (this.current) {
@@ -163,7 +105,7 @@ export class ExecutionEngine {
         this.current = null;
     }
 
-    public getSteps(): ExecutionStep[] { return this.steps; }
+    public getSteps(): IExecutionStep[] { return this.steps; }
 
     public get currentStepIndex(): number { return this._idx; }
 
@@ -179,7 +121,7 @@ export class ExecutionEngine {
         }
     }
 
-    private advance(): ExecutionStep | null {
+    private advance(): IExecutionStep | null {
         while (this.current) {
             const node = this.graph.nodes.get(this.current)
             if (!node) break
@@ -195,8 +137,8 @@ export class ExecutionEngine {
     }
 
 
-    private exec(node: ParserNode, input?: string): ExecutionStep | null {
-        const base = (): ExecutionStep => ({
+    private exec(node: IParserNode, input?: string): IExecutionStep | null {
+        const base = (): IExecutionStep => ({
             nodeId: node.id, nodeLabel: node.label ?? "", nodeType: node.type,
             variables: this.memory.snapshot(), log: "", output: undefined,
             waitingForInput: false, inputPrompt: undefined, inputType: undefined,
@@ -245,11 +187,11 @@ export class ExecutionEngine {
         }
     }
 
-    private processMemory(node: ParserNode): void {
+    private processMemory(node: IParserNode): void {
         node.rows?.forEach(r => r.variables.split(",").map(v => v.trim()).forEach(v => this.memory.declare(v, r.type)))
     }
 
-    private next(node: ParserNode): string | null {
+    private next(node: IParserNode): string | null {
         if (node.type === "decision") return this.graph.getNextNode(node.id, this.expr.condition(node.label ?? "") ? "yes" : "no")
         return this.graph.getNextNode(node.id)
     }

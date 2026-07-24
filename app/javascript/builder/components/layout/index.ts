@@ -1,2 +1,2 @@
-export { default as Header, type HeaderProps } from "./Header"
-export { default as WorkspaceLayout, type WorkspaceLayoutProps } from "./WorkspaceLayout"
+export { default as Header, type IHeaderProps } from "./Header"
+export { default as WorkspaceLayout, type IWorkspaceLayoutProps } from "./WorkspaceLayout"

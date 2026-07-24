@@ -1,13 +1,13 @@
 import type { ReactNode } from "react"
 
-export interface WorkspaceLayoutProps {
+export interface IWorkspaceLayoutProps {
   header: ReactNode
   sidebar: ReactNode
   canvas: ReactNode
   inspector: ReactNode
 }
 
-export default function WorkspaceLayout({ header, sidebar, canvas, inspector }: WorkspaceLayoutProps) {
+export default function WorkspaceLayout({ header, sidebar, canvas, inspector }: IWorkspaceLayoutProps) {
   return (
     <div className="h-full flex flex-col">
       <div className="shrink-0">{header}</div>
