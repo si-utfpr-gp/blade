@@ -88,7 +88,7 @@ export class ExprEvaluator {
       const src = rest.join("=").trim()
       const res = String(new Function(`return (${this.resolve(src)})`)())
       if (!this.memory.has(target.trim())) {
-        this.memory.declare(target.trim(), "desconhecido")
+        this.memory.declare(target.trim(), "caractere")
       }
       this.memory.set(target.trim(), res)
       return `${target.trim()} = ${res}`
