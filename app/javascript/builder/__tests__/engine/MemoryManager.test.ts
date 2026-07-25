@@ -229,4 +229,117 @@ describe("MemoryManager", () => {
     expect(mm.isDeclared("x")).toBe(false)
     expect(mm.snapshot()).toEqual([])
   })
+
+  // --- additional edge cases ---
+
+  it("declares logico type", () => {
+    const mm = new MemoryManager()
+    mm.declare("flag", "logico")
+    expect(mm.getType("flag")).toBe("logico")
+  })
+
+  it("allows empty string value", () => {
+    const mm = new MemoryManager()
+    mm.declare("nome", "caractere")
+    mm.set("nome", "")
+    expect(mm.get("nome")).toBe("")
+  })
+
+  it("overwrites simple variable value", () => {
+    const mm = new MemoryManager()
+    mm.declare("x", "inteiro")
+    mm.set("x", "10")
+    mm.set("x", "20")
+    expect(mm.get("x")).toBe("20")
+  })
+
+  it("overwrites array element value", () => {
+    const mm = new MemoryManager()
+    mm.declare("notas[3]", "real")
+    mm.setIndex("notas", 0, "7.5")
+    mm.setIndex("notas", 0, "9.0")
+    expect(mm.getIndex("notas", 0)).toBe("9.0")
+  })
+
+  it("throws on get after reset", () => {
+    const mm = new MemoryManager()
+    mm.declare("x", "inteiro")
+    mm.set("x", "10")
+    mm.reset()
+    expect(() => mm.get("x")).toThrow("não declarada")
+  })
+
+  it("throws on set after reset", () => {
+    const mm = new MemoryManager()
+    mm.declare("x", "inteiro")
+    mm.set("x", "10")
+    mm.reset()
+    expect(() => mm.set("x", "20")).toThrow("não declarada")
+  })
+
+  it("returns isInitialized false for array with all null elements", () => {
+    const mm = new MemoryManager()
+    mm.declare("notas[3]", "inteiro")
+    expect(mm.isInitialized("notas")).toBe(false)
+  })
+
+  it("declares array with size 1", () => {
+    const mm = new MemoryManager()
+    mm.declare("x[1]", "inteiro")
+    expect(mm.getLength("x")).toBe(1)
+    mm.setIndex("x", 0, "42")
+    expect(mm.getIndex("x", 0)).toBe("42")
+  })
+
+  it("does not overwrite simple var when declaring array with same base name", () => {
+    const mm = new MemoryManager()
+    mm.declare("notas", "inteiro")
+    mm.set("notas", "10")
+    mm.declare("notas[5]", "real")
+    expect(mm.get("notas")).toBe("10")
+    expect(mm.getType("notas")).toBe("inteiro")
+  })
+
+  it("does not overwrite array when declaring simple var with same name", () => {
+    const mm = new MemoryManager()
+    mm.declare("notas[3]", "real")
+    mm.setIndex("notas", 0, "7.5")
+    mm.declare("notas", "inteiro")
+    expect(mm.getIndex("notas", 0)).toBe("7.5")
+    expect(mm.getType("notas")).toBe("real")
+  })
+
+  it("declares multiple variables and preserves snapshot order", () => {
+    const mm = new MemoryManager()
+    mm.declare("a", "inteiro")
+    mm.declare("b", "real")
+    mm.declare("c", "caractere")
+    mm.set("a", "1")
+    mm.set("b", "2.5")
+    mm.set("c", "teste")
+    const snap = mm.snapshot()
+    expect(snap[0].name).toBe("a")
+    expect(snap[1].name).toBe("b")
+    expect(snap[2].name).toBe("c")
+  })
+
+  it("handles many variables", () => {
+    const mm = new MemoryManager()
+    for (let i = 0; i < 100; i++) {
+      mm.declare(`var${i}`, "inteiro")
+      mm.set(`var${i}`, String(i))
+    }
+    expect(mm.isDeclared("var0")).toBe(true)
+    expect(mm.isDeclared("var99")).toBe(true)
+    expect(mm.get("var50")).toBe("50")
+    expect(mm.snapshot()).toHaveLength(100)
+  })
+
+  it("handles large array", () => {
+    const mm = new MemoryManager()
+    mm.declare("arr[1000]", "inteiro")
+    expect(mm.getLength("arr")).toBe(1000)
+    mm.setIndex("arr", 999, "42")
+    expect(mm.getIndex("arr", 999)).toBe("42")
+  })
 })
