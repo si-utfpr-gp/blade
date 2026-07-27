@@ -2,12 +2,12 @@ import type { IVariable, IExecutionStep } from "../interfaces/execution";
 import type { IParserData, IParserNode } from "../parser/types";
 import { ExprEvaluator } from "./ExprEvaluator";
 import { MemoryManager } from "./MemoryManager";
+import { SnapshotManager } from "./SnapshotManager";
 
 export class ExecutionEngine {
     private memory = new MemoryManager();
     private expr = new ExprEvaluator(this.memory);
-    private steps: IExecutionStep[] = [];
-    private _idx = -1;
+    private snapshots = new SnapshotManager();
     private outputs: string[] = [];
     private _err: string | null = null;
     private _done = false;
@@ -27,7 +27,7 @@ export class ExecutionEngine {
 
     public step(input?: string): IExecutionStep | null {
         if (this._done || !this.current) return null
-        if (this.steps.length >= this.max) { this._err = "Limite de passos excedido"; return null }
+        if (this.snapshots.size >= this.max) { this._err = "Limite de passos excedido"; return null }
         while (this.current) {
             const node = this.graph.nodes.get(this.current)
             if (!node) { this._err = `Bloco '${this.current}' não encontrado`; return null }
@@ -40,7 +40,7 @@ export class ExecutionEngine {
         if (!node) { this._err = `Bloco '${this.current}' não encontrado`; return null }
         try {
             const s = this.exec(node, input)
-            if (s) { this.steps.push(s); this._idx = this.steps.length - 1 }
+            if (s) { this.snapshots.store(s); }
             this.current = this.next(node)
             if (this.current === null && node.type === "startEnd" && node.variant === "end") this._done = true
             return s
@@ -48,26 +48,26 @@ export class ExecutionEngine {
     }
 
     public goToStep(i: number): void {
-        if (i < 0 || i >= this.steps.length) return
-        this._idx = i;
-        this.current = this.steps[i].nodeId;
+        const step = this.snapshots.getStep(i);
+        if (!step) return;
+        this.snapshots.goTo(i);
+        this.current = step.nodeId;
         this._err = null;
         this._done = false;
     }
 
     public reset(): void {
         this.memory.reset();
-        this.steps = [];
-        this._idx = -1;
+        this.snapshots.reset();
         this.outputs = [];
         this._err = null;
         this._done = false;
         this.current = null;
     }
 
-    public getSteps(): IExecutionStep[] { return this.steps; }
+    public getSteps(): IExecutionStep[] { return this.snapshots.allSteps as IExecutionStep[]; }
 
-    public get currentStepIndex(): number { return this._idx; }
+    public get currentStepIndex(): number { return this.snapshots.currentIndex; }
 
     public getCurretnOutputs(): string[] { return this.outputs; }
 
@@ -75,9 +75,9 @@ export class ExecutionEngine {
         return {
             currentNodeId: this.current,
             variables: new Map(this.memory.snapshot().map(v => [v.name, v])),
-            steps: this.steps, logs: this.steps.map(s => s.log), outputs: this.outputs,
+            steps: this.snapshots.allSteps as IExecutionStep[], logs: this.snapshots.allSteps.map(s => s.log), outputs: this.outputs,
             finished: this._done, error: this._err,
-            inputQueue: [], inputIndex: 0, stepCount: this.steps.length,
+            inputQueue: [], inputIndex: 0, stepCount: this.snapshots.size,
         }
     }
 
@@ -89,7 +89,7 @@ export class ExecutionEngine {
             if (node.type === "connector") { this.current = this.graph.getNextNode(this.current); continue }
             try {
                 const s = this.exec(node)
-                if (s) { this.steps.push(s); this._idx = this.steps.length - 1 }
+                if (s) { this.snapshots.store(s); }
                 this.current = this.next(node); return s
         } catch (e) { this._err = e instanceof Error ? e.message : "Erro"; throw e }
         }
