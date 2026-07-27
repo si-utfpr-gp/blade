@@ -1,5 +1,5 @@
 export type { IAlgorithmExample } from "./examples"
 export type { IMemory } from "./memory"
-export type { IVariable, IExecutionStep, IExecutionState, ISnapshot } from "./execution"
+export type { IVariable, IExecutionStep, IExecutionState, ISnapshot, IExplanationContext } from "./execution"
 export type { ISimulatorState, ISimulatorAction, ISimulatorCallbacks } from "./simulator"
 export { initialState, simulatorReducer } from "./simulator"

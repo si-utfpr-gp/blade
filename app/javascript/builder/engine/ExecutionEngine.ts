@@ -1,13 +1,15 @@
-import type { IVariable, IExecutionStep } from "../interfaces/execution";
+import type { IVariable, IExecutionStep, IExplanationContext } from "../interfaces/execution";
 import type { IParserData, IParserNode } from "../parser/types";
 import { ExprEvaluator } from "./ExprEvaluator";
 import { MemoryManager } from "./MemoryManager";
 import { SnapshotManager } from "./SnapshotManager";
+import { ExplanationGenerator } from "./ExplanationGenerator";
 
 export class ExecutionEngine {
     private memory = new MemoryManager();
     private expr = new ExprEvaluator(this.memory);
     private snapshots = new SnapshotManager();
+    private explanations = new ExplanationGenerator();
     private outputs: string[] = [];
     private _err: string | null = null;
     private _done = false;
@@ -103,47 +105,82 @@ export class ExecutionEngine {
             variables: this.memory.snapshot(), log: "", output: undefined,
             waitingForInput: false, inputPrompt: undefined, inputType: undefined,
             explanation: "", changes: [], nextHint: "",
-        })
+        });
 
         switch (node.type) {
-            case "startEnd":
-                if (node.variant === "start") return { ...base(), log: "Iniciando o algoritmo.", explanation: "Iniciando o algoritmo.", nextHint: "Avançar." }
-                if (node.variant === "end") return { ...base(), log: "Algoritmo finalizado.", explanation: "Algoritmo finalizado.", nextHint: "Concluído." }
-                return null
+            case "startEnd": {
+                if (node.variant !== "start" && node.variant !== "end") return null;
+                const text = this.explanations.generate({
+                    nodeType: node.type,
+                    variant: node.variant,
+                    nodeLabel: node.label ?? "",
+                });
+                return { ...base(), ...text };
+            }
 
-            case "memory": return null
+            case "memory": return null;
 
-            case "input":
-                if (input === undefined) return { ...base(), waitingForInput: true, inputPrompt: `Valor para '${node.label}':`, log: `Solicitando ${node.label}.`, explanation: `Aguardando valor para '${node.label}'.`, nextHint: `Informe o valor.` }
-                if (!this.memory.has(node.label ?? "")) this.memory.declare(node.label ?? "", "caractere")
-                this.memory.set(node.label ?? "", input)
-                return { ...base(), log: `Lendo ${node.label}.`, explanation: `Armazenando '${input}' em '${node.label}'.`, changes: [`${node.label} = ${input}`], nextHint: "Avançar." }
+            case "input": {
+                const ctx: IExplanationContext = {
+                    nodeType: node.type,
+                    nodeLabel: node.label ?? "",
+                    inputValue: input,
+                };
+                if (input === undefined) {
+                    const text = this.explanations.generate(ctx);
+                    return { ...base(), waitingForInput: true, inputPrompt: `Valor para '${node.label}':`, ...text };
+                }
+                if (!this.memory.has(node.label ?? "")) this.memory.declare(node.label ?? "", "caractere");
+                this.memory.set(node.label ?? "", input);
+                const text = this.explanations.generate(ctx);
+                return { ...base(), ...text };
+            }
 
             case "output": {
-                const v = this.expr.output(node.label ?? "")
-                this.outputs.push(v)
-                return { ...base(), output: v, log: `Exibindo ${node.label}.`, explanation: `Resultado: ${v}.`, changes: [`Saída: ${v}`], nextHint: "Avançar." }
+                const v = this.expr.output(node.label ?? "");
+                this.outputs.push(v);
+                const text = this.explanations.generate({
+                    nodeType: node.type,
+                    nodeLabel: node.label ?? "",
+                    expressionResult: v,
+                });
+                return { ...base(), output: v, ...text };
             }
 
             case "process": {
-                const changes = this.expr.assign(node.label ?? "")
-                return { ...base(), variables: this.memory.snapshot(), log: node.label ?? "", changes, explanation: changes.length === 1 ? `${changes[0]}.` : `Múltiplos: ${changes.join("; ")}.`, nextHint: "Avançar." }
+                const changes = this.expr.assign(node.label ?? "");
+                const text = this.explanations.generate({
+                    nodeType: node.type,
+                    nodeLabel: node.label ?? "",
+                    changes,
+                });
+                return { ...base(), variables: this.memory.snapshot(), ...text };
             }
 
             case "decision": {
-                const cond = node.label ?? ""
-                const ok = this.expr.condition(cond)
-                return { ...base(), log: `${cond} → ${ok ? "V" : "F"}`, changes: [`Decisão: ${ok ? "VERDADEIRO" : "FALSO"}`], explanation: `'${cond}' é ${ok ? "verdadeiro" : "falso"}.`, nextHint: `Seguindo ${ok ? "VERDADEIRO" : "FALSO"}.` }
+                const cond = node.label ?? "";
+                const ok = this.expr.condition(cond);
+                const text = this.explanations.generate({
+                    nodeType: node.type,
+                    nodeLabel: cond,
+                    conditionResult: ok,
+                });
+                return { ...base(), ...text };
             }
 
-            case "connector": return null
+            case "connector": return null;
 
             case "subroutine": {
-                const sub = node.label ?? "sub-rotina"
-                return { ...base(), log: `Chamando ${sub}.`, explanation: `Chamando '${sub}'.`, changes: [`Chamada: ${sub}`], nextHint: "Retornando." }
+                const sub = node.label ?? "sub-rotina";
+                const text = this.explanations.generate({
+                    nodeType: node.type,
+                    nodeLabel: sub,
+                    subroutineName: sub,
+                });
+                return { ...base(), ...text };
             }
 
-            default: throw new Error(`Bloco desconhecido: '${node.type}'`)
+            default: throw new Error(`Bloco desconhecido: '${node.type}'`);
         }
     }
 
