@@ -20,6 +20,18 @@ export interface IExecutionStep {
   nextHint: string
 }
 
+export interface ISnapshot {
+  step: number
+  blockId: string
+  blockLabel: string
+  blockType: string
+  variables: IVariable[]
+  output?: string
+  explanation: string
+  changes: string[]
+  nextHint: string
+}
+
 export interface IExecutionState {
   currentNodeId: string | null
   variables: Map<string, IVariable>
