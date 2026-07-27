@@ -1,26 +1,54 @@
 import { describe, it, expect } from "vitest"
 import { ExprEvaluator } from "../../engine/ExprEvaluator"
 import type { IMemory } from "../../interfaces/memory"
+import type { IVariable } from "../../interfaces/execution"
 
 class TestMemory implements IMemory {
   private data = new Map<string, { type: string; value: string | null }>()
+  private arrays = new Map<string, (string | null)[]>()
 
-  private stripIndex(k: string): string {
-    return k.replace(/\[\d+\]$/, "")
-  }
-
-  has(name: string): boolean { return this.data.has(this.stripIndex(name)) }
+  has(name: string): boolean { return this.data.has(name) || this.arrays.has(name) }
   get(name: string): string | null {
-    return this.data.get(this.stripIndex(name))?.value ?? null
+    return this.data.get(name)?.value ?? null
   }
   set(name: string, value: string): void {
-    const key = this.stripIndex(name)
-    const entry = this.data.get(key)
+    const entry = this.data.get(name)
     if (entry) entry.value = value
   }
   declare(name: string, type: string): void {
-    this.data.set(this.stripIndex(name), { type, value: null })
+    const arrayMatch = name.match(/^(\w+)\[(\d+)\]$/)
+    if (arrayMatch) {
+      const varName = arrayMatch[1]
+      const size = parseInt(arrayMatch[2], 10)
+      this.data.set(varName, { type, value: null })
+      this.arrays.set(varName, new Array<string | null>(size).fill(null))
+    } else {
+      this.data.set(name, { type, value: null })
+    }
   }
+  isDeclared(name: string): boolean { return this.data.has(name) }
+  isInitialized(name: string): boolean {
+    return this.data.get(name)?.value !== null
+  }
+  getType(name: string): string | null {
+    return this.data.get(name)?.type ?? null
+  }
+  setIndex(arrayName: string, index: number, value: string): void {
+    const arr = this.arrays.get(arrayName)
+    if (arr && index >= 0 && index < arr.length) arr[index] = value
+  }
+  getIndex(arrayName: string, index: number): string | null {
+    return this.arrays.get(arrayName)?.[index] ?? null
+  }
+  getLength(arrayName: string): number {
+    return this.arrays.get(arrayName)?.length ?? 0
+  }
+  snapshot(): IVariable[] {
+    return Array.from(this.data.entries()).map(([k, v]) => ({
+      name: k, value: v.value, type: v.type, scope: "global",
+    }))
+  }
+  reset(): void { this.data.clear(); this.arrays.clear() }
 }
 
 function setup(vars: Record<string, string>): ExprEvaluator {
@@ -258,7 +286,7 @@ describe("ExprEvaluator", () => {
     it("literal index", () => {
       const mem = new TestMemory()
       mem.declare("notas[5]", "inteiro")
-      mem.set("notas[0]", "10")
+      mem.setIndex("notas", 0, "10")
       const ev = new ExprEvaluator(mem)
       expect(ev.output("notas[0]")).toBe("10")
     })

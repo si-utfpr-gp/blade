@@ -45,11 +45,24 @@ export class ExprEvaluator {
 
       const varMatch = expr.slice(i).match(/^[a-zA-Z_]\w*(\[\d+\])?/)
       if (varMatch) {
-        const base = varMatch[0].replace(/\[\d+\]$/, "")
         const full = varMatch[0]
-        if (!this.memory.has(base)) throw new Error(`Variável '${base}' não declarada`)
-        const val = this.memory.get(full)
-        if (val === null) throw new Error(`Variável '${base}' não inicializada`)
+        const arrayAccess = full.match(/^(\w+)\[(\d+)\]$/)
+        let val: string | null
+        if (arrayAccess) {
+          const arrName = arrayAccess[1]
+          const idx = parseInt(arrayAccess[2], 10)
+          if (!this.memory.has(arrName)) {
+            throw new Error(`Array '${arrName}' não declarado`)
+          }
+          val = this.memory.getIndex(arrName, idx)
+        } else {
+          if (!this.memory.has(full)) {
+            throw new Error(`Variável '${full}' não declarada`)
+          }
+          val = this.memory.get(full)
+        }
+        const varName = full.replace(/\[\d+\]$/, "")
+        if (val === null) throw new Error(`Variável '${varName}' não inicializada`)
         const isNum = /^-?\d+(\.\d+)?$/.test(val)
         const isBool = val === "true" || val === "false"
         out += isNum || isBool ? val : `"${val.replace(/"/g, '\\"')}"`
@@ -75,7 +88,7 @@ export class ExprEvaluator {
       const src = rest.join("=").trim()
       const res = String(new Function(`return (${this.resolve(src)})`)())
       if (!this.memory.has(target.trim())) {
-        this.memory.declare(target.trim(), "desconhecido")
+        this.memory.declare(target.trim(), "caractere")
       }
       this.memory.set(target.trim(), res)
       return `${target.trim()} = ${res}`
