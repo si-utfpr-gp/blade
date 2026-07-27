@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest"
-import { simulatorReducer, initialState } from "../../interfaces/simulator"
-import type { IExecutionStep } from "../../interfaces"
+import { describe, it, expect } from "vitest";
+import { simulatorReducer, initialState } from "../../components/simulator/simulatorReducer";
+import type { IExecutionStep } from "../../interfaces";
 
 const mockStep: IExecutionStep = {
   nodeId: "node-1",

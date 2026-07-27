@@ -10,7 +10,7 @@ import type {
   ISimulatorState,
   ISimulatorCallbacks,
 } from "../../interfaces/simulator";
-import { initialState, simulatorReducer } from "../../interfaces/simulator";
+import { initialState, simulatorReducer } from "./simulatorReducer";
 
 type Tab = "trace" | "explain" | "code";
 

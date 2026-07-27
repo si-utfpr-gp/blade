@@ -1,7 +1,7 @@
-import { describe, it, expect } from "vitest"
-import { ExprEvaluator } from "../../engine/ExprEvaluator"
-import type { IMemory } from "../../interfaces/memory"
-import type { IVariable } from "../../interfaces/execution"
+import { describe, it, expect } from "vitest";
+import { ExprEvaluator } from "../../engine/ExprEvaluator";
+import type { IMemory } from "../../interfaces/memory";
+import type { IVariable } from "../../interfaces/execution";
 
 class TestMemory implements IMemory {
   private data = new Map<string, { type: string; value: string | null }>()

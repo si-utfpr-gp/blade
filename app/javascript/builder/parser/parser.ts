@@ -1,5 +1,5 @@
 import type { Node, Edge } from "@xyflow/react";
-import type { IParserNode, IParserEdge, IParserData } from "./types";
+import type { IParserNode, IParserEdge, IParserData } from "../interfaces/parser";
 
 export function parse(nodes: Node[], edges: Edge[]): IParserData {
     const nodeMap = new Map<string, IParserNode>();
