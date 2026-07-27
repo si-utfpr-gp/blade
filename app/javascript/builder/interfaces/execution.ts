@@ -1,15 +1,15 @@
-export interface Variable {
+export interface IVariable {
   name: string
   value: string | null
   type: string
   scope: string
 }
 
-export interface ExecutionStep {
+export interface IExecutionStep {
   nodeId: string
   nodeLabel: string
   nodeType: string
-  variables: Variable[]
+  variables: IVariable[]
   log: string
   output?: string
   waitingForInput?: boolean
@@ -20,10 +20,10 @@ export interface ExecutionStep {
   nextHint: string
 }
 
-export interface ExecutionState {
+export interface IExecutionState {
   currentNodeId: string | null
-  variables: Map<string, Variable>
-  steps: ExecutionStep[]
+  variables: Map<string, IVariable>
+  steps: IExecutionStep[]
   logs: string[]
   outputs: string[]
   finished: boolean

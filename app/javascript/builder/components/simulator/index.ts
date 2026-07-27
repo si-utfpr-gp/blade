@@ -1,4 +1,4 @@
-export { default, type SimulatorPanelProps } from "./SimulatorPanel";
+export { default, type ISimulatorPanelProps } from "./SimulatorPanel";
 export { SimulatorProvider, useSimulator } from "./SimulatorContext";
 export { default as SimulatorHeader } from "./SimulatorHeader";
 export { default as SimulatorControl } from "./SimulatorControl";
