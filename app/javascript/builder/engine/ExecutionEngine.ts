@@ -1,5 +1,5 @@
-import type { IVariable, IExecutionStep } from "../interfaces/execution";
-import type { IParserData, IParserNode } from "../parser/types";
+import type { IExecutionStep } from "../interfaces/execution";
+import type { IParserData, IParserNode } from "../interfaces/parser";
 import { ExprEvaluator } from "./ExprEvaluator";
 import { MemoryManager } from "./MemoryManager";
 
