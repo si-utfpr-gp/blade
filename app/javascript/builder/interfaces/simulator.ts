@@ -33,6 +33,7 @@ export type ISimulatorAction =
   | { type: "FINISH" }
   | { type: "INPUT_REQUESTED"; prompt: string; variable: string; inputType: string }
   | { type: "SUBMIT_INPUT" }
+  | { type: "GO_TO_STEP"; index: number }
 
 export interface ISimulatorCallbacks {
   onStart?: () => void
@@ -113,6 +114,10 @@ export function simulatorReducer(state: ISimulatorState, action: ISimulatorActio
       return { ...state, awaitingInput: true, inputPrompt: action.prompt, inputVariable: action.variable, inputType: action.inputType }
     case "SUBMIT_INPUT":
       return { ...state, awaitingInput: false, inputPrompt: "", inputVariable: "", inputType: "" }
+    case "GO_TO_STEP": {
+      if (action.index < 0 || action.index >= state.steps.length) return state
+      return { ...state, currentStepIndex: action.index }
+    }
     default:
       return state
   }

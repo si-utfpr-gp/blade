@@ -214,4 +214,28 @@ describe("simulatorReducer", () => {
     expect(state.currentStepIndex).toBe(0)
     expect(state.steps[0].nodeId).toBe("n1")
   })
+
+  it("GO_TO_STEP sets currentStepIndex to the given index", () => {
+    const state = simulatorReducer(
+      { ...initialState, steps: [mockStep, mockStep, mockStep], currentStepIndex: 0 },
+      { type: "GO_TO_STEP", index: 2 }
+    )
+    expect(state.currentStepIndex).toBe(2)
+  })
+
+  it("GO_TO_STEP ignores index below 0", () => {
+    const state = simulatorReducer(
+      { ...initialState, currentStepIndex: 1 },
+      { type: "GO_TO_STEP", index: -1 }
+    )
+    expect(state.currentStepIndex).toBe(1)
+  })
+
+  it("GO_TO_STEP ignores index beyond steps.length - 1", () => {
+    const state = simulatorReducer(
+      { ...initialState, steps: [mockStep], currentStepIndex: 0 },
+      { type: "GO_TO_STEP", index: 5 }
+    )
+    expect(state.currentStepIndex).toBe(0)
+  })
 })
