@@ -44,6 +44,9 @@ export class ExecutionEngine {
         try {
             const s = this.exec(node, input)
             if (s) { this.snapshots.store(s); }
+            if (s?.waitingForInput) {
+                return s
+            }
             this.current = this.next(node)
             if (this.current === null && node.type === "startEnd" && node.variant === "end") this._done = true
             return s
