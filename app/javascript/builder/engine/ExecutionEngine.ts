@@ -4,6 +4,7 @@ import { ExprEvaluator } from "./ExprEvaluator";
 import { MemoryManager } from "./MemoryManager";
 import { SnapshotManager } from "./SnapshotManager";
 import { ExplanationGenerator } from "./ExplanationGenerator";
+import { classifyError } from "./errors";
 
 export class ExecutionEngine {
     private memory = new MemoryManager();
@@ -46,7 +47,11 @@ export class ExecutionEngine {
             this.current = this.next(node)
             if (this.current === null && node.type === "startEnd" && node.variant === "end") this._done = true
             return s
-        } catch (e) { this._err = e instanceof Error ? e.message : "Erro"; throw e }
+        } catch (e) {
+          const structured = classifyError(e, this.current)
+          this._err = structured.message
+          throw e
+        }
     }
 
     public goToStep(i: number): void {
@@ -93,7 +98,11 @@ export class ExecutionEngine {
                 const s = this.exec(node)
                 if (s) { this.snapshots.store(s); }
                 this.current = this.next(node); return s
-        } catch (e) { this._err = e instanceof Error ? e.message : "Erro"; throw e }
+        } catch (e) {
+          const structured = classifyError(e, this.current)
+          this._err = structured.message
+          throw e
+        }
         }
         return null
     }

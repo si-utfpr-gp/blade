@@ -183,3 +183,48 @@ describe("ExprEvaluator error integration", () => {
     expect(() => engine.step()).toThrow("Expressão inválida")
   })
 })
+
+describe("ExecutionEngine error classification", () => {
+  it("stores classified error in getCurrentState on undeclared variable", () => {
+    const g = makeGraph(
+      [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
+       { id:"n2",type:"process",position:{x:0,y:100},data:{label:"x = y + 1"} },
+       { id:"n3",type:"startEnd",position:{x:0,y:200},data:{variant:"end"} }],
+      [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"}]
+    )
+    const engine = new ExecutionEngine(g)
+    engine.start()
+    expect(() => engine.step()).toThrow()
+    const state = engine.getCurrentState()
+    expect(state.error).not.toBeNull()
+    expect(state.error).toContain("não declarada")
+  })
+
+  it("engine error is null on successful execution", () => {
+    const g = makeGraph(
+      [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
+       { id:"n3",type:"startEnd",position:{x:0,y:100},data:{variant:"end"} }],
+      [{ id:"e1",source:"n1",target:"n3"}]
+    )
+    const engine = new ExecutionEngine(g)
+    const step = engine.start()
+    expect(step).not.toBeNull()
+    const state = engine.getCurrentState()
+    expect(state.error).toBeNull()
+  })
+
+  it("engine error is null after reset", () => {
+    const g = makeGraph(
+      [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
+       { id:"n2",type:"process",position:{x:0,y:100},data:{label:"x = y + 1"} },
+       { id:"n3",type:"startEnd",position:{x:0,y:200},data:{variant:"end"} }],
+      [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"}]
+    )
+    const engine = new ExecutionEngine(g)
+    engine.start()
+    expect(() => engine.step()).toThrow()
+    engine.reset()
+    const state = engine.getCurrentState()
+    expect(state.error).toBeNull()
+  })
+})
