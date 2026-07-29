@@ -1,4 +1,4 @@
-FROM ruby:4.0.0
+FROM ruby:4.0.6
 
 ARG NODE_VERSION=22
 
