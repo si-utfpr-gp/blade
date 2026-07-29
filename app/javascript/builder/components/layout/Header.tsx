@@ -1,8 +1,8 @@
-export interface HeaderProps {
+export interface IHeaderProps {
   title: string
 }
 
-export default function Header({ title }: HeaderProps) {
+export default function Header({ title }: IHeaderProps) {
   return (
     <header className="flex items-center justify-between h-12 px-4 border-b bg-white">
       <div className="flex items-center gap-2">

@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest"
 import { simulatorReducer, initialState } from "../../interfaces/simulator"
-import type { ExecutionStep } from "../../interfaces"
+import type { IExecutionStep } from "../../interfaces"
 
-const mockStep: ExecutionStep = {
+const mockStep: IExecutionStep = {
   nodeId: "node-1",
   nodeLabel: "Início",
   nodeType: "startEnd",
@@ -132,7 +132,7 @@ describe("simulatorReducer", () => {
   })
 
   it("EDIT_VARIABLE does not affect other steps", () => {
-    const step2: ExecutionStep = {
+    const step2: IExecutionStep = {
       ...mockStep,
       nodeId: "node-2",
       variables: [{ name: "x", value: "10", type: "number", scope: "local" }],

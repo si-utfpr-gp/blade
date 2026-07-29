@@ -1,7 +1,7 @@
-import type { ExecutionStep } from "./execution"
+import type { IExecutionStep } from "./execution"
 
-export interface SimulatorState {
-  steps: ExecutionStep[]
+export interface ISimulatorState {
+  steps: IExecutionStep[]
   currentStepIndex: number
   outputs: string[]
   isRunning: boolean
@@ -13,9 +13,9 @@ export interface SimulatorState {
   tsCode: string
 }
 
-export type SimulatorAction =
+export type ISimulatorAction =
   | { type: "START" }
-  | { type: "STEP_FORWARD"; step?: ExecutionStep }
+  | { type: "STEP_FORWARD"; step?: IExecutionStep }
   | { type: "STEP_BACK" }
   | { type: "RUN_ALL" }
   | { type: "STOP" }
@@ -24,11 +24,11 @@ export type SimulatorAction =
   | { type: "SET_ERROR"; error: string | null }
   | { type: "SET_OUTPUTS"; outputs: string[] }
   | { type: "SET_CODE"; js: string; ts: string }
-  | { type: "SET_STEPS"; steps: ExecutionStep[] }
+  | { type: "SET_STEPS"; steps: IExecutionStep[] }
   | { type: "EDIT_VARIABLE"; stepIndex: number; varName: string; newValue: string }
   | { type: "FINISH" }
 
-export interface SimulatorCallbacks {
+export interface ISimulatorCallbacks {
   onStart?: () => void
   onStepForward?: () => void
   onStepBack?: () => void
@@ -38,7 +38,7 @@ export interface SimulatorCallbacks {
   onVariableEdit?: (stepIndex: number, varName: string, newValue: string) => void
 }
 
-export const initialState: SimulatorState = {
+export const initialState: ISimulatorState = {
   steps: [],
   currentStepIndex: 0,
   outputs: [],
@@ -51,7 +51,7 @@ export const initialState: SimulatorState = {
   tsCode: "",
 }
 
-export function simulatorReducer(state: SimulatorState, action: SimulatorAction): SimulatorState {
+export function simulatorReducer(state: ISimulatorState, action: ISimulatorAction): ISimulatorState {
   switch (action.type) {
     case "START":
       return { ...state, isStarted: true, isRunning: false, isFinished: false, error: null, currentStepIndex: 0, outputs: [] }
