@@ -1,4 +1,5 @@
-import type { IMemory } from "../interfaces/memory";
+import type { IMemory } from "../interfaces/memory"
+import { detectDivisionByZero, checkValidExpression, buildDivByZeroError } from "./errors"
 
 export class ExprEvaluator {
   constructor(private memory: IMemory) {}
@@ -82,11 +83,17 @@ export class ExprEvaluator {
     return out
   }
 
-  assign(expr: string): string[] {
+  assign(expr: string, blockId: string | null): string[] {
     return expr.split(";").filter(Boolean).map(s => {
       const [target, ...rest] = s.trim().split("=")
       const src = rest.join("=").trim()
-      const res = String(new Function(`return (${this.resolve(src)})`)())
+      const resolved = this.resolve(src)
+      if (detectDivisionByZero(resolved)) {
+        throw new Error(buildDivByZeroError(blockId).message)
+      }
+      const err = checkValidExpression(resolved, blockId)
+      if (err) throw new Error(err.message)
+      const res = String(new Function(`return (${resolved})`)())
       if (!this.memory.has(target.trim())) {
         this.memory.declare(target.trim(), "caractere")
       }
@@ -95,11 +102,23 @@ export class ExprEvaluator {
     })
   }
 
-  condition(expr: string): boolean {
-    return Boolean(new Function(`return (${this.resolve(expr)})`)())
+  condition(expr: string, blockId: string | null): boolean {
+    const resolved = this.resolve(expr)
+    if (detectDivisionByZero(resolved)) {
+      throw new Error(buildDivByZeroError(blockId).message)
+    }
+    const err = checkValidExpression(resolved, blockId)
+    if (err) throw new Error(err.message)
+    return Boolean(new Function(`return (${resolved})`)())
   }
 
-  output(expr: string): string {
-    return String(new Function(`return (${this.resolve(expr)})`)())
+  output(expr: string, blockId: string | null): string {
+    const resolved = this.resolve(expr)
+    if (detectDivisionByZero(resolved)) {
+      throw new Error(buildDivByZeroError(blockId).message)
+    }
+    const err = checkValidExpression(resolved, blockId)
+    if (err) throw new Error(err.message)
+    return String(new Function(`return (${resolved})`)())
   }
 }
