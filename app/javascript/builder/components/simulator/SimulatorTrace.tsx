@@ -34,7 +34,7 @@ function formatValue(v: IVariable | undefined): string {
 }
 
 export default function SimulatorTrace() {
-  const { state, editVariable } = useSimulator();
+  const { state, editVariable, goToStep } = useSimulator();
   const {
     steps,
     currentStepIndex,
@@ -148,7 +148,8 @@ export default function SimulatorTrace() {
                 return (
                   <tr
                     key={i}
-                    className={`border-t border-border/50 transition-colors ${isCurrent ? "bg-primary/10" : "hover:bg-muted/30"}`}
+                    onClick={() => goToStep(i)}
+                    className={`border-t border-border/50 transition-colors cursor-pointer ${isCurrent ? "bg-primary/10" : "hover:bg-muted/50"}`}
                   >
                     <td
                       className={`py-1 px-2 font-mono text-center border-r border-border sticky left-0 z-10 ${isCurrent ? "bg-primary/10 font-bold text-primary" : "bg-card text-muted-foreground"}`}
