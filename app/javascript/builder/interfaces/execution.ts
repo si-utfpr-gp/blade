@@ -20,6 +20,17 @@ export interface IExecutionStep {
   nextHint: string
 }
 
+export interface IExplanationContext {
+    nodeType: string;
+    variant?: string;
+    nodeLabel: string;
+    inputValue?: string;
+    expressionResult?: string;
+    conditionResult?: boolean;
+    changes?: string[];
+    subroutineName?: string;
+}
+
 export interface ISnapshot {
   step: number
   blockId: string
