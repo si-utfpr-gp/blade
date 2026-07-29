@@ -7,3 +7,4 @@ export { default as SimulatorTrace } from "./SimulatorTrace";
 export { default as SimulatorExplain } from "./SimulatorExplain";
 export { default as SimulatorCode } from "./SimulatorCode";
 export { default as SimulatorStatusBar } from "./SimulatorStatusBar";
+export { default as InputDialog } from "./InputDialog";

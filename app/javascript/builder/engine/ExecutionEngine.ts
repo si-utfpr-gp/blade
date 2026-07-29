@@ -44,6 +44,9 @@ export class ExecutionEngine {
         try {
             const s = this.exec(node, input)
             if (s) { this.snapshots.store(s); }
+            if (s?.waitingForInput) {
+                return s
+            }
             this.current = this.next(node)
             if (this.current === null && node.type === "startEnd" && node.variant === "end") this._done = true
             return s
@@ -108,6 +111,29 @@ export class ExecutionEngine {
     }
 
 
+    private validateInput(value: string, type: string): string | null {
+      switch (type) {
+        case "inteiro": {
+          if (!/^-?\d+$/.test(value.trim())) return `Valor inválido para inteiro: '${value}'`
+          return null
+        }
+        case "real": {
+          if (!/^-?\d+(\.\d+)?$/.test(value.trim())) return `Valor inválido para real: '${value}'`
+          return null
+        }
+        case "logico": {
+          const v = value.trim().toLowerCase()
+          if (!["verdadeiro", "verdadeiro.", "v", "falso", "falso.", "f"].includes(v))
+            return `Valor inválido para lógico: '${value}' (esperado: verdadeiro/falso)`
+          return null
+        }
+        case "caractere":
+          return null
+        default:
+          return null
+      }
+    }
+
     private exec(node: IParserNode, input?: string): IExecutionStep | null {
         const base = (): IExecutionStep => ({
             nodeId: node.id, nodeLabel: node.label ?? "", nodeType: node.type,
@@ -130,6 +156,7 @@ export class ExecutionEngine {
             case "memory": return null;
 
             case "input": {
+                const varNames = (node.label ?? "").split(",").map(s => s.trim()).filter(Boolean)
                 const ctx: IExplanationContext = {
                     nodeType: node.type,
                     nodeLabel: node.label ?? "",
@@ -137,10 +164,27 @@ export class ExecutionEngine {
                 };
                 if (input === undefined) {
                     const text = this.explanations.generate(ctx);
-                    return { ...base(), waitingForInput: true, inputPrompt: `Valor para '${node.label}':`, ...text };
+                    const firstType = varNames.length > 0 ? (this.memory.getType(varNames[0]) ?? "caractere") : "caractere"
+                    return {
+                        ...base(),
+                        waitingForInput: true,
+                        inputPrompt: varNames.length === 1 ? `Valor para '${varNames[0]}':` : `Valores para '${varNames.join(", ")}':`,
+                        inputType: firstType,
+                        ...text,
+                    };
                 }
-                if (!this.memory.has(node.label ?? "")) this.memory.declare(node.label ?? "", "caractere");
-                this.memory.set(node.label ?? "", input);
+                const values = input.split(",").map(s => s.trim())
+                const errors: string[] = []
+                for (let i = 0; i < varNames.length; i++) {
+                    const name = varNames[i]
+                    const val = values[i] ?? ""
+                    const declaredType = this.memory.getType(name) ?? "caractere"
+                    if (!this.memory.has(name)) this.memory.declare(name, "caractere")
+                    const validationError = this.validateInput(val, declaredType)
+                    if (validationError) errors.push(validationError)
+                    this.memory.set(name, val)
+                }
+                if (errors.length > 0) throw new Error(errors.join("; "))
                 const text = this.explanations.generate(ctx);
                 return { ...base(), ...text };
             }

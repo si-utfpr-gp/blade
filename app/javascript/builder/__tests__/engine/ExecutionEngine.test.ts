@@ -102,6 +102,61 @@ describe("ExecutionEngine", () => {
     expect(s?.waitingForInput).toBeFalsy()
   })
 
+  it("input with multiple comma-separated variables", () => {
+    const e = new ExecutionEngine(g(
+      [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"}},
+       { id:"n2",type:"memory",position:{x:0,y:80},data:{rows:[{type:"inteiro",variables:"x, y"}]}},
+       { id:"n3",type:"input",position:{x:0,y:200},data:{label:"x, y"}},
+       { id:"n4",type:"startEnd",position:{x:0,y:320},data:{variant:"end"}}],
+      [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"},{ id:"e3",source:"n3",target:"n4"}]
+    ))
+    e.start()
+    const waiting = e.step()
+    expect(waiting?.waitingForInput).toBe(true)
+    const done = e.step("10, 20")
+    expect(done?.variables.find(v=>v.name==="x")?.value).toBe("10")
+    expect(done?.variables.find(v=>v.name==="y")?.value).toBe("20")
+  })
+
+  it("input validation rejects invalid integer", () => {
+    const e = new ExecutionEngine(g(
+      [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"}},
+       { id:"n2",type:"memory",position:{x:0,y:80},data:{rows:[{type:"inteiro",variables:"x"}]}},
+       { id:"n3",type:"input",position:{x:0,y:200},data:{label:"x"}},
+       { id:"n4",type:"startEnd",position:{x:0,y:320},data:{variant:"end"}}],
+      [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"},{ id:"e3",source:"n3",target:"n4"}]
+    ))
+    e.start()
+    e.step()
+    expect(() => e.step("abc")).toThrow("inteiro")
+  })
+
+  it("input type is returned in waiting step", () => {
+    const e = new ExecutionEngine(g(
+      [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"}},
+       { id:"n2",type:"memory",position:{x:0,y:80},data:{rows:[{type:"real",variables:"x"}]}},
+       { id:"n3",type:"input",position:{x:0,y:200},data:{label:"x"}},
+       { id:"n4",type:"startEnd",position:{x:0,y:320},data:{variant:"end"}}],
+      [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"},{ id:"e3",source:"n3",target:"n4"}]
+    ))
+    e.start()
+    const s = e.step()
+    expect(s?.inputType).toBe("real")
+  })
+
+  it("input validation rejects invalid logical value", () => {
+    const e = new ExecutionEngine(g(
+      [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"}},
+       { id:"n2",type:"memory",position:{x:0,y:80},data:{rows:[{type:"logico",variables:"ok"}]}},
+       { id:"n3",type:"input",position:{x:0,y:200},data:{label:"ok"}},
+       { id:"n4",type:"startEnd",position:{x:0,y:320},data:{variant:"end"}}],
+      [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"},{ id:"e3",source:"n3",target:"n4"}]
+    ))
+    e.start()
+    e.step()
+    expect(() => e.step("talvez")).toThrow("lógico")
+  })
+
   it("gera explicação para cada passo", () => {
     const e = new ExecutionEngine(g(
       [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"}},
