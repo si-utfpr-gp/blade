@@ -31,6 +31,7 @@ interface ISimulatorContextValue {
   setSpeed: (speed: number) => void;
   setCode: (js: string, ts: string) => void;
   editVariable: (stepIndex: number, varName: string, newValue: string) => void;
+  goToStep: (index: number) => void;
   submitInput: (value: string) => void;
   cancelInput: () => void;
   setEngine: (engine: ExecutionEngine) => void;
@@ -150,6 +151,12 @@ export function SimulatorProvider({
     [callbacks],
   );
 
+  const goToStep = useCallback((index: number) => {
+    if (index < 0 || index >= state.steps.length) return
+    engineRef.current?.goToStep(index)
+    dispatch({ type: "GO_TO_STEP", index })
+  }, [state.steps.length])
+
   return (
     <SimulatorContext.Provider
       value={{
@@ -167,6 +174,7 @@ export function SimulatorProvider({
         setSpeed,
         setCode,
         editVariable,
+        goToStep,
         submitInput,
         cancelInput,
         setEngine,
