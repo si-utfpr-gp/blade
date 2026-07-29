@@ -7,15 +7,15 @@ import {
   type ReactNode,
 } from "react";
 import type {
-  SimulatorState,
-  SimulatorCallbacks,
+  ISimulatorState,
+  ISimulatorCallbacks,
 } from "../../interfaces/simulator";
 import { initialState, simulatorReducer } from "../../interfaces/simulator";
 
 type Tab = "trace" | "explain" | "code";
 
-interface SimulatorContextValue {
-  state: SimulatorState;
+interface ISimulatorContextValue {
+  state: ISimulatorState;
   activeTab: Tab;
   setActiveTab: (tab: Tab) => void;
   canStepBack: boolean;
@@ -31,14 +31,14 @@ interface SimulatorContextValue {
   editVariable: (stepIndex: number, varName: string, newValue: string) => void;
 }
 
-const SimulatorContext = createContext<SimulatorContextValue | null>(null);
+const SimulatorContext = createContext<ISimulatorContextValue | null>(null);
 
 export function SimulatorProvider({
   children,
   callbacks,
 }: {
   children: ReactNode;
-  callbacks?: SimulatorCallbacks;
+  callbacks?: ISimulatorCallbacks;
 }) {
   const [state, dispatch] = useReducer(simulatorReducer, initialState);
   const [activeTab, setActiveTab] = useState<Tab>("trace");
@@ -118,7 +118,7 @@ export function SimulatorProvider({
   );
 }
 
-export function useSimulator(): SimulatorContextValue {
+export function useSimulator(): ISimulatorContextValue {
   const ctx = useContext(SimulatorContext);
   if (!ctx) {
     throw new Error("useSimulator must be used within SimulatorProvider");

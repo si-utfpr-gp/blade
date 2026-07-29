@@ -1,2 +1,2 @@
-export type { ParserNode, ParserEdge, ParserData } from "./types";
+export type { IParserNode, IParserEdge, IParserData } from "./types";
 export { parse } from "./parser";

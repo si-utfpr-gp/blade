@@ -1,8 +1,8 @@
-export interface BlocksPanelProps {
+export interface IBlocksPanelProps {
   errors: string[]
 }
 
-export default function BlocksPanel({ errors: _errors }: BlocksPanelProps) {
+export default function BlocksPanel({ errors: _errors }: IBlocksPanelProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b text-center">
