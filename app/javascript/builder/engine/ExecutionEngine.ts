@@ -137,7 +137,7 @@ export class ExecutionEngine {
             }
 
             case "output": {
-                const v = this.expr.output(node.label ?? "");
+                const v = this.expr.output(node.label ?? "", node.id);
                 this.outputs.push(v);
                 const text = this.explanations.generate({
                     nodeType: node.type,
@@ -148,7 +148,7 @@ export class ExecutionEngine {
             }
 
             case "process": {
-                const changes = this.expr.assign(node.label ?? "");
+                const changes = this.expr.assign(node.label ?? "", node.id);
                 const text = this.explanations.generate({
                     nodeType: node.type,
                     nodeLabel: node.label ?? "",
@@ -159,7 +159,7 @@ export class ExecutionEngine {
 
             case "decision": {
                 const cond = node.label ?? "";
-                const ok = this.expr.condition(cond);
+                const ok = this.expr.condition(cond, node.id);
                 const text = this.explanations.generate({
                     nodeType: node.type,
                     nodeLabel: cond,
@@ -189,7 +189,7 @@ export class ExecutionEngine {
     }
 
     private next(node: IParserNode): string | null {
-        if (node.type === "decision") return this.graph.getNextNode(node.id, this.expr.condition(node.label ?? "") ? "yes" : "no")
+        if (node.type === "decision") return this.graph.getNextNode(node.id, this.expr.condition(node.label ?? "", node.id) ? "yes" : "no")
         return this.graph.getNextNode(node.id)
     }
 

@@ -8,6 +8,13 @@ import {
   type IExecutionError,
   type ExecutionErrorType,
 } from "../../engine/errors"
+import { ExecutionEngine } from "../../engine/ExecutionEngine"
+import { parse } from "../../parser/parser"
+import type { Node, Edge } from "@xyflow/react"
+
+function makeGraph(nodes: Node[], edges: Edge[]) {
+  return parse(nodes, edges)
+}
 
 describe("detectDivisionByZero", () => {
   it("detects literal division by zero", () => {
@@ -124,5 +131,55 @@ describe("classifyError", () => {
     const err = classifyError("string error", null)
     expect(err.type).toBe(ERROR_TYPES.INVALID_EXPRESSION)
     expect(err.message).toBe("Erro desconhecido")
+  })
+})
+
+describe("ExprEvaluator error integration", () => {
+  it("assign throws on division by zero", () => {
+    const g = makeGraph(
+      [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
+       { id:"n2",type:"process",position:{x:0,y:100},data:{label:"x = 10 / 0"} },
+       { id:"n3",type:"startEnd",position:{x:0,y:200},data:{variant:"end"} }],
+      [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"}]
+    )
+    const engine = new ExecutionEngine(g)
+    engine.start()
+    expect(() => engine.step()).toThrow("Divisão por zero")
+  })
+
+  it("assign throws on invalid expression", () => {
+    const g = makeGraph(
+      [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
+       { id:"n2",type:"process",position:{x:0,y:100},data:{label:"x = 10 +"} },
+       { id:"n3",type:"startEnd",position:{x:0,y:200},data:{variant:"end"} }],
+      [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"}]
+    )
+    const engine = new ExecutionEngine(g)
+    engine.start()
+    expect(() => engine.step()).toThrow("Expressão inválida")
+  })
+
+  it("condition throws on division by zero", () => {
+    const g = makeGraph(
+      [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
+       { id:"n2",type:"decision",position:{x:0,y:100},data:{label:"1 / 0 > 0"} },
+       { id:"n3",type:"startEnd",position:{x:0,y:200},data:{variant:"end"} }],
+      [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"}]
+    )
+    const engine = new ExecutionEngine(g)
+    engine.start()
+    expect(() => engine.step()).toThrow("Divisão por zero")
+  })
+
+  it("output throws on invalid expression", () => {
+    const g = makeGraph(
+      [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
+       { id:"n2",type:"output",position:{x:0,y:100},data:{label:"10 +"} },
+       { id:"n3",type:"startEnd",position:{x:0,y:200},data:{variant:"end"} }],
+      [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"}]
+    )
+    const engine = new ExecutionEngine(g)
+    engine.start()
+    expect(() => engine.step()).toThrow("Expressão inválida")
   })
 })
