@@ -1,7 +1,7 @@
 # Checklist - Blade
 
 **Versao:** 2.0.0
-**Atualizado em:** 2026-07-27 (Explanation Generator concluído)
+**Atualizado em:** 2026-07-29 (Execution Errors + User Input + Navigate to Step concluídos)
 
 ---
 
@@ -31,9 +31,9 @@
 | 5 | [#55](https://github.com/si-utfpr-gp/blade/issues/55) | Snapshot System (capture/store/restore) | ✅ Feito |
 | 6 | [#56](https://github.com/si-utfpr-gp/blade/issues/56) | Explanation Generator (Portuguese text) | ✅ Feito |
 | 7 | [#57](https://github.com/si-utfpr-gp/blade/issues/57) | Code Generator (JavaScript + TypeScript) | ✅ Feito |
-| 8 | [#58](https://github.com/si-utfpr-gp/blade/issues/58) | Execution Errors detection (div by zero, etc.) | ⬜ Pendente |
-| 9 | [#59](https://github.com/si-utfpr-gp/blade/issues/59) | User Input During Execution (input block) | ⬜ Pendente |
-| 10 | [#60](https://github.com/si-utfpr-gp/blade/issues/60) | Navigate to Specific Step in History | ⬜ Pendente |
+| 8 | [#58](https://github.com/si-utfpr-gp/blade/issues/58) | Execution Errors detection (div by zero, etc.) | ✅ Feito |
+| 9 | [#59](https://github.com/si-utfpr-gp/blade/issues/59) | User Input During Execution (input block) | ✅ Feito |
+| 10 | [#60](https://github.com/si-utfpr-gp/blade/issues/60) | Navigate to Specific Step in History | ✅ Feito |
 | 11 | [#61](https://github.com/si-utfpr-gp/blade/issues/61) | Builder ↔ Simulator Integration | ⬜ Pendente |
 | 12 | [#62](https://github.com/si-utfpr-gp/blade/issues/62) | Custom Hooks (useExecutionEngine, useParser, useCodeGeneration) | ⬜ Pendente |
 
@@ -44,7 +44,7 @@
 | Componente | Status |
 |-------------|--------|
 | Types/Interfaces (Variable, ExecutionStep, SimulatorState) | ✅ Feito |
-| Simulator Reducer (15 actions) | ✅ Feito |
+| Simulator Reducer (18 actions) | ✅ Feito |
 | Simulator Context/Provider | ✅ Feito |
 | SimulatorPanel (layout principal) | ✅ Feito |
 | SimulatorHeader (status indicator) | ✅ Feito |

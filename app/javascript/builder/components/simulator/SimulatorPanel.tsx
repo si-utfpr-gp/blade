@@ -7,6 +7,7 @@ import SimulatorTrace from "./SimulatorTrace";
 import SimulatorExplain from "./SimulatorExplain";
 import SimulatorCode from "./SimulatorCode";
 import SimulatorStatusBar from "./SimulatorStatusBar";
+import InputDialog from "./InputDialog";
 import type { ISimulatorCallbacks } from "../../interfaces/simulator";
 
 export interface ISimulatorPanelProps {
@@ -24,6 +25,7 @@ export default function SimulatorPanel({ callbacks }: ISimulatorPanelProps) {
         <SimulatorPanelContent />
         <SimulatorStatusBar />
       </div>
+      <InputDialog />
       </TooltipProvider>
     </SimulatorProvider>
   );

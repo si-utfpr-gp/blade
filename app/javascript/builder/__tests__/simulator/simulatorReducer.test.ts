@@ -147,4 +147,95 @@ describe("simulatorReducer", () => {
     expect(state.steps[0].variables[0].value).toBe("99")
     expect(state.steps[1].variables[0].value).toBe("10")
   })
+
+  it("INPUT_REQUESTED sets awaitingInput and prompt", () => {
+    const state = simulatorReducer(initialState, {
+      type: "INPUT_REQUESTED",
+      prompt: "Valor para 'x':",
+      variable: "x",
+      inputType: "inteiro",
+    })
+    expect(state.awaitingInput).toBe(true)
+    expect(state.inputPrompt).toBe("Valor para 'x':")
+    expect(state.inputVariable).toBe("x")
+    expect(state.inputType).toBe("inteiro")
+  })
+
+  it("SUBMIT_INPUT clears input state", () => {
+    const inputState = {
+      ...initialState,
+      awaitingInput: true,
+      inputPrompt: "Valor para 'x':",
+      inputVariable: "x",
+      inputType: "inteiro",
+    }
+    const state = simulatorReducer(inputState, { type: "SUBMIT_INPUT" })
+    expect(state.awaitingInput).toBe(false)
+    expect(state.inputPrompt).toBe("")
+    expect(state.inputVariable).toBe("")
+    expect(state.inputType).toBe("")
+  })
+
+  it("START resets input state when already awaiting", () => {
+    const modified = {
+      ...initialState,
+      isStarted: true,
+      awaitingInput: true,
+      inputPrompt: "Valor:",
+      inputVariable: "x",
+      inputType: "inteiro",
+    }
+    const state = simulatorReducer(modified, { type: "START" })
+    expect(state.awaitingInput).toBe(false)
+    expect(state.inputPrompt).toBe("")
+    expect(state.inputVariable).toBe("")
+    expect(state.inputType).toBe("")
+  })
+
+  it("STEP_FORWARD with step appends to steps array", () => {
+    const inputStep: IExecutionStep = {
+      nodeId: "n1",
+      nodeLabel: "x",
+      nodeType: "input",
+      variables: [],
+      log: "Solicitando x.",
+      explanation: "Aguardando valor.",
+      changes: [],
+      nextHint: "Informe o valor.",
+      waitingForInput: true,
+      inputPrompt: "Valor para 'x':",
+      inputType: "inteiro",
+    }
+    const state = simulatorReducer(
+      { ...initialState, currentStepIndex: -1 },
+      { type: "STEP_FORWARD", step: inputStep }
+    )
+    expect(state.steps).toHaveLength(1)
+    expect(state.currentStepIndex).toBe(0)
+    expect(state.steps[0].nodeId).toBe("n1")
+  })
+
+  it("GO_TO_STEP sets currentStepIndex to the given index", () => {
+    const state = simulatorReducer(
+      { ...initialState, steps: [mockStep, mockStep, mockStep], currentStepIndex: 0 },
+      { type: "GO_TO_STEP", index: 2 }
+    )
+    expect(state.currentStepIndex).toBe(2)
+  })
+
+  it("GO_TO_STEP ignores index below 0", () => {
+    const state = simulatorReducer(
+      { ...initialState, currentStepIndex: 1 },
+      { type: "GO_TO_STEP", index: -1 }
+    )
+    expect(state.currentStepIndex).toBe(1)
+  })
+
+  it("GO_TO_STEP ignores index beyond steps.length - 1", () => {
+    const state = simulatorReducer(
+      { ...initialState, steps: [mockStep], currentStepIndex: 0 },
+      { type: "GO_TO_STEP", index: 5 }
+    )
+    expect(state.currentStepIndex).toBe(0)
+  })
 })

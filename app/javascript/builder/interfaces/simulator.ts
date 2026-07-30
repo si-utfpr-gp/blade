@@ -11,6 +11,10 @@ export interface ISimulatorState {
   speed: number
   jsCode: string
   tsCode: string
+  awaitingInput: boolean
+  inputPrompt: string
+  inputVariable: string
+  inputType: string
 }
 
 export type ISimulatorAction =
@@ -27,15 +31,20 @@ export type ISimulatorAction =
   | { type: "SET_STEPS"; steps: IExecutionStep[] }
   | { type: "EDIT_VARIABLE"; stepIndex: number; varName: string; newValue: string }
   | { type: "FINISH" }
+  | { type: "INPUT_REQUESTED"; prompt: string; variable: string; inputType: string }
+  | { type: "SUBMIT_INPUT" }
+  | { type: "GO_TO_STEP"; index: number }
 
 export interface ISimulatorCallbacks {
   onStart?: () => void
-  onStepForward?: () => void
+  onStepForward?: (input?: string) => void
   onStepBack?: () => void
   onRunAll?: () => void
   onStop?: () => void
   onReset?: () => void
   onVariableEdit?: (stepIndex: number, varName: string, newValue: string) => void
+  onInputSubmit?: (value: string) => void
+  onInputCancel?: () => void
 }
 
 export const initialState: ISimulatorState = {
@@ -49,14 +58,26 @@ export const initialState: ISimulatorState = {
   speed: 1000,
   jsCode: "",
   tsCode: "",
+  awaitingInput: false,
+  inputPrompt: "",
+  inputVariable: "",
+  inputType: "",
 }
 
 export function simulatorReducer(state: ISimulatorState, action: ISimulatorAction): ISimulatorState {
   switch (action.type) {
     case "START":
-      return { ...state, isStarted: true, isRunning: false, isFinished: false, error: null, currentStepIndex: 0, outputs: [] }
-    case "STEP_FORWARD":
+      return { ...state, isStarted: true, isRunning: false, isFinished: false, error: null, currentStepIndex: 0, outputs: [], awaitingInput: false, inputPrompt: "", inputVariable: "", inputType: "" }
+    case "STEP_FORWARD": {
+      if (action.step) {
+        return {
+          ...state,
+          steps: [...state.steps, action.step],
+          currentStepIndex: state.steps.length,
+        }
+      }
       return { ...state, currentStepIndex: state.currentStepIndex + 1 }
+    }
     case "STEP_BACK":
       return { ...state, currentStepIndex: Math.max(0, state.currentStepIndex - 1) }
     case "RUN_ALL":
@@ -89,6 +110,14 @@ export function simulatorReducer(state: ISimulatorState, action: ISimulatorActio
     }
     case "FINISH":
       return { ...state, isFinished: true, isRunning: false }
+    case "INPUT_REQUESTED":
+      return { ...state, awaitingInput: true, inputPrompt: action.prompt, inputVariable: action.variable, inputType: action.inputType }
+    case "SUBMIT_INPUT":
+      return { ...state, awaitingInput: false, inputPrompt: "", inputVariable: "", inputType: "" }
+    case "GO_TO_STEP": {
+      if (action.index < 0 || action.index >= state.steps.length) return state
+      return { ...state, currentStepIndex: action.index }
+    }
     default:
       return state
   }
