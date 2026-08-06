@@ -15,7 +15,7 @@ export class CodeGenerator {
   generateFromSteps(steps: IExecutionStep[], options?: { lang?: 'js' | 'ts' }): string {
     const lang = options?.lang ?? 'js'
     const lines: string[] = []
-    for (const [id, node] of this.graph.nodes) {
+    for (const [, node] of this.graph.nodes) {
       if (node.type === "memory" && node.rows) {
         const memLine = this.translateMemory(node, lang, 0)
         if (memLine) lines.push(memLine)

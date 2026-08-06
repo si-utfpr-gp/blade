@@ -102,7 +102,7 @@ describe("ExecutionEngine", () => {
     expect(s?.waitingForInput).toBeFalsy()
   })
 
-  it("input with multiple comma-separated variables", () => {
+  it("input com múltiplas variáveis pede um valor por vez", () => {
     const e = new ExecutionEngine(g(
       [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"}},
        { id:"n2",type:"memory",position:{x:0,y:80},data:{rows:[{type:"inteiro",variables:"x, y"}]}},
@@ -111,11 +111,20 @@ describe("ExecutionEngine", () => {
       [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"},{ id:"e3",source:"n3",target:"n4"}]
     ))
     e.start()
-    const waiting = e.step()
-    expect(waiting?.waitingForInput).toBe(true)
-    const done = e.step("10, 20")
-    expect(done?.variables.find(v=>v.name==="x")?.value).toBe("10")
-    expect(done?.variables.find(v=>v.name==="y")?.value).toBe("20")
+    const w1 = e.step()
+    expect(w1?.waitingForInput).toBe(true)
+    expect(w1?.inputEntered).toBe(false)
+    expect(w1?.inputVariable).toBe("x")
+    const s1 = e.step("10")
+    expect(s1?.inputEntered).toBe(true)
+    expect(s1?.waitingForInput).toBe(true)
+    expect(s1?.inputVariable).toBe("y")
+    expect(s1?.variables.find(v=>v.name==="x")?.value).toBe("10")
+    const s2 = e.step("20")
+    expect(s2?.waitingForInput).toBe(false)
+    expect(s2?.variables.find(v=>v.name==="x")?.value).toBe("10")
+    expect(s2?.variables.find(v=>v.name==="y")?.value).toBe("20")
+    expect(e.getSteps().filter(s => s.nodeType === "input")).toHaveLength(2)
   })
 
   it("input validation rejects invalid integer", () => {

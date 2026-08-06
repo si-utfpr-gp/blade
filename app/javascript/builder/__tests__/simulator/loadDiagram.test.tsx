@@ -43,6 +43,7 @@ function Probe({ nodes, edges }: { nodes: Node[]; edges: Edge[] }) {
 }
 
 import { TooltipProvider } from "../../components/ui/tooltip"
+import InputDialog from "../../components/simulator/InputDialog"
 
 function renderHarness(nodes: Node[], edges: Edge[]) {
   return render(
@@ -51,6 +52,21 @@ function renderHarness(nodes: Node[], edges: Edge[]) {
         <Probe nodes={nodes} edges={edges} />
         <SimulatorControl />
         <SimulatorTrace />
+        <SimulatorCode />
+        <InputDialog />
+      </TooltipProvider>
+    </SimulatorProvider>
+  )
+}
+
+function renderInteractive(nodes: Node[], edges: Edge[]) {
+  return render(
+    <SimulatorProvider>
+      <TooltipProvider>
+        <Probe nodes={nodes} edges={edges} />
+        <SimulatorControl />
+        <SimulatorTrace />
+        <InputDialog />
         <SimulatorCode />
       </TooltipProvider>
     </SimulatorProvider>
@@ -80,5 +96,32 @@ describe("loadDiagram", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "carregar" }))
     expect(screen.getByTestId("result")).toHaveTextContent(/não|início/i)
+  })
+})
+
+describe("input multi-valor (teste de mesa real)", () => {
+  function submitValue(value: string) {
+    const field = screen.getByPlaceholderText(/número inteiro/i)
+    fireEvent.change(field, { target: { value } })
+    fireEvent.click(screen.getByRole("button", { name: "OK" }))
+  }
+
+  it("pede um valor por vez e não traça linha fantasma", () => {
+    renderInteractive(sumNodes, sumEdges)
+    fireEvent.click(screen.getByRole("button", { name: "carregar" }))
+    fireEvent.click(screen.getByRole("button", { name: /iniciar execução/i }))
+    expect(screen.getByText(/Histórico — Passo 1/)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "Próximo" }))
+    expect(screen.getByText(/Valor para 'num1':/)).toBeInTheDocument()
+    expect(screen.getByText(/Histórico — Passo 1/)).toBeInTheDocument()
+
+    submitValue("10")
+    expect(screen.getByText(/Valor para 'num2':/)).toBeInTheDocument()
+    expect(screen.getByText(/Histórico — Passo 2/)).toBeInTheDocument()
+
+    submitValue("20")
+    expect(screen.queryByText(/Valor para/)).not.toBeInTheDocument()
+    expect(screen.getByText(/Histórico — Passo 3/)).toBeInTheDocument()
   })
 })

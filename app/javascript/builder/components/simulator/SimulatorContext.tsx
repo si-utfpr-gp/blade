@@ -93,13 +93,15 @@ export function SimulatorProvider({
     }
 
     if (step.waitingForInput) {
+      if (step.inputEntered) {
+        dispatch({ type: "STEP_FORWARD", step });
+      }
       dispatch({
         type: "INPUT_REQUESTED",
         prompt: step.inputPrompt ?? `Valor para '${step.nodeLabel}':`,
-        variable: step.nodeLabel,
+        variable: step.inputVariable ?? step.nodeLabel,
         inputType: step.inputType ?? "caractere",
       });
-      dispatch({ type: "STEP_FORWARD", step });
     } else {
       if (step.output !== undefined) {
         dispatch({ type: "SET_OUTPUTS", outputs: [...state.outputs, step.output] });

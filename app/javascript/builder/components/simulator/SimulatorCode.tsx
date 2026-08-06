@@ -33,7 +33,13 @@ export default function SimulatorCode() {
         </button>
       </div>
       <pre className="flex-1 overflow-auto p-3 text-[11px] font-mono leading-relaxed bg-foreground/2">
-        <code>{codeLang === "js" ? jsCode : tsCode}</code>
+        {jsCode || tsCode ? (
+          <code>{codeLang === "js" ? jsCode : tsCode}</code>
+        ) : (
+          <span className="text-muted-foreground">
+            Carregue um diagrama válido (JSON) para gerar o código JavaScript/TypeScript.
+          </span>
+        )}
       </pre>
     </div>
   );

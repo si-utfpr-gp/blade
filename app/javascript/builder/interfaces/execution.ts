@@ -15,6 +15,7 @@ export interface IExecutionStep {
   waitingForInput?: boolean
   inputPrompt?: string
   inputType?: string
+  inputEntered?: boolean
   explanation: string
   changes: string[]
   nextHint: string

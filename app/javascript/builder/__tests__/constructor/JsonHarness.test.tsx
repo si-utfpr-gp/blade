@@ -1,12 +1,33 @@
 import { describe, it, expect } from "vitest"
 import { render, screen, fireEvent } from "@testing-library/react"
-import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
+import { SimulatorProvider, useSimulator } from "../../components/simulator/SimulatorContext"
 import JsonHarness from "../../components/constructor/JsonHarness"
+import SimulatorTabs from "../../components/simulator/SimulatorTabs"
+import SimulatorCode from "../../components/simulator/SimulatorCode"
 
 function renderHarness() {
   return render(
     <SimulatorProvider>
       <JsonHarness />
+    </SimulatorProvider>
+  )
+}
+
+function PanelContent() {
+  const { activeTab } = useSimulator()
+  return (
+    <div>
+      <SimulatorTabs />
+      {activeTab === "code" && <SimulatorCode />}
+    </div>
+  )
+}
+
+function renderApp() {
+  return render(
+    <SimulatorProvider>
+      <JsonHarness />
+      <PanelContent />
     </SimulatorProvider>
   )
 }
@@ -33,6 +54,16 @@ describe("JsonHarness", () => {
     fireEvent.click(screen.getByRole("button", { name: /exemplo/i }))
     fireEvent.click(screen.getByRole("button", { name: /carregar/i }))
     expect(screen.getByText(/motor carregado/i)).toBeInTheDocument()
+  })
+
+  it("gera JS/TS na aba Código após carregar o exemplo (soma)", () => {
+    renderApp()
+    fireEvent.click(screen.getByRole("button", { name: /exemplo/i }))
+    fireEvent.click(screen.getByRole("button", { name: /carregar/i }))
+    fireEvent.click(screen.getByText("Código"))
+    const code = screen.getByText("JavaScript").closest("div")?.parentElement?.querySelector("code")
+    expect(code?.textContent).toContain("let num1;")
+    expect(code?.textContent).toContain('console.log("A soma');
   })
 
   it("shows error for invalid JSON", () => {
