@@ -259,6 +259,24 @@ describe("ExprEvaluator", () => {
       e.assign("x = 42")
       expect(e.output("x")).toBe("42")
     })
+
+    it("assigns to array index", () => {
+      const mem = new TestMemory()
+      mem.declare("notas[5]", "inteiro")
+      const ev = new ExprEvaluator(mem)
+      ev.assign("notas[0] = 10")
+      expect(ev.output("notas[0]")).toBe("10")
+    })
+
+    it("assigns to array index with index variable", () => {
+      const mem = new TestMemory()
+      mem.declare("notas[5]", "inteiro")
+      mem.declare("i", "inteiro")
+      mem.set("i", "0")
+      const ev = new ExprEvaluator(mem)
+      ev.assign("notas[i] = 7")
+      expect(ev.output("notas[0]")).toBe("7")
+    })
   })
 
   describe("errors", () => {

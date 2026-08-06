@@ -1,5 +1,5 @@
 import { TooltipProvider } from "../ui/tooltip";
-import { SimulatorProvider, useSimulator } from "./SimulatorContext";
+import { useSimulator } from "./SimulatorContext";
 import SimulatorHeader from "./SimulatorHeader";
 import SimulatorControl from "./SimulatorControl";
 import SimulatorTabs from "./SimulatorTabs";
@@ -8,16 +8,10 @@ import SimulatorExplain from "./SimulatorExplain";
 import SimulatorCode from "./SimulatorCode";
 import SimulatorStatusBar from "./SimulatorStatusBar";
 import InputDialog from "./InputDialog";
-import type { ISimulatorCallbacks } from "../../interfaces/simulator";
 
-export interface ISimulatorPanelProps {
-  callbacks?: ISimulatorCallbacks;
-}
-
-export default function SimulatorPanel({ callbacks }: ISimulatorPanelProps) {
+export default function SimulatorPanel() {
   return (
-    <SimulatorProvider callbacks={callbacks}>
-      <TooltipProvider delayDuration={200}>
+    <TooltipProvider delayDuration={200}>
       <div className="flex flex-col h-full bg-card border-l border-border">
         <SimulatorHeader />
         <SimulatorControl />
@@ -26,8 +20,7 @@ export default function SimulatorPanel({ callbacks }: ISimulatorPanelProps) {
         <SimulatorStatusBar />
       </div>
       <InputDialog />
-      </TooltipProvider>
-    </SimulatorProvider>
+    </TooltipProvider>
   );
 }
 

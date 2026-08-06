@@ -13,6 +13,9 @@ import type {
 } from "../../interfaces/simulator";
 import { initialState, simulatorReducer } from "../../interfaces/simulator";
 import { ExecutionEngine } from "../../engine/ExecutionEngine";
+import { parse } from "../../parser";
+import { CodeGenerator } from "../../engine/CodeGenerator";
+import type { Node, Edge } from "@xyflow/react";
 
 type Tab = "trace" | "explain" | "code";
 
@@ -35,6 +38,7 @@ interface ISimulatorContextValue {
   submitInput: (value: string) => void;
   cancelInput: () => void;
   setEngine: (engine: ExecutionEngine) => void;
+  loadDiagram: (nodes: Node[], edges: Edge[]) => { ok: true } | { ok: false; error: string };
 }
 
 const SimulatorContext = createContext<ISimulatorContextValue | null>(null);
@@ -53,6 +57,25 @@ export function SimulatorProvider({
   const setEngine = useCallback((engine: ExecutionEngine) => {
     engineRef.current = engine;
   }, []);
+
+  const loadDiagram = useCallback((nodes: Node[], edges: Edge[]) => {
+    try {
+      const graph = parse(nodes, edges);
+      if (!graph.startNodeId) {
+        return { ok: false, error: "Nenhum bloco de início (RN01)" };
+      }
+      const engine = new ExecutionEngine(graph);
+      setEngine(engine);
+      const codeGen = new CodeGenerator(graph);
+      const js = codeGen.generate({ lang: "js" });
+      const ts = codeGen.generate({ lang: "ts" });
+      dispatch({ type: "SET_CODE", js, ts });
+      return { ok: true };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Erro ao carregar diagrama";
+      return { ok: false, error: msg };
+    }
+  }, [setEngine]);
 
   const canStepBack =
     state.isStarted && state.currentStepIndex > 0 && !state.isRunning && !state.awaitingInput;
@@ -178,6 +201,7 @@ export function SimulatorProvider({
         submitInput,
         cancelInput,
         setEngine,
+        loadDiagram,
       }}
     >
       {children}

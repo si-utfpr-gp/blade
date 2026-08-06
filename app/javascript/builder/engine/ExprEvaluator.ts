@@ -94,6 +94,14 @@ export class ExprEvaluator {
       const err = checkValidExpression(resolved, blockId)
       if (err) throw new Error(err.message)
       const res = String(new Function(`return (${resolved})`)())
+      const indexTarget = target.trim().match(/^(\w+)\[(-?\d+|\w+)\]$/)
+      if (indexTarget) {
+        const arrName = indexTarget[1]
+        const idxExpr = indexTarget[2]
+        const idx = /^-?\d+$/.test(idxExpr) ? parseInt(idxExpr, 10) : Number(this.resolve(idxExpr))
+        this.memory.setIndex(arrName, idx, res)
+        return `${target.trim()} = ${res}`
+      }
       if (!this.memory.has(target.trim())) {
         this.memory.declare(target.trim(), "caractere")
       }
