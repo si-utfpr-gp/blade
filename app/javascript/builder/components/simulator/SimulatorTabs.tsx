@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { Table2, Sparkles, Code2 } from "lucide-react";
+import { Table2, BookOpenText, Code2 } from "lucide-react";
 import { useSimulator } from "./SimulatorContext";
 
 type Tab = "trace" | "explain" | "code";
@@ -13,7 +13,7 @@ const tabs: { id: Tab; label: string; icon: ReactNode }[] = [
   {
     id: "explain",
     label: "Explicação",
-    icon: <Sparkles className="w-3.5 h-3.5" />,
+    icon: <BookOpenText className="w-3.5 h-3.5" />,
   },
   { id: "code", label: "Código", icon: <Code2 className="w-3.5 h-3.5" /> },
 ];
