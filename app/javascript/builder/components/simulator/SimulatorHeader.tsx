@@ -7,7 +7,8 @@ interface ISimulatorHeaderProps {
 
 export default function SimulatorHeader({ onToggleCollapsed }: ISimulatorHeaderProps) {
   const { state } = useSimulator();
-  const { isRunning, isFinished, isStarted } = state;
+  const { isRunning, isFinished, isStarted, awaitingInput } = state;
+  const status = getDebuggerStatus({ isRunning, isFinished, isStarted, awaitingInput });
 
   return (
     <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/30">
@@ -22,20 +23,60 @@ export default function SimulatorHeader({ onToggleCollapsed }: ISimulatorHeaderP
         <span className="text-xs font-semibold text-foreground">Depurador</span>
         {onToggleCollapsed && <PanelRightClose className="w-3.5 h-3.5 text-muted-foreground" />}
       </button>
-      <span
-        className={`flex items-center gap-1 text-[10px] ${isRunning ? "text-secondary" : isFinished ? "text-muted-foreground" : isStarted ? "text-accent" : "text-primary"}`}
-      >
-        <span
-          className={`w-1.5 h-1.5 rounded-full ${isRunning ? "bg-secondary animate-pulse" : isFinished ? "bg-muted-foreground" : isStarted ? "bg-accent" : "bg-primary"}`}
-        />
-        {isRunning
-          ? "Executando..."
-          : isFinished
-            ? "Finalizado"
-            : isStarted
-              ? "Pausado"
-              : "Pronto"}
+      <span className={`flex items-center gap-1 text-[10px] font-medium ${status.textClass}`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${status.dotClass}`} />
+        {status.label}
       </span>
     </div>
   );
+}
+
+function getDebuggerStatus({
+  isRunning,
+  isFinished,
+  isStarted,
+  awaitingInput,
+}: {
+  isRunning: boolean
+  isFinished: boolean
+  isStarted: boolean
+  awaitingInput: boolean
+}) {
+  if (isFinished) {
+    return {
+      label: "Concluído",
+      textClass: "text-emerald-700",
+      dotClass: "bg-emerald-500",
+    }
+  }
+
+  if (awaitingInput) {
+    return {
+      label: "Aguardando entrada",
+      textClass: "text-amber-700",
+      dotClass: "bg-amber-500 animate-pulse",
+    }
+  }
+
+  if (isRunning) {
+    return {
+      label: "Executando",
+      textClass: "text-emerald-700",
+      dotClass: "bg-emerald-500 animate-pulse",
+    }
+  }
+
+  if (isStarted) {
+    return {
+      label: "Pausado",
+      textClass: "text-slate-600",
+      dotClass: "bg-slate-400",
+    }
+  }
+
+  return {
+    label: "Pronto",
+    textClass: "text-primary",
+    dotClass: "bg-primary",
+  }
 }
