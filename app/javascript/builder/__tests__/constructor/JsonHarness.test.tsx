@@ -53,7 +53,7 @@ describe("JsonHarness", () => {
     renderHarness()
     fireEvent.click(screen.getByRole("button", { name: /exemplo/i }))
     fireEvent.click(screen.getByRole("button", { name: /carregar/i }))
-    expect(screen.getByText(/motor carregado/i)).toBeInTheDocument()
+    expect(screen.getByText(/código js\/ts gerado/i)).toBeInTheDocument()
   })
 
   it("gera JS/TS na aba Código após carregar o exemplo (soma)", () => {

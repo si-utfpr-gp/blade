@@ -40,7 +40,7 @@ export default function JsonHarness() {
     }
     const result = loadDiagram(data.nodes, data.edges ?? [])
     if (result.ok) {
-      setStatus({ ok: true, message: "Motor carregado. Use o simulador ao lado." })
+      setStatus({ ok: true, message: "Diagrama carregado. Código JS/TS gerado. Use o simulador ao lado para executar." })
     } else {
       setStatus({ ok: false, message: result.error })
     }
