@@ -52,5 +52,8 @@ export function parse(nodes: Node[], edges: Edge[]): IParserData {
           }
           return outgoing[0].target
         },
+        getOutgoing(currentId: string): IParserEdge[] {
+          return [...(adjacency.get(currentId) ?? [])]
+        },
     }
 }

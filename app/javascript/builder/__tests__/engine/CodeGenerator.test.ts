@@ -42,7 +42,7 @@ describe("CodeGenerator", () => {
     expect(code).toContain("let nome;")
   })
 
-  it("generate() converte input — parseInt", () => {
+  it("generate() converte input sem memory como texto", () => {
     const gen = new CodeGenerator(g(
       [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
        { id:"n2",type:"input",position:{x:0,y:100},data:{label:"num1"} },
@@ -50,7 +50,19 @@ describe("CodeGenerator", () => {
       [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"}]
     ))
     const code = gen.generate({ lang: "js" })
-    expect(code).toContain('num1 = parseInt(prompt(""));')
+    expect(code).toContain('num1 = (prompt("Valor para num1:") ?? "");')
+  })
+
+  it("generate() converte input inteiro declarado com Number.parseInt", () => {
+    const gen = new CodeGenerator(g(
+      [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
+       { id:"n2",type:"memory",position:{x:0,y:80},data:{rows:[{type:"inteiro",variables:"num1"}]} },
+       { id:"n3",type:"input",position:{x:0,y:100},data:{label:"num1"} },
+       { id:"n4",type:"startEnd",position:{x:0,y:200},data:{variant:"end"} }],
+      [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"},{ id:"e3",source:"n3",target:"n4"}]
+    ))
+    const code = gen.generate({ lang: "js" })
+    expect(code).toContain('num1 = Number.parseInt((prompt("Valor para num1:") ?? ""), 10);')
   })
 
   it("generate() converte output — console.log", () => {
@@ -186,15 +198,17 @@ describe("CodeGenerator", () => {
     expect(code).toContain("let nome: string;")
   })
 
-  it("generate({ lang: 'ts' }) usa parseInt com fallback", () => {
+  it("generate({ lang: 'ts' }) usa tipo declarado no input", () => {
     const gen = new CodeGenerator(g(
       [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
-       { id:"n2",type:"input",position:{x:0,y:100},data:{label:"num"} },
-       { id:"n3",type:"startEnd",position:{x:0,y:200},data:{variant:"end"} }],
-      [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"}]
+       { id:"n2",type:"memory",position:{x:0,y:80},data:{rows:[{type:"inteiro",variables:"num"}]} },
+       { id:"n3",type:"input",position:{x:0,y:100},data:{label:"num"} },
+       { id:"n4",type:"startEnd",position:{x:0,y:200},data:{variant:"end"} }],
+      [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"},{ id:"e3",source:"n3",target:"n4"}]
     ))
     const code = gen.generate({ lang: "ts" })
-    expect(code).toContain('num = parseInt(prompt("") || "0");')
+    expect(code).toContain('let num: number;')
+    expect(code).toContain('num = Number.parseInt((prompt("Valor para num:") ?? ""), 10);')
   })
 
   it("generateFromSteps() converte steps em código", () => {
@@ -248,8 +262,8 @@ describe("CodeGenerator", () => {
     expect(code).toContain("let num1;")
     expect(code).toContain("let num2;")
     expect(code).toContain("let soma;")
-    expect(code).toContain('num1 = parseInt(prompt(""));')
-    expect(code).toContain('num2 = parseInt(prompt(""));')
+    expect(code).toContain('num1 = Number.parseInt((prompt("Valor para num1:") ?? ""), 10);')
+    expect(code).toContain('num2 = Number.parseInt((prompt("Valor para num2:") ?? ""), 10);')
     expect(code).toContain("soma = num1 + num2;")
     expect(code).toContain('console.log("A soma é: " + soma);')
     expect(code).toContain("// Fim do algoritmo")
@@ -265,4 +279,50 @@ describe("CodeGenerator", () => {
     const code = gen.generate({ lang: "ts" })
     expect(code).toContain("let notas: number[] = new Array(5);")
   })
+
+  it("generate() traduz decisão com operadores Portugol", () => {
+    const gen = new CodeGenerator(g(
+      [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
+       { id:"n2",type:"decision",position:{x:0,y:100},data:{label:"nota >= 0 e nota <= 10"} },
+       { id:"n3",type:"output",position:{x:0,y:200},data:{label:"'ok'"} },
+       { id:"n4",type:"startEnd",position:{x:0,y:300},data:{variant:"end"} }],
+      [{ id:"e1",source:"n1",target:"n2"},
+       { id:"e2",source:"n2",target:"n3",sourceHandle:"yes"},
+       { id:"e3",source:"n3",target:"n4"}]
+    ))
+    const code = gen.generate()
+    expect(code).toContain("if (nota >= 0 && nota <= 10) {")
+  })
+
+  it("generate() gera while quando decisão retorna para ela mesma pelo ramo yes", () => {
+    const gen = new CodeGenerator(g(
+      [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
+       { id:"n2",type:"memory",position:{x:0,y:80},data:{rows:[{type:"inteiro",variables:"n, i"}]} },
+       { id:"n3",type:"process",position:{x:0,y:160},data:{label:"i = 0"} },
+       { id:"n4",type:"decision",position:{x:0,y:240},data:{label:"i < n"} },
+       { id:"n5",type:"process",position:{x:0,y:320},data:{label:"i = i + 1"} },
+       { id:"n6",type:"startEnd",position:{x:0,y:400},data:{variant:"end"} }],
+      [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"},{ id:"e3",source:"n3",target:"n4"},
+       { id:"e4",source:"n4",target:"n5",sourceHandle:"yes"},{ id:"e5",source:"n5",target:"n4"},
+       { id:"e6",source:"n4",target:"n6",sourceHandle:"no"}]
+    ))
+    const code = gen.generate()
+    expect(code).toContain("while (i < n) {")
+    expect(code).toContain("  i = i + 1;")
+    expect(code).toContain("// Fim do algoritmo")
+  })
+
+  it("generate() usa parseFloat e boolean para tipos real/logico", () => {
+    const gen = new CodeGenerator(g(
+      [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
+       { id:"n2",type:"memory",position:{x:0,y:80},data:{rows:[{type:"real",variables:"nota"},{type:"logico",variables:"ok"}]} },
+       { id:"n3",type:"input",position:{x:0,y:160},data:{label:"nota, ok"} },
+       { id:"n4",type:"startEnd",position:{x:0,y:240},data:{variant:"end"} }],
+      [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"},{ id:"e3",source:"n3",target:"n4"}]
+    ))
+    const code = gen.generate()
+    expect(code).toContain('nota = Number.parseFloat((prompt("Valor para nota:") ?? ""));')
+    expect(code).toContain('ok = ["verdadeiro", "v", "true", "1"].includes((prompt("Valor para ok:") ?? "").trim().toLowerCase());')
+  })
+
 })
