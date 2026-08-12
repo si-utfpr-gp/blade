@@ -4,6 +4,10 @@ Documento com diagramas prontos para copiar e colar no **Harness JSON** (canvas 
 validar o **Módulo de Execução e Teste de Mesa** (parser → motor → teste de mesa → explicação →
 código transpilado).
 
+Para teste de mesa, os exemplos podem ser escritos no formato lógico limpo, sem `position`. O campo
+`position` pertence ao construtor visual/React Flow e só serve para layout no canvas; o parser e o
+motor de execução ignoram esse campo.
+
 ## Como usar
 
 1. Abra a página do builder (harness no canvas + simulador à direita).
@@ -19,12 +23,12 @@ código transpilado).
 ```jsonc
 {
   "nodes": [ // lista de blocos
-    { "id": "n1", "type": "startEnd", "position": { "x": 0, "y": 0 },
+    { "id": "n1", "type": "startEnd",
       "data": { "label": "Início", "variant": "start" } },
     { "id": "n2", "type": "memory", "data": { "rows": [
         { "type": "inteiro", "variables": "n, i" },
         { "type": "real", "variables": "notas[5], soma" } ] } },
-    { "id": "n3", "type": "input",  "data": { "label": "n" } },
+    { "id": "n3", "type": "input", "data": { "label": "n" } },
     { "id": "n4", "type": "process","data": { "label": "soma = 0; i = 0" } },
     { "id": "n5", "type": "decision","data": { "label": "i < n" } },
     { "id": "n6", "type": "output", "data": { "label": "'Média: ' + media" } },
@@ -39,6 +43,10 @@ código transpilado).
 
 **Tipos de bloco:** `startEnd` (com `variant: "start"|"end"`), `memory`, `input`, `process`,
 `output`, `decision`, `subroutine`, `connector`.
+
+**Campos de layout:** `position`, `width`, `height`, `selected` e outros metadados do React Flow são
+opcionais para execução. Eles podem aparecer no JSON exportado pelo construtor, mas não devem ser
+necessários nos JSONs de teste de mesa.
 
 ## Sintaxe de expressões suportada pelo motor
 
@@ -67,12 +75,12 @@ Soma dois inteiros e exibe o resultado. Fluxo linear, sem desvios.
 ```json
 {
   "nodes": [
-    { "id": "n1", "type": "startEnd", "position": { "x": 250, "y": 0 }, "data": { "label": "Início", "variant": "start" } },
-    { "id": "n2", "type": "memory", "position": { "x": 220, "y": 90 }, "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "num1, num2, soma" } ] } },
-    { "id": "n3", "type": "input", "position": { "x": 240, "y": 190 }, "data": { "label": "num1, num2" } },
-    { "id": "n4", "type": "process", "position": { "x": 230, "y": 290 }, "data": { "label": "soma = num1 + num2" } },
-    { "id": "n5", "type": "output", "position": { "x": 240, "y": 390 }, "data": { "label": "'A soma é: ' + soma" } },
-    { "id": "n6", "type": "startEnd", "position": { "x": 250, "y": 490 }, "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "num1, num2, soma" } ] } },
+    { "id": "n3", "type": "input", "data": { "label": "num1, num2" } },
+    { "id": "n4", "type": "process", "data": { "label": "soma = num1 + num2" } },
+    { "id": "n5", "type": "output", "data": { "label": "'A soma é: ' + soma" } },
+    { "id": "n6", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
@@ -96,13 +104,13 @@ Testa se um número é par ou ímpar usando `n % 2 == 0` em um bloco `decision`,
 ```json
 {
   "nodes": [
-    { "id": "n1", "type": "startEnd", "position": { "x": 250, "y": 0 }, "data": { "label": "Início", "variant": "start" } },
-    { "id": "n2", "type": "memory", "position": { "x": 230, "y": 90 }, "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "n" } ] } },
-    { "id": "n3", "type": "input", "position": { "x": 240, "y": 190 }, "data": { "label": "n" } },
-    { "id": "n4", "type": "decision", "position": { "x": 240, "y": 290 }, "data": { "label": "n % 2 == 0" } },
-    { "id": "n5", "type": "output", "position": { "x": 20, "y": 400 }, "data": { "label": "'O número é PAR'" } },
-    { "id": "n6", "type": "output", "position": { "x": 460, "y": 400 }, "data": { "label": "'O número é ÍMPAR'" } },
-    { "id": "n7", "type": "startEnd", "position": { "x": 250, "y": 520 }, "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "n" } ] } },
+    { "id": "n3", "type": "input", "data": { "label": "n" } },
+    { "id": "n4", "type": "decision", "data": { "label": "n % 2 == 0" } },
+    { "id": "n5", "type": "output", "data": { "label": "'O número é PAR'" } },
+    { "id": "n6", "type": "output", "data": { "label": "'O número é ÍMPAR'" } },
+    { "id": "n7", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
@@ -128,16 +136,16 @@ Encontra o maior entre três números usando decisões aninhadas (if dentro de i
 ```json
 {
   "nodes": [
-    { "id": "n1", "type": "startEnd", "position": { "x": 250, "y": 0 }, "data": { "label": "Início", "variant": "start" } },
-    { "id": "n2", "type": "memory", "position": { "x": 230, "y": 90 }, "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "a, b, c, maior" } ] } },
-    { "id": "n3", "type": "input", "position": { "x": 240, "y": 190 }, "data": { "label": "a, b, c" } },
-    { "id": "n4", "type": "process", "position": { "x": 230, "y": 290 }, "data": { "label": "maior = a" } },
-    { "id": "n5", "type": "decision", "position": { "x": 230, "y": 390 }, "data": { "label": "b > maior" } },
-    { "id": "n6", "type": "process", "position": { "x": 460, "y": 480 }, "data": { "label": "maior = b" } },
-    { "id": "n7", "type": "decision", "position": { "x": 230, "y": 580 }, "data": { "label": "c > maior" } },
-    { "id": "n8", "type": "process", "position": { "x": 460, "y": 670 }, "data": { "label": "maior = c" } },
-    { "id": "n9", "type": "output", "position": { "x": 230, "y": 770 }, "data": { "label": "'O maior é: ' + maior" } },
-    { "id": "n10", "type": "startEnd", "position": { "x": 250, "y": 870 }, "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "a, b, c, maior" } ] } },
+    { "id": "n3", "type": "input", "data": { "label": "a, b, c" } },
+    { "id": "n4", "type": "process", "data": { "label": "maior = a" } },
+    { "id": "n5", "type": "decision", "data": { "label": "b > maior" } },
+    { "id": "n6", "type": "process", "data": { "label": "maior = b" } },
+    { "id": "n7", "type": "decision", "data": { "label": "c > maior" } },
+    { "id": "n8", "type": "process", "data": { "label": "maior = c" } },
+    { "id": "n9", "type": "output", "data": { "label": "'O maior é: ' + maior" } },
+    { "id": "n10", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
@@ -167,14 +175,14 @@ Calcula o fatorial de `n` com laço `enquanto` (decisão + aresta de retorno).
 ```json
 {
   "nodes": [
-    { "id": "n1", "type": "startEnd", "position": { "x": 250, "y": 0 }, "data": { "label": "Início", "variant": "start" } },
-    { "id": "n2", "type": "memory", "position": { "x": 230, "y": 90 }, "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "n, fatorial, i" } ] } },
-    { "id": "n3", "type": "input", "position": { "x": 240, "y": 190 }, "data": { "label": "n" } },
-    { "id": "n4", "type": "process", "position": { "x": 230, "y": 290 }, "data": { "label": "fatorial = 1; i = 1" } },
-    { "id": "n5", "type": "decision", "position": { "x": 230, "y": 390 }, "data": { "label": "i <= n" } },
-    { "id": "n6", "type": "process", "position": { "x": 460, "y": 480 }, "data": { "label": "fatorial = fatorial * i; i = i + 1" } },
-    { "id": "n7", "type": "output", "position": { "x": 230, "y": 600 }, "data": { "label": "'O fatorial de ' + n + ' é ' + fatorial" } },
-    { "id": "n8", "type": "startEnd", "position": { "x": 250, "y": 700 }, "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "n, fatorial, i" } ] } },
+    { "id": "n3", "type": "input", "data": { "label": "n" } },
+    { "id": "n4", "type": "process", "data": { "label": "fatorial = 1; i = 1" } },
+    { "id": "n5", "type": "decision", "data": { "label": "i <= n" } },
+    { "id": "n6", "type": "process", "data": { "label": "fatorial = fatorial * i; i = i + 1" } },
+    { "id": "n7", "type": "output", "data": { "label": "'O fatorial de ' + n + ' é ' + fatorial" } },
+    { "id": "n8", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
@@ -201,14 +209,14 @@ Soma números fornecidos até que o valor informado seja `0` (o `0` não altera 
 ```json
 {
   "nodes": [
-    { "id": "n1", "type": "startEnd", "position": { "x": 250, "y": 0 }, "data": { "label": "Início", "variant": "start" } },
-    { "id": "n2", "type": "memory", "position": { "x": 230, "y": 90 }, "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "num, soma" } ] } },
-    { "id": "n3", "type": "process", "position": { "x": 230, "y": 190 }, "data": { "label": "soma = 0" } },
-    { "id": "n4", "type": "input", "position": { "x": 240, "y": 290 }, "data": { "label": "num" } },
-    { "id": "n5", "type": "process", "position": { "x": 230, "y": 390 }, "data": { "label": "soma = soma + num" } },
-    { "id": "n6", "type": "decision", "position": { "x": 230, "y": 490 }, "data": { "label": "num != 0" } },
-    { "id": "n7", "type": "output", "position": { "x": 230, "y": 610 }, "data": { "label": "'A soma é: ' + soma" } },
-    { "id": "n8", "type": "startEnd", "position": { "x": 250, "y": 710 }, "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "num, soma" } ] } },
+    { "id": "n3", "type": "process", "data": { "label": "soma = 0" } },
+    { "id": "n4", "type": "input", "data": { "label": "num" } },
+    { "id": "n5", "type": "process", "data": { "label": "soma = soma + num" } },
+    { "id": "n6", "type": "decision", "data": { "label": "num != 0" } },
+    { "id": "n7", "type": "output", "data": { "label": "'A soma é: ' + soma" } },
+    { "id": "n8", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
@@ -235,13 +243,13 @@ Valida se a nota está no intervalo `[0, 10]` usando uma condição composta com
 ```json
 {
   "nodes": [
-    { "id": "n1", "type": "startEnd", "position": { "x": 250, "y": 0 }, "data": { "label": "Início", "variant": "start" } },
-    { "id": "n2", "type": "memory", "position": { "x": 230, "y": 90 }, "data": { "label": "Memória", "rows": [ { "type": "real", "variables": "nota" } ] } },
-    { "id": "n3", "type": "input", "position": { "x": 240, "y": 190 }, "data": { "label": "nota" } },
-    { "id": "n4", "type": "decision", "position": { "x": 240, "y": 290 }, "data": { "label": "nota >= 0 e nota <= 10" } },
-    { "id": "n5", "type": "output", "position": { "x": 20, "y": 400 }, "data": { "label": "'NOTA VÁLIDA'" } },
-    { "id": "n6", "type": "output", "position": { "x": 460, "y": 400 }, "data": { "label": "'NOTA INVÁLIDA'" } },
-    { "id": "n7", "type": "startEnd", "position": { "x": 250, "y": 520 }, "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "real", "variables": "nota" } ] } },
+    { "id": "n3", "type": "input", "data": { "label": "nota" } },
+    { "id": "n4", "type": "decision", "data": { "label": "nota >= 0 e nota <= 10" } },
+    { "id": "n5", "type": "output", "data": { "label": "'NOTA VÁLIDA'" } },
+    { "id": "n6", "type": "output", "data": { "label": "'NOTA INVÁLIDA'" } },
+    { "id": "n7", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
@@ -267,16 +275,16 @@ Lê `n` valores e calcula a média. Laço com contador `i`.
 ```json
 {
   "nodes": [
-    { "id": "n1", "type": "startEnd", "position": { "x": 250, "y": 0 }, "data": { "label": "Início", "variant": "start" } },
-    { "id": "n2", "type": "memory", "position": { "x": 230, "y": 90 }, "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "n, i" }, { "type": "real", "variables": "valor, soma, media" } ] } },
-    { "id": "n3", "type": "input", "position": { "x": 240, "y": 190 }, "data": { "label": "n" } },
-    { "id": "n4", "type": "process", "position": { "x": 230, "y": 290 }, "data": { "label": "soma = 0; i = 0" } },
-    { "id": "n5", "type": "decision", "position": { "x": 230, "y": 390 }, "data": { "label": "i < n" } },
-    { "id": "n6", "type": "input", "position": { "x": 460, "y": 480 }, "data": { "label": "valor" } },
-    { "id": "n7", "type": "process", "position": { "x": 460, "y": 580 }, "data": { "label": "soma = soma + valor; i = i + 1" } },
-    { "id": "n8", "type": "process", "position": { "x": 230, "y": 700 }, "data": { "label": "media = soma / n" } },
-    { "id": "n9", "type": "output", "position": { "x": 240, "y": 800 }, "data": { "label": "'A média é: ' + media" } },
-    { "id": "n10", "type": "startEnd", "position": { "x": 250, "y": 900 }, "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "n, i" }, { "type": "real", "variables": "valor, soma, media" } ] } },
+    { "id": "n3", "type": "input", "data": { "label": "n" } },
+    { "id": "n4", "type": "process", "data": { "label": "soma = 0; i = 0" } },
+    { "id": "n5", "type": "decision", "data": { "label": "i < n" } },
+    { "id": "n6", "type": "input", "data": { "label": "valor" } },
+    { "id": "n7", "type": "process", "data": { "label": "soma = soma + valor; i = i + 1" } },
+    { "id": "n8", "type": "process", "data": { "label": "media = soma / n" } },
+    { "id": "n9", "type": "output", "data": { "label": "'A média é: ' + media" } },
+    { "id": "n10", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
@@ -306,16 +314,16 @@ Armazena as notas em um vetor `notas[5]` e calcula a média. Usa atribuição in
 ```json
 {
   "nodes": [
-    { "id": "n1", "type": "startEnd", "position": { "x": 250, "y": 0 }, "data": { "label": "Início", "variant": "start" } },
-    { "id": "n2", "type": "memory", "position": { "x": 230, "y": 90 }, "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "n, i" }, { "type": "real", "variables": "notas[5], soma, media" } ] } },
-    { "id": "n3", "type": "input", "position": { "x": 240, "y": 190 }, "data": { "label": "n" } },
-    { "id": "n4", "type": "process", "position": { "x": 230, "y": 290 }, "data": { "label": "soma = 0; i = 0" } },
-    { "id": "n5", "type": "decision", "position": { "x": 230, "y": 390 }, "data": { "label": "i < n" } },
-    { "id": "n6", "type": "input", "position": { "x": 460, "y": 480 }, "data": { "label": "nota" } },
-    { "id": "n7", "type": "process", "position": { "x": 460, "y": 580 }, "data": { "label": "notas[i] = nota; soma = soma + nota; i = i + 1" } },
-    { "id": "n8", "type": "process", "position": { "x": 230, "y": 700 }, "data": { "label": "media = soma / n" } },
-    { "id": "n9", "type": "output", "position": { "x": 240, "y": 800 }, "data": { "label": "'A média das notas é: ' + media" } },
-    { "id": "n10", "type": "startEnd", "position": { "x": 250, "y": 900 }, "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "n, i" }, { "type": "real", "variables": "notas[5], soma, media" } ] } },
+    { "id": "n3", "type": "input", "data": { "label": "n" } },
+    { "id": "n4", "type": "process", "data": { "label": "soma = 0; i = 0" } },
+    { "id": "n5", "type": "decision", "data": { "label": "i < n" } },
+    { "id": "n6", "type": "input", "data": { "label": "nota" } },
+    { "id": "n7", "type": "process", "data": { "label": "notas[i] = nota; soma = soma + nota; i = i + 1" } },
+    { "id": "n8", "type": "process", "data": { "label": "media = soma / n" } },
+    { "id": "n9", "type": "output", "data": { "label": "'A média das notas é: ' + media" } },
+    { "id": "n10", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
@@ -346,11 +354,11 @@ Módulo de Execução. Útil para validar como o bloco aparece no trace/explain/
 ```json
 {
   "nodes": [
-    { "id": "n1", "type": "startEnd", "position": { "x": 250, "y": 0 }, "data": { "label": "Início", "variant": "start" } },
-    { "id": "n2", "type": "memory", "position": { "x": 230, "y": 90 }, "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "n" } ] } },
-    { "id": "n3", "type": "input", "position": { "x": 240, "y": 190 }, "data": { "label": "n" } },
-    { "id": "n4", "type": "subroutine", "position": { "x": 240, "y": 290 }, "data": { "label": "fatorial(n)" } },
-    { "id": "n5", "type": "startEnd", "position": { "x": 250, "y": 390 }, "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "n" } ] } },
+    { "id": "n3", "type": "input", "data": { "label": "n" } },
+    { "id": "n4", "type": "subroutine", "data": { "label": "fatorial(n)" } },
+    { "id": "n5", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
