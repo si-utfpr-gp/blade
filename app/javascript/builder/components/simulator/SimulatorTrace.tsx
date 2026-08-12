@@ -329,16 +329,16 @@ export default function SimulatorTrace() {
               Saída do Algoritmo
             </span>
           </div>
-          <div className="bg-foreground/95 rounded-lg p-3 min-h-15 font-mono">
+          <div className="bg-slate-950 rounded-lg p-3 min-h-15 font-mono border border-slate-800">
             {outputs.length === 0 ? (
-              <p className="text-[11px] text-muted/50 italic">
+              <p className="text-[11px] text-slate-400 italic">
                 Aguardando saída...
               </p>
             ) : (
               <div className="space-y-0.5">
                 {outputs.map((out, i) => (
-                  <div key={i} className="text-xs text-secondary-foreground">
-                    <span className="text-secondary">{">"}</span> {out}
+                  <div key={i} className="text-xs text-emerald-100">
+                    <span className="text-emerald-400">{">"}</span> <span className="text-emerald-100">{out}</span>
                   </div>
                 ))}
               </div>
