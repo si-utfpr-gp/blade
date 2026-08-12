@@ -1,9 +1,18 @@
 import type { IMemory } from "../interfaces/memory"
 import { detectDivisionByZero, checkValidExpression, buildDivByZeroError } from "./errors"
 
+/**
+ * Evaluates the expression subset used by diagram blocks.
+ *
+ * Expressions are first resolved from Portugol-like syntax and memory values
+ * into JavaScript expressions, then evaluated. This is appropriate for the
+ * local educational simulator, but should be sandboxed/replaced before running
+ * untrusted external input in production.
+ */
 export class ExprEvaluator {
   constructor(private memory: IMemory) {}
 
+  /** Replaces variables and Portugol operators with executable JavaScript syntax. */
   resolve(expr: string): string {
     let out = ""
     let i = 0
@@ -83,6 +92,7 @@ export class ExprEvaluator {
     return out
   }
 
+  /** Executes one or more assignments separated by ';' and returns a change log. */
   assign(expr: string, blockId: string | null): string[] {
     return expr.split(";").filter(Boolean).map(s => {
       const [target, ...rest] = s.trim().split("=")

@@ -3,6 +3,15 @@ import type { IExecutionStep } from "../interfaces/execution"
 
 type Lang = "js" | "ts"
 
+/**
+ * Converts the logical diagram graph into readable JavaScript/TypeScript.
+ *
+ * The generator intentionally ignores visual metadata such as node positions.
+ * It supports the canonical structures used by the builder/tests: sequential
+ * flow, if/else branches, simple while loops represented by a decision whose
+ * branch reaches the same decision again, typed inputs, arrays, and Portugol
+ * boolean operators.
+ */
 export class CodeGenerator {
   private varTypes = new Map<string, string>()
 
@@ -41,6 +50,7 @@ export class CodeGenerator {
     return this.compact(lines).join("\n")
   }
 
+  /** Walks the graph from one node until the end or a known merge/loop point. */
   private emitPath(
     nodeId: string | null,
     lines: string[],
@@ -74,6 +84,7 @@ export class CodeGenerator {
     this.emitPath(this.graph.getNextNode(nodeId), lines, indent, lang, emitted, stopAt)
   }
 
+  /** Emits either an if/else or a while when one decision branch loops back. */
   private emitDecision(
     node: IParserNode,
     lines: string[],
@@ -193,6 +204,7 @@ export class CodeGenerator {
     })
   }
 
+  /** Translates the subset of Portugol-style expressions supported by the engine to JS. */
   private translateExpression(expr: string): string {
     let out = ""
     let i = 0
@@ -269,6 +281,7 @@ export class CodeGenerator {
     }
   }
 
+  /** Returns true when a branch eventually reaches a target node; used for loop detection. */
   private pathReaches(from: string | null, target: string, seen = new Set<string>()): boolean {
     if (!from) return false
     if (from === target) return true
@@ -281,6 +294,7 @@ export class CodeGenerator {
     return false
   }
 
+  /** Finds a simple convergence node shared by the yes/no branches of a decision. */
   private findMerge(a: string | null, b: string | null): string | null {
     if (!a || !b) return null
     const aOrder = this.reachableOrder(a)

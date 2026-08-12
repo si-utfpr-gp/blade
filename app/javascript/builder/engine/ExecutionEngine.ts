@@ -6,6 +6,13 @@ import { SnapshotManager } from "./SnapshotManager";
 import { ExplanationGenerator } from "./ExplanationGenerator";
 import { classifyError } from "./errors";
 
+/**
+ * Stateful interpreter for a parsed diagram.
+ *
+ * It walks the graph one executable block at a time, skips declarative/routing
+ * blocks (`memory` and `connector`), updates memory, stores snapshots, and
+ * pauses when an `input` block needs a value from the UI.
+ */
 export class ExecutionEngine {
     private memory = new MemoryManager();
     private expr = new ExprEvaluator(this.memory);
@@ -31,26 +38,31 @@ export class ExecutionEngine {
 
     public step(input?: string): IExecutionStep | null {
         if (this._done || !this.current) return null
-        if (this.snapshots.size >= this.max) { this._err = "Limite de passos excedido"; return null }
-        while (this.current) {
-            const node = this.graph.nodes.get(this.current)
-            if (!node) { this._err = `Bloco '${this.current}' não encontrado`; return null }
-            if (node.type === "memory") { this.processMemory(node); this.current = this.graph.getNextNode(this.current); continue }
-            if (node.type === "connector") { this.current = this.graph.getNextNode(this.current); continue }
-            break
+        if (this.snapshots.size >= this.max) {
+            this._err = "Limite de passos excedido"
+            return null
         }
+
+        this.skipNonExecutableBlocks()
         if (!this.current) return null
+
         const node = this.graph.nodes.get(this.current)
-        if (!node) { this._err = `Bloco '${this.current}' não encontrado`; return null }
+        if (!node) {
+            this._err = `Bloco '${this.current}' não encontrado`
+            return null
+        }
+
         try {
-            const s = this.exec(node, input)
-            if (s && !(s.waitingForInput && s.inputEntered === false)) { this.snapshots.store(s); }
-            if (s?.waitingForInput) {
-                return s
-            }
+            const step = this.exec(node, input)
+            const isOnlyAskingForInput = step?.waitingForInput && step.inputEntered === false
+            if (step && !isOnlyAskingForInput) this.snapshots.store(step)
+            if (step?.waitingForInput) return step
+
             this.current = this.next(node)
-            if (this.current === null && node.type === "startEnd" && node.variant === "end") this._done = true
-            return s
+            if (this.current === null && node.type === "startEnd" && node.variant === "end") {
+                this._done = true
+            }
+            return step
         } catch (e) {
           const structured = classifyError(e, this.current)
           this._err = structured.message
@@ -81,7 +93,10 @@ export class ExecutionEngine {
 
     public get currentStepIndex(): number { return this.snapshots.currentIndex; }
 
-    public getCurretnOutputs(): string[] { return this.outputs; }
+    public getCurrentOutputs(): string[] { return this.outputs; }
+
+    /** @deprecated Use getCurrentOutputs(). Kept to avoid breaking older callers. */
+    public getCurretnOutputs(): string[] { return this.getCurrentOutputs(); }
 
     public getCurrentState() {
         return {
@@ -94,25 +109,26 @@ export class ExecutionEngine {
     }
 
     private advance(): IExecutionStep | null {
-        while (this.current) {
-            const node = this.graph.nodes.get(this.current)
-            if (!node) break
-            if (node.type === "memory") { this.processMemory(node); this.current = this.graph.getNextNode(this.current); continue }
-            if (node.type === "connector") { this.current = this.graph.getNextNode(this.current); continue }
-            try {
-                const s = this.exec(node)
-                if (s) { this.snapshots.store(s); }
-                this.current = this.next(node); return s
+        this.skipNonExecutableBlocks()
+        if (!this.current) return null
+
+        const node = this.graph.nodes.get(this.current)
+        if (!node) return null
+
+        try {
+            const step = this.exec(node)
+            if (step) this.snapshots.store(step)
+            this.current = this.next(node)
+            return step
         } catch (e) {
           const structured = classifyError(e, this.current)
           this._err = structured.message
           throw e
         }
-        }
-        return null
     }
 
 
+    /** Validates raw user input according to the type declared in a memory block. */
     private validateInput(value: string, type: string): string | null {
       switch (type) {
         case "inteiro": {
@@ -136,6 +152,7 @@ export class ExecutionEngine {
       }
     }
 
+    /** Executes one block and returns the UI-facing step/snapshot data for it. */
     private exec(node: IParserNode, input?: string): IExecutionStep | null {
         const base = (): IExecutionStep => ({
             nodeId: node.id, nodeLabel: node.label ?? "", nodeType: node.type,
@@ -268,8 +285,34 @@ export class ExecutionEngine {
         }
     }
 
+    private skipNonExecutableBlocks(): void {
+        while (this.current) {
+            const node = this.graph.nodes.get(this.current)
+            if (!node) {
+                this._err = `Bloco '${this.current}' não encontrado`
+                return
+            }
+            if (node.type === "memory") {
+                this.processMemory(node)
+                this.current = this.graph.getNextNode(this.current)
+                continue
+            }
+            if (node.type === "connector") {
+                this.current = this.graph.getNextNode(this.current)
+                continue
+            }
+            return
+        }
+    }
+
     private processMemory(node: IParserNode): void {
-        node.rows?.forEach(r => r.variables.split(",").map(v => v.trim()).forEach(v => this.memory.declare(v, r.type)))
+        node.rows?.forEach(row => {
+            row.variables
+                .split(",")
+                .map(variable => variable.trim())
+                .filter(Boolean)
+                .forEach(variable => this.memory.declare(variable, row.type))
+        })
     }
 
     private next(node: IParserNode): string | null {
