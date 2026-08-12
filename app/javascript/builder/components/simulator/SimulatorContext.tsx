@@ -3,6 +3,7 @@ import {
   useContext,
   useReducer,
   useCallback,
+  useEffect,
   useState,
   useRef,
   type ReactNode,
@@ -84,29 +85,37 @@ export function SimulatorProvider({
 
   const executeNextStep = useCallback((input?: string) => {
     const engine = engineRef.current;
-    if (!engine) return;
-
-    const step = engine.step(input);
-    if (!step) {
-      dispatch({ type: "FINISH" });
+    if (!engine) {
+      dispatch({ type: "SET_ERROR", error: "Nenhum diagrama carregado." });
       return;
     }
 
-    if (step.waitingForInput) {
-      if (step.inputEntered) {
+    try {
+      const step = engine.step(input);
+      if (!step) {
+        dispatch({ type: "FINISH" });
+        return;
+      }
+
+      if (step.waitingForInput) {
+        if (step.inputEntered) {
+          dispatch({ type: "STEP_FORWARD", step });
+        }
+        dispatch({
+          type: "INPUT_REQUESTED",
+          prompt: step.inputPrompt ?? `Valor para '${step.nodeLabel}':`,
+          variable: step.inputVariable ?? step.nodeLabel,
+          inputType: step.inputType ?? "caractere",
+        });
+      } else {
+        if (step.output !== undefined) {
+          dispatch({ type: "SET_OUTPUTS", outputs: [...state.outputs, step.output] });
+        }
         dispatch({ type: "STEP_FORWARD", step });
       }
-      dispatch({
-        type: "INPUT_REQUESTED",
-        prompt: step.inputPrompt ?? `Valor para '${step.nodeLabel}':`,
-        variable: step.inputVariable ?? step.nodeLabel,
-        inputType: step.inputType ?? "caractere",
-      });
-    } else {
-      if (step.output !== undefined) {
-        dispatch({ type: "SET_OUTPUTS", outputs: [...state.outputs, step.output] });
-      }
-      dispatch({ type: "STEP_FORWARD", step });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Erro durante a execução.";
+      dispatch({ type: "SET_ERROR", error: msg });
     }
   }, [state.outputs]);
 
@@ -136,6 +145,7 @@ export function SimulatorProvider({
 
   const cancelInput = useCallback(() => {
     dispatch({ type: "SUBMIT_INPUT" });
+    dispatch({ type: "STOP" });
     callbacks?.onInputCancel?.();
   }, [callbacks]);
 
@@ -181,6 +191,24 @@ export function SimulatorProvider({
     engineRef.current?.goToStep(index)
     dispatch({ type: "GO_TO_STEP", index })
   }, [state.steps.length])
+
+  useEffect(() => {
+    if (!state.isRunning || state.awaitingInput || state.isFinished) return;
+
+    const timer = window.setTimeout(() => {
+      executeNextStep();
+    }, state.speed);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    state.isRunning,
+    state.awaitingInput,
+    state.isFinished,
+    state.speed,
+    state.currentStepIndex,
+    state.steps.length,
+    executeNextStep,
+  ]);
 
   return (
     <SimulatorContext.Provider

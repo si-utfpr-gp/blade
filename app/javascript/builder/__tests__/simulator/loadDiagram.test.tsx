@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, vi } from "vitest"
 import { useState } from "react"
-import { render, screen, fireEvent } from "@testing-library/react"
+import { render, screen, fireEvent, act } from "@testing-library/react"
 import type { Node, Edge } from "@xyflow/react"
 import { SimulatorProvider, useSimulator } from "../../components/simulator/SimulatorContext"
 import SimulatorControl from "../../components/simulator/SimulatorControl"
@@ -121,7 +121,39 @@ describe("input multi-valor (teste de mesa real)", () => {
     expect(screen.getByText(/Histórico — Passo 2/)).toBeInTheDocument()
 
     submitValue("20")
-    expect(screen.queryByText(/Valor para/)).not.toBeInTheDocument()
+    expect(screen.queryByText("Entrada de Dados")).not.toBeInTheDocument()
     expect(screen.getByText(/Histórico — Passo 3/)).toBeInTheDocument()
+  })
+
+
+  it("executa automaticamente até input, retoma após submit e respeita timer", async () => {
+    vi.useFakeTimers()
+    try {
+      renderInteractive(sumNodes, sumEdges)
+      fireEvent.click(screen.getByRole("button", { name: "carregar" }))
+      fireEvent.click(screen.getByRole("button", { name: /iniciar execução/i }))
+
+      fireEvent.click(screen.getByTitle("Executar tudo"))
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000)
+      })
+      expect(screen.getByText(/Valor para 'num1':/)).toBeInTheDocument()
+
+      submitValue("10")
+      expect(screen.getByText(/Valor para 'num2':/)).toBeInTheDocument()
+
+      submitValue("20")
+      expect(screen.queryByText("Entrada de Dados")).not.toBeInTheDocument()
+
+      for (let i = 0; i < 3; i++) {
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(1000)
+        })
+      }
+      expect(screen.getByText(/A soma é: 30/)).toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
