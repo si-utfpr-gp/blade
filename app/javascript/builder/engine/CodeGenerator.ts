@@ -1,141 +1,401 @@
 import type { IParserData, IParserNode } from "../parser/types"
 import type { IExecutionStep } from "../interfaces/execution"
 
-export class CodeGenerator {
-  constructor(private graph: IParserData) {}
+type Lang = "js" | "ts"
 
-  generate(options?: { lang?: 'js' | 'ts' }): string {
-    const lang = options?.lang ?? 'js'
-    const lines: string[] = []
-    const visited = new Set<string>()
-    this.traverse(this.graph.startNodeId, lines, 0, lang, visited)
-    return lines.join("\n")
+/**
+ * Converts the logical diagram graph into readable JavaScript/TypeScript.
+ *
+ * The generator intentionally ignores visual metadata such as node positions.
+ * It supports the canonical structures used by the builder/tests: sequential
+ * flow, if/else branches, simple while loops represented by a decision whose
+ * branch reaches the same decision again, typed inputs, arrays, and Portugol
+ * boolean operators.
+ */
+export class CodeGenerator {
+  private varTypes = new Map<string, string>()
+
+  constructor(private graph: IParserData) {
+    this.collectDeclaredTypes()
   }
 
-  generateFromSteps(steps: IExecutionStep[], options?: { lang?: 'js' | 'ts' }): string {
-    const lang = options?.lang ?? 'js'
+  generate(options?: { lang?: Lang }): string {
+    const lang = options?.lang ?? "js"
     const lines: string[] = []
-    for (const [id, node] of this.graph.nodes) {
+    this.emitPath(this.graph.startNodeId, lines, 0, lang, new Set())
+    return this.compact(lines).join("\n")
+  }
+
+  generateFromSteps(steps: IExecutionStep[], options?: { lang?: Lang }): string {
+    const lang = options?.lang ?? "js"
+    const lines: string[] = []
+    const emittedMemory = new Set<string>()
+
+    for (const [, node] of this.graph.nodes) {
       if (node.type === "memory" && node.rows) {
-        const memLine = this.translateMemory(node, lang, 0)
-        if (memLine) lines.push(memLine)
+        const memoryLines = this.translateMemory(node, lang, 0)
+        if (memoryLines.length > 0) {
+          emittedMemory.add(node.id)
+          lines.push(...memoryLines)
+        }
       }
     }
+
     for (const step of steps) {
       const node = this.graph.nodes.get(step.nodeId)
-      if (!node) continue
-      const line = this.translate(node, lang, 0)
-      if (line !== null && node.type !== "memory") {
-        lines.push(line)
-      }
+      if (!node || emittedMemory.has(node.id)) continue
+      lines.push(...this.translate(node, lang, 0))
     }
-    return lines.join("\n")
+
+    return this.compact(lines).join("\n")
   }
 
-  private traverse(
-    nodeId: string | null, lines: string[], indent: number,
-    lang: 'js' | 'ts', visited: Set<string>
+  /** Walks the graph from one node until the end or a known merge/loop point. */
+  private emitPath(
+    nodeId: string | null,
+    lines: string[],
+    indent: number,
+    lang: Lang,
+    emitted: Set<string>,
+    stopAt?: string | null,
   ): void {
-    if (!nodeId || visited.has(nodeId)) return
+    if (!nodeId || nodeId === stopAt) return
+    if (emitted.has(nodeId)) {
+      lines.push(`${this.indent(indent)}// fluxo retorna para ${nodeId}`)
+      return
+    }
+
     const node = this.graph.nodes.get(nodeId)
     if (!node) return
 
     if (node.type === "connector") {
-      this.traverse(this.graph.getNextNode(nodeId), lines, indent, lang, visited)
+      this.emitPath(this.graph.getNextNode(nodeId), lines, indent, lang, emitted, stopAt)
       return
     }
-
-    visited.add(nodeId)
 
     if (node.type === "decision") {
-      const ind = "  ".repeat(indent)
-      lines.push(`${ind}if (${node.label ?? ""}) {`)
-      const yesNext = this.graph.getNextNode(nodeId, "yes")
-      this.traverse(yesNext, lines, indent + 1, lang, visited)
-      const noNext = this.graph.getNextNode(nodeId, "no")
-      if (noNext) {
-        lines.push(`${ind}} else {`)
-        this.traverse(noNext, lines, indent + 1, lang, visited)
-      }
-      lines.push(`${ind}}`)
+      emitted.add(nodeId)
+      this.emitDecision(node, lines, indent, lang, emitted, stopAt)
       return
     }
 
-    const line = this.translate(node, lang, indent)
-    if (line !== null) lines.push(line)
-
-    this.traverse(this.graph.getNextNode(nodeId), lines, indent, lang, visited)
+    emitted.add(nodeId)
+    lines.push(...this.translate(node, lang, indent))
+    this.emitPath(this.graph.getNextNode(nodeId), lines, indent, lang, emitted, stopAt)
   }
 
-  private translate(node: IParserNode, lang: 'js' | 'ts', indent: number): string | null {
-    const ind = "  ".repeat(indent)
+  /** Emits either an if/else or a while when one decision branch loops back. */
+  private emitDecision(
+    node: IParserNode,
+    lines: string[],
+    indent: number,
+    lang: Lang,
+    emitted: Set<string>,
+    stopAt?: string | null,
+  ): void {
+    const yesNext = this.graph.getNextNode(node.id, "yes")
+    const noNext = this.graph.getNextNode(node.id, "no")
+    const condition = this.translateExpression(node.label ?? "false")
+    const ind = this.indent(indent)
+
+    if (yesNext && this.pathReaches(yesNext, node.id)) {
+      lines.push(`${ind}while (${condition}) {`)
+      this.emitPath(yesNext, lines, indent + 1, lang, emitted, node.id)
+      lines.push(`${ind}}`)
+      this.emitPath(noNext, lines, indent, lang, emitted, stopAt)
+      return
+    }
+
+    if (noNext && this.pathReaches(noNext, node.id)) {
+      lines.push(`${ind}while (!(${condition})) {`)
+      this.emitPath(noNext, lines, indent + 1, lang, emitted, node.id)
+      lines.push(`${ind}}`)
+      this.emitPath(yesNext, lines, indent, lang, emitted, stopAt)
+      return
+    }
+
+    const merge = this.findMerge(yesNext, noNext)
+    lines.push(`${ind}if (${condition}) {`)
+    this.emitPath(yesNext, lines, indent + 1, lang, emitted, merge)
+
+    if (noNext) {
+      lines.push(`${ind}} else {`)
+      this.emitPath(noNext, lines, indent + 1, lang, emitted, merge)
+    }
+
+    lines.push(`${ind}}`)
+    this.emitPath(merge, lines, indent, lang, emitted, stopAt)
+  }
+
+  private translate(node: IParserNode, lang: Lang, indent: number): string[] {
     switch (node.type) {
       case "startEnd":
-        if (node.variant === "start") return `${ind}// Início do algoritmo`
-        if (node.variant === "end") return `${ind}// Fim do algoritmo`
-        return null
+        if (node.variant === "start") return [`${this.indent(indent)}// Início do algoritmo`]
+        if (node.variant === "end") return [`${this.indent(indent)}// Fim do algoritmo`]
+        return []
 
       case "memory":
         return this.translateMemory(node, lang, indent)
 
-      case "input": {
-        const vars = (node.label ?? "").split(",").map(s => s.trim()).filter(Boolean)
-        const stmts = vars.map(v => {
-          if (lang === "ts") return `${ind}${v} = parseInt(prompt("") || "0");`
-          return `${ind}${v} = parseInt(prompt(""));`
-        })
-        return stmts.join("\n")
-      }
+      case "input":
+        return this.translateInput(node, lang, indent)
 
-      case "output": {
-        return `${ind}console.log(${node.label ?? ""});`
-      }
+      case "output":
+        return [`${this.indent(indent)}console.log(${this.translateExpression(node.label ?? "\"\"")});`]
 
-      case "process": {
-        const stmts = (node.label ?? "").split(";").filter(Boolean).map(s => `${ind}${s.trim()};`)
-        return stmts.join("\n")
-      }
+      case "process":
+        return this.translateProcess(node, indent)
 
       case "subroutine": {
-        return `${ind}${node.label ?? ""};`
+        const label = (node.label ?? "").trim()
+        return label ? [`${this.indent(indent)}${this.ensureSemicolon(label)}`] : []
       }
 
       default:
-        return null
+        return []
     }
   }
 
-  private translateMemory(node: IParserNode, lang: 'js' | 'ts', indent: number): string | null {
-    if (!node.rows?.length) return null
-    const ind = "  ".repeat(indent)
-    const parts: string[] = []
+  private translateMemory(node: IParserNode, lang: Lang, indent: number): string[] {
+    if (!node.rows?.length) return []
+    const ind = this.indent(indent)
+    const lines: string[] = []
+
     for (const row of node.rows) {
-      for (const v of row.variables.split(",").map(s => s.trim())) {
-        const arrayMatch = v.match(/^(\w+)\[(\d+)\]$/)
+      for (const raw of row.variables.split(",").map(s => s.trim()).filter(Boolean)) {
+        const arrayMatch = raw.match(/^(\w+)\[(\d+)\]$/)
         if (arrayMatch) {
-          const [_, name, size] = arrayMatch
-          if (lang === "ts") {
-            parts.push(`${ind}let ${name}: ${this.typeToTS(row.type)}[] = new Array(${size});`)
-          } else {
-            parts.push(`${ind}let ${name} = new Array(${size});`)
-          }
+          const [, name, size] = arrayMatch
+          const tsType = this.typeToTS(row.type)
+          lines.push(lang === "ts"
+            ? `${ind}let ${name}: ${tsType}[] = new Array(${size});`
+            : `${ind}let ${name} = new Array(${size});`)
         } else {
-          if (lang === "ts") {
-            parts.push(`${ind}let ${v}: ${this.typeToTS(row.type)};`)
-          } else {
-            parts.push(`${ind}let ${v};`)
-          }
+          lines.push(lang === "ts"
+            ? `${ind}let ${raw}: ${this.typeToTS(row.type)};`
+            : `${ind}let ${raw};`)
         }
       }
     }
-    return parts.join("\n") || null
+
+    return lines
+  }
+
+  private translateInput(node: IParserNode, _lang: Lang, indent: number): string[] {
+    const ind = this.indent(indent)
+    const vars = (node.label ?? "").split(",").map(s => s.trim()).filter(Boolean)
+
+    return vars.map(variable => {
+      const rawInput = `(prompt("Valor para ${variable}:") ?? "")`
+      const type = this.varTypes.get(this.baseVarName(variable)) ?? "caractere"
+      return `${ind}${variable} = ${this.parseInputValue(rawInput, type)};`
+    })
+  }
+
+  private translateProcess(node: IParserNode, indent: number): string[] {
+    const ind = this.indent(indent)
+    return this.splitStatements(node.label ?? "").map(statement => {
+      const assignmentIndex = this.findAssignmentIndex(statement)
+      if (assignmentIndex < 0) return `${ind}${this.ensureSemicolon(this.translateExpression(statement))}`
+
+      const target = statement.slice(0, assignmentIndex).trim()
+      const source = statement.slice(assignmentIndex + 1).trim()
+      return `${ind}${target} = ${this.translateExpression(source)};`
+    })
+  }
+
+  /** Translates the subset of Portugol-style expressions supported by the engine to JS. */
+  private translateExpression(expr: string): string {
+    let out = ""
+    let i = 0
+
+    while (i < expr.length) {
+      const ch = expr[i]
+      if (ch === '"' || ch === "'") {
+        const q = ch
+        let j = i + 1
+        while (j < expr.length) {
+          if (expr[j] === "\\") {
+            j += 2
+            continue
+          }
+          if (expr[j] === q) break
+          j++
+        }
+        out += expr.slice(i, Math.min(j + 1, expr.length))
+        i = Math.min(j + 1, expr.length)
+        continue
+      }
+
+      const word = expr.slice(i).match(/^[a-zA-Z_]\w*/)?.[0]
+      if (word) {
+        const lower = word.toLowerCase()
+        const keywords: Record<string, string> = {
+          verdadeiro: "true",
+          falso: "false",
+          e: "&&",
+          ou: "||",
+          nao: "!",
+        }
+        out += keywords[lower] ?? word
+        i += word.length
+        continue
+      }
+
+      const rest = expr.slice(i)
+      if (rest.startsWith(">=")) { out += ">="; i += 2; continue }
+      if (rest.startsWith("<=")) { out += "<="; i += 2; continue }
+      if (rest.startsWith("!=")) { out += "!=="; i += 2; continue }
+      if (rest.startsWith("==")) { out += "==="; i += 2; continue }
+      if (rest.startsWith("=") && !rest.startsWith("=>")) { out += "==="; i += 1; continue }
+
+      out += ch
+      i++
+    }
+
+    return out.trim()
+  }
+
+  private parseInputValue(rawName: string, type: string): string {
+    switch (type) {
+      case "inteiro":
+        return `Number.parseInt(${rawName}, 10)`
+      case "real":
+        return `Number.parseFloat(${rawName})`
+      case "logico":
+        return `["verdadeiro", "v", "true", "1"].includes(${rawName}.trim().toLowerCase())`
+      case "caractere":
+      default:
+        return rawName
+    }
+  }
+
+  private collectDeclaredTypes(): void {
+    for (const [, node] of this.graph.nodes) {
+      if (node.type !== "memory") continue
+      for (const row of node.rows ?? []) {
+        for (const raw of row.variables.split(",").map(s => s.trim()).filter(Boolean)) {
+          this.varTypes.set(this.baseVarName(raw), row.type)
+        }
+      }
+    }
+  }
+
+  /** Returns true when a branch eventually reaches a target node; used for loop detection. */
+  private pathReaches(from: string | null, target: string, seen = new Set<string>()): boolean {
+    if (!from) return false
+    if (from === target) return true
+    if (seen.has(from)) return false
+    seen.add(from)
+
+    for (const edge of this.graph.getOutgoing(from)) {
+      if (this.pathReaches(edge.target, target, seen)) return true
+    }
+    return false
+  }
+
+  /** Finds a simple convergence node shared by the yes/no branches of a decision. */
+  private findMerge(a: string | null, b: string | null): string | null {
+    if (!a || !b) return null
+    const aOrder = this.reachableOrder(a)
+    const bReachable = new Set(this.reachableOrder(b))
+    return aOrder.find(id => bReachable.has(id)) ?? null
+  }
+
+  private reachableOrder(start: string): string[] {
+    const result: string[] = []
+    const seen = new Set<string>()
+    const queue = [start]
+
+    while (queue.length > 0) {
+      const id = queue.shift()
+      if (!id || seen.has(id)) continue
+      seen.add(id)
+      result.push(id)
+      for (const edge of this.graph.getOutgoing(id)) queue.push(edge.target)
+    }
+
+    return result
+  }
+
+  private splitStatements(input: string): string[] {
+    const result: string[] = []
+    let current = ""
+    let quote: string | null = null
+
+    for (let i = 0; i < input.length; i++) {
+      const ch = input[i]
+      if (quote) {
+        current += ch
+        if (ch === "\\") {
+          current += input[++i] ?? ""
+          continue
+        }
+        if (ch === quote) quote = null
+        continue
+      }
+
+      if (ch === '"' || ch === "'") {
+        quote = ch
+        current += ch
+        continue
+      }
+
+      if (ch === ";") {
+        if (current.trim()) result.push(current.trim())
+        current = ""
+        continue
+      }
+
+      current += ch
+    }
+
+    if (current.trim()) result.push(current.trim())
+    return result
+  }
+
+  private findAssignmentIndex(statement: string): number {
+    let quote: string | null = null
+    for (let i = 0; i < statement.length; i++) {
+      const ch = statement[i]
+      if (quote) {
+        if (ch === "\\") { i++; continue }
+        if (ch === quote) quote = null
+        continue
+      }
+      if (ch === '"' || ch === "'") { quote = ch; continue }
+      if (ch !== "=") continue
+      if ([">", "<", "!", "="].includes(statement[i - 1] ?? "")) continue
+      if (statement[i + 1] === "=" || statement[i + 1] === ">") continue
+      return i
+    }
+    return -1
+  }
+
+  private ensureSemicolon(statement: string): string {
+    const trimmed = statement.trim()
+    return trimmed.endsWith(";") ? trimmed : `${trimmed};`
+  }
+
+  private baseVarName(name: string): string {
+    return name.trim().replace(/\[.*\]$/, "")
   }
 
   private typeToTS(type: string): string {
     const map: Record<string, string> = {
-      inteiro: "number", real: "number",
-      caractere: "string", logico: "boolean",
+      inteiro: "number",
+      real: "number",
+      caractere: "string",
+      logico: "boolean",
     }
-    return map[type] ?? "any"
+    return map[type] ?? "unknown"
+  }
+
+  private indent(level: number): string {
+    return "  ".repeat(level)
+  }
+
+  private compact(lines: string[]): string[] {
+    return lines.filter(line => line.trim().length > 0)
   }
 }

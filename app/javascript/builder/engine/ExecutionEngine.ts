@@ -1,4 +1,4 @@
-import type { IVariable, IExecutionStep, IExplanationContext } from "../interfaces/execution";
+import type { IExecutionStep } from "../interfaces/execution";
 import type { IParserData, IParserNode } from "../parser/types";
 import { ExprEvaluator } from "./ExprEvaluator";
 import { MemoryManager } from "./MemoryManager";
@@ -6,6 +6,13 @@ import { SnapshotManager } from "./SnapshotManager";
 import { ExplanationGenerator } from "./ExplanationGenerator";
 import { classifyError } from "./errors";
 
+/**
+ * Stateful interpreter for a parsed diagram.
+ *
+ * It walks the graph one executable block at a time, skips declarative/routing
+ * blocks (`memory` and `connector`), updates memory, stores snapshots, and
+ * pauses when an `input` block needs a value from the UI.
+ */
 export class ExecutionEngine {
     private memory = new MemoryManager();
     private expr = new ExprEvaluator(this.memory);
@@ -16,6 +23,7 @@ export class ExecutionEngine {
     private _done = false;
     private current: string | null = null;
     private max = 10000;
+    private pendingInput: { nodeId: string; names: string[]; index: number } | null = null;
 
     public constructor(private graph: IParserData) { }
 
@@ -30,26 +38,31 @@ export class ExecutionEngine {
 
     public step(input?: string): IExecutionStep | null {
         if (this._done || !this.current) return null
-        if (this.snapshots.size >= this.max) { this._err = "Limite de passos excedido"; return null }
-        while (this.current) {
-            const node = this.graph.nodes.get(this.current)
-            if (!node) { this._err = `Bloco '${this.current}' não encontrado`; return null }
-            if (node.type === "memory") { this.processMemory(node); this.current = this.graph.getNextNode(this.current); continue }
-            if (node.type === "connector") { this.current = this.graph.getNextNode(this.current); continue }
-            break
+        if (this.snapshots.size >= this.max) {
+            this._err = "Limite de passos excedido"
+            return null
         }
+
+        this.skipNonExecutableBlocks()
         if (!this.current) return null
+
         const node = this.graph.nodes.get(this.current)
-        if (!node) { this._err = `Bloco '${this.current}' não encontrado`; return null }
+        if (!node) {
+            this._err = `Bloco '${this.current}' não encontrado`
+            return null
+        }
+
         try {
-            const s = this.exec(node, input)
-            if (s) { this.snapshots.store(s); }
-            if (s?.waitingForInput) {
-                return s
-            }
+            const step = this.exec(node, input)
+            const isOnlyAskingForInput = step?.waitingForInput && step.inputEntered === false
+            if (step && !isOnlyAskingForInput) this.snapshots.store(step)
+            if (step?.waitingForInput) return step
+
             this.current = this.next(node)
-            if (this.current === null && node.type === "startEnd" && node.variant === "end") this._done = true
-            return s
+            if (this.current === null && node.type === "startEnd" && node.variant === "end") {
+                this._done = true
+            }
+            return step
         } catch (e) {
           const structured = classifyError(e, this.current)
           this._err = structured.message
@@ -73,13 +86,17 @@ export class ExecutionEngine {
         this._err = null;
         this._done = false;
         this.current = null;
+        this.pendingInput = null;
     }
 
     public getSteps(): IExecutionStep[] { return this.snapshots.allSteps as IExecutionStep[]; }
 
     public get currentStepIndex(): number { return this.snapshots.currentIndex; }
 
-    public getCurretnOutputs(): string[] { return this.outputs; }
+    public getCurrentOutputs(): string[] { return this.outputs; }
+
+    /** @deprecated Use getCurrentOutputs(). Kept to avoid breaking older callers. */
+    public getCurretnOutputs(): string[] { return this.getCurrentOutputs(); }
 
     public getCurrentState() {
         return {
@@ -92,25 +109,26 @@ export class ExecutionEngine {
     }
 
     private advance(): IExecutionStep | null {
-        while (this.current) {
-            const node = this.graph.nodes.get(this.current)
-            if (!node) break
-            if (node.type === "memory") { this.processMemory(node); this.current = this.graph.getNextNode(this.current); continue }
-            if (node.type === "connector") { this.current = this.graph.getNextNode(this.current); continue }
-            try {
-                const s = this.exec(node)
-                if (s) { this.snapshots.store(s); }
-                this.current = this.next(node); return s
+        this.skipNonExecutableBlocks()
+        if (!this.current) return null
+
+        const node = this.graph.nodes.get(this.current)
+        if (!node) return null
+
+        try {
+            const step = this.exec(node)
+            if (step) this.snapshots.store(step)
+            this.current = this.next(node)
+            return step
         } catch (e) {
           const structured = classifyError(e, this.current)
           this._err = structured.message
           throw e
         }
-        }
-        return null
     }
 
 
+    /** Validates raw user input according to the type declared in a memory block. */
     private validateInput(value: string, type: string): string | null {
       switch (type) {
         case "inteiro": {
@@ -134,6 +152,7 @@ export class ExecutionEngine {
       }
     }
 
+    /** Executes one block and returns the UI-facing step/snapshot data for it. */
     private exec(node: IParserNode, input?: string): IExecutionStep | null {
         const base = (): IExecutionStep => ({
             nodeId: node.id, nodeLabel: node.label ?? "", nodeType: node.type,
@@ -157,36 +176,65 @@ export class ExecutionEngine {
 
             case "input": {
                 const varNames = (node.label ?? "").split(",").map(s => s.trim()).filter(Boolean)
-                const ctx: IExplanationContext = {
-                    nodeType: node.type,
-                    nodeLabel: node.label ?? "",
-                    inputValue: input,
-                };
+                if (!this.pendingInput || this.pendingInput.nodeId !== node.id) {
+                    this.pendingInput = { nodeId: node.id, names: varNames, index: 0 }
+                }
+                const pi = this.pendingInput
+                const name = pi.names[pi.index]
+
                 if (input === undefined) {
-                    const text = this.explanations.generate(ctx);
-                    const firstType = varNames.length > 0 ? (this.memory.getType(varNames[0]) ?? "caractere") : "caractere"
+                    const type = this.memory.getType(name) ?? "caractere"
+                    const text = this.explanations.generate({
+                        nodeType: node.type,
+                        nodeLabel: name,
+                        inputValue: undefined,
+                    });
                     return {
                         ...base(),
                         waitingForInput: true,
-                        inputPrompt: varNames.length === 1 ? `Valor para '${varNames[0]}':` : `Valores para '${varNames.join(", ")}':`,
-                        inputType: firstType,
+                        inputEntered: false,
+                        inputPrompt: `Valor para '${name}':`,
+                        inputVariable: name,
+                        inputType: type,
                         ...text,
                     };
                 }
-                const values = input.split(",").map(s => s.trim())
-                const errors: string[] = []
-                for (let i = 0; i < varNames.length; i++) {
-                    const name = varNames[i]
-                    const val = values[i] ?? ""
-                    const declaredType = this.memory.getType(name) ?? "caractere"
-                    if (!this.memory.has(name)) this.memory.declare(name, "caractere")
-                    const validationError = this.validateInput(val, declaredType)
-                    if (validationError) errors.push(validationError)
-                    this.memory.set(name, val)
+
+                const declaredType = this.memory.getType(name) ?? "caractere"
+                if (!this.memory.has(name)) this.memory.declare(name, "caractere")
+                const validationError = this.validateInput(input, declaredType)
+                if (validationError) throw new Error(validationError)
+                this.memory.set(name, input)
+
+                const remaining = pi.index + 1 < pi.names.length
+                pi.index += 1
+                const text = this.explanations.generate({
+                    nodeType: node.type,
+                    nodeLabel: name,
+                    inputValue: input,
+                });
+
+                if (remaining) {
+                    const nextName = pi.names[pi.index]
+                    return {
+                        ...base(),
+                        waitingForInput: true,
+                        inputEntered: true,
+                        inputPrompt: `Valor para '${nextName}':`,
+                        inputVariable: nextName,
+                        inputType: this.memory.getType(nextName) ?? "caractere",
+                        ...text,
+                    };
                 }
-                if (errors.length > 0) throw new Error(errors.join("; "))
-                const text = this.explanations.generate(ctx);
-                return { ...base(), ...text };
+
+                this.pendingInput = null
+                return {
+                    ...base(),
+                    waitingForInput: false,
+                    inputEntered: true,
+                    inputType: declaredType,
+                    ...text,
+                };
             }
 
             case "output": {
@@ -237,8 +285,34 @@ export class ExecutionEngine {
         }
     }
 
+    private skipNonExecutableBlocks(): void {
+        while (this.current) {
+            const node = this.graph.nodes.get(this.current)
+            if (!node) {
+                this._err = `Bloco '${this.current}' não encontrado`
+                return
+            }
+            if (node.type === "memory") {
+                this.processMemory(node)
+                this.current = this.graph.getNextNode(this.current)
+                continue
+            }
+            if (node.type === "connector") {
+                this.current = this.graph.getNextNode(this.current)
+                continue
+            }
+            return
+        }
+    }
+
     private processMemory(node: IParserNode): void {
-        node.rows?.forEach(r => r.variables.split(",").map(v => v.trim()).forEach(v => this.memory.declare(v, r.type)))
+        node.rows?.forEach(row => {
+            row.variables
+                .split(",")
+                .map(variable => variable.trim())
+                .filter(Boolean)
+                .forEach(variable => this.memory.declare(variable, row.type))
+        })
     }
 
     private next(node: IParserNode): string | null {

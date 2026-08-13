@@ -48,9 +48,9 @@ export default function SimulatorExplain() {
             {currentStep.changes.map((change, i) => (
               <div
                 key={i}
-                className="flex items-center gap-1.5 text-xs font-mono bg-secondary/10 rounded px-2 py-1 text-secondary"
+                className="flex items-center gap-1.5 text-xs font-mono bg-emerald-50 border border-emerald-200 rounded px-2 py-1 text-emerald-800"
               >
-                <ArrowRight className="w-3 h-3 shrink-0" />
+                <ArrowRight className="w-3 h-3 shrink-0 text-emerald-600" />
                 {change}
               </div>
             ))}

@@ -18,9 +18,8 @@ export default function InputDialog() {
 
   useEffect(() => {
     if (awaitingInput) {
-      setValue("")
-      setError("")
-      setTimeout(() => inputRef.current?.focus(), 100)
+      const t = setTimeout(() => inputRef.current?.focus(), 100)
+      return () => clearTimeout(t)
     }
   }, [awaitingInput])
 
@@ -35,6 +34,7 @@ export default function InputDialog() {
       return
     }
     setError("")
+    setValue("")
     submitInput(trimmed)
   }
 

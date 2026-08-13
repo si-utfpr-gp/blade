@@ -1,15 +1,27 @@
+import { useState } from "react"
 import { Header, WorkspaceLayout } from "./components/layout"
 import BlocksPanel from "./components/blocks"
-import ConstructorCanvas from "./components/constructor"
+import JsonHarness from "./components/constructor/JsonHarness"
 import SimulatorPanel from "./components/simulator"
+import { SimulatorProvider } from "./components/simulator/SimulatorContext"
 
 export default function BuilderPage() {
+  const [debuggerCollapsed, setDebuggerCollapsed] = useState(false)
+
   return (
-    <WorkspaceLayout
-      header={<Header title="Construa seu algoritmo" />}
-      sidebar={<BlocksPanel errors={[]} />}
-      canvas={<ConstructorCanvas />}
-      inspector={<SimulatorPanel />}
-    />
+    <SimulatorProvider>
+      <WorkspaceLayout
+        header={<Header title="Construa seu algoritmo" />}
+        sidebar={<BlocksPanel errors={[]} />}
+        canvas={<JsonHarness />}
+        inspector={
+          <SimulatorPanel
+            collapsed={debuggerCollapsed}
+            onToggleCollapsed={() => setDebuggerCollapsed((value) => !value)}
+          />
+        }
+        inspectorCollapsed={debuggerCollapsed}
+      />
+    </SimulatorProvider>
   )
 }

@@ -102,7 +102,7 @@ describe("ExecutionEngine", () => {
     expect(s?.waitingForInput).toBeFalsy()
   })
 
-  it("input with multiple comma-separated variables", () => {
+  it("input com múltiplas variáveis pede um valor por vez", () => {
     const e = new ExecutionEngine(g(
       [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"}},
        { id:"n2",type:"memory",position:{x:0,y:80},data:{rows:[{type:"inteiro",variables:"x, y"}]}},
@@ -111,11 +111,20 @@ describe("ExecutionEngine", () => {
       [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"},{ id:"e3",source:"n3",target:"n4"}]
     ))
     e.start()
-    const waiting = e.step()
-    expect(waiting?.waitingForInput).toBe(true)
-    const done = e.step("10, 20")
-    expect(done?.variables.find(v=>v.name==="x")?.value).toBe("10")
-    expect(done?.variables.find(v=>v.name==="y")?.value).toBe("20")
+    const w1 = e.step()
+    expect(w1?.waitingForInput).toBe(true)
+    expect(w1?.inputEntered).toBe(false)
+    expect(w1?.inputVariable).toBe("x")
+    const s1 = e.step("10")
+    expect(s1?.inputEntered).toBe(true)
+    expect(s1?.waitingForInput).toBe(true)
+    expect(s1?.inputVariable).toBe("y")
+    expect(s1?.variables.find(v=>v.name==="x")?.value).toBe("10")
+    const s2 = e.step("20")
+    expect(s2?.waitingForInput).toBe(false)
+    expect(s2?.variables.find(v=>v.name==="x")?.value).toBe("10")
+    expect(s2?.variables.find(v=>v.name==="y")?.value).toBe("20")
+    expect(e.getSteps().filter(s => s.nodeType === "input")).toHaveLength(2)
   })
 
   it("input validation rejects invalid integer", () => {
@@ -168,5 +177,86 @@ describe("ExecutionEngine", () => {
     const s = e.step()
     expect(s?.explanation.length).toBeGreaterThan(0)
     expect(s?.changes.length).toBeGreaterThan(0)
+  })
+
+  it("executa loop de fatorial (enquanto)", () => {
+    const graph = g(
+      [
+        { id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
+        { id:"n2",type:"memory",position:{x:0,y:80},data:{rows:[{type:"inteiro",variables:"n, fatorial, i"}]} },
+        { id:"n3",type:"input",position:{x:0,y:200},data:{label:"n"} },
+        { id:"n4",type:"process",position:{x:0,y:300},data:{label:"fatorial = 1; i = 1"} },
+        { id:"n5",type:"decision",position:{x:0,y:400},data:{label:"i <= n"} },
+        { id:"n6",type:"process",position:{x:220,y:500},data:{label:"fatorial = fatorial * i; i = i + 1"} },
+        { id:"n7",type:"output",position:{x:0,y:620},data:{label:"'Fatorial: ' + fatorial"} },
+        { id:"n8",type:"startEnd",position:{x:0,y:720},data:{variant:"end"} },
+      ],
+      [
+        { id:"e1",source:"n1",target:"n2"},
+        { id:"e2",source:"n2",target:"n3"},
+        { id:"e3",source:"n3",target:"n4"},
+        { id:"e4",source:"n4",target:"n5"},
+        { id:"e5",source:"n5",target:"n6",sourceHandle:"yes"},
+        { id:"e6",source:"n6",target:"n5"},
+        { id:"e7",source:"n5",target:"n7",sourceHandle:"no"},
+        { id:"e8",source:"n7",target:"n8"},
+      ]
+    )
+    const e = new ExecutionEngine(graph)
+    e.start()
+    e.step()
+    e.step("5")
+    let guard = 0
+    while (e.step() !== null && guard++ < 100) { /* itera até terminar */ }
+    const outputSteps = e.getCurrentState().steps.filter(st => st.nodeType === "output")
+    expect(outputSteps.length).toBeGreaterThan(0)
+  })
+
+  it("atualiza vetor por índice em loop", () => {
+    const graph = g(
+      [
+        { id:"n1", type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
+        { id:"n2", type:"memory",position:{x:0,y:80},data:{rows:[{type:"inteiro",variables:"n, i"},{type:"real",variables:"notas[3], soma, media"}]} },
+        { id:"n3", type:"input",position:{x:0,y:200},data:{label:"n"} },
+        { id:"n4", type:"process",position:{x:0,y:300},data:{label:"soma = 0; i = 0"} },
+        { id:"n5", type:"decision",position:{x:0,y:400},data:{label:"i < n"} },
+        { id:"n6", type:"input",position:{x:220,y:500},data:{label:"nota"} },
+        { id:"n7", type:"process",position:{x:220,y:600},data:{label:"notas[i] = nota; soma = soma + nota; i = i + 1"} },
+        { id:"n8", type:"process",position:{x:0,y:720},data:{label:"media = soma / n"} },
+        { id:"n9", type:"output",position:{x:0,y:820},data:{label:"'Média: ' + media"} },
+        { id:"n10", type:"startEnd",position:{x:0,y:920},data:{variant:"end"} },
+      ],
+      [
+        { id:"e1",source:"n1",target:"n2"},
+        { id:"e2",source:"n2",target:"n3"},
+        { id:"e3",source:"n3",target:"n4"},
+        { id:"e4",source:"n4",target:"n5"},
+        { id:"e5",source:"n5",target:"n6",sourceHandle:"yes"},
+        { id:"e6",source:"n6",target:"n7"},
+        { id:"e7",source:"n7",target:"n5"},
+        { id:"e8",source:"n5",target:"n8",sourceHandle:"no"},
+        { id:"e9",source:"n8",target:"n9"},
+        { id:"e10",source:"n9",target:"n10"},
+      ]
+    )
+    const e = new ExecutionEngine(graph)
+    e.start()
+    e.step()      // entrada n (aguardando)
+    e.step("3")   // n = 3
+    e.step()      // soma = 0; i = 0
+    e.step()      // decision i < 3 -> sim
+    e.step("10")  // nota = 10
+    e.step()      // notas[0] = 10
+    e.step()      // decision -> sim
+    e.step("20")  // nota = 20
+    e.step()
+    e.step()
+    e.step("30")
+    e.step()
+    e.step()      // decision i < 3 -> nao
+    const mediaStep = e.step() // media = soma / n
+    expect(mediaStep?.nodeType).toBe("process")
+    const out = e.step()
+    expect(out?.output).toBe("Média: 20")
   })
 })

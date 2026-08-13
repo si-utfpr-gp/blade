@@ -3,6 +3,7 @@ import {
   useContext,
   useReducer,
   useCallback,
+  useEffect,
   useState,
   useRef,
   type ReactNode,
@@ -13,6 +14,9 @@ import type {
 } from "../../interfaces/simulator";
 import { initialState, simulatorReducer } from "../../interfaces/simulator";
 import { ExecutionEngine } from "../../engine/ExecutionEngine";
+import { parse } from "../../parser";
+import { CodeGenerator } from "../../engine/CodeGenerator";
+import type { Node, Edge } from "@xyflow/react";
 
 type Tab = "trace" | "explain" | "code";
 
@@ -35,6 +39,7 @@ interface ISimulatorContextValue {
   submitInput: (value: string) => void;
   cancelInput: () => void;
   setEngine: (engine: ExecutionEngine) => void;
+  loadDiagram: (nodes: Node[], edges: Edge[]) => { ok: true } | { ok: false; error: string };
 }
 
 const SimulatorContext = createContext<ISimulatorContextValue | null>(null);
@@ -54,6 +59,25 @@ export function SimulatorProvider({
     engineRef.current = engine;
   }, []);
 
+  const loadDiagram = useCallback((nodes: Node[], edges: Edge[]) => {
+    try {
+      const graph = parse(nodes, edges);
+      if (!graph.startNodeId) {
+        return { ok: false, error: "Nenhum bloco de início (RN01)" };
+      }
+      const engine = new ExecutionEngine(graph);
+      setEngine(engine);
+      const codeGen = new CodeGenerator(graph);
+      const js = codeGen.generate({ lang: "js" });
+      const ts = codeGen.generate({ lang: "ts" });
+      dispatch({ type: "SET_CODE", js, ts });
+      return { ok: true };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Erro ao carregar diagrama";
+      return { ok: false, error: msg };
+    }
+  }, [setEngine]);
+
   const canStepBack =
     state.isStarted && state.currentStepIndex > 0 && !state.isRunning && !state.awaitingInput;
   const canStepForward =
@@ -61,27 +85,37 @@ export function SimulatorProvider({
 
   const executeNextStep = useCallback((input?: string) => {
     const engine = engineRef.current;
-    if (!engine) return;
-
-    const step = engine.step(input);
-    if (!step) {
-      dispatch({ type: "FINISH" });
+    if (!engine) {
+      dispatch({ type: "SET_ERROR", error: "Nenhum diagrama carregado." });
       return;
     }
 
-    if (step.waitingForInput) {
-      dispatch({
-        type: "INPUT_REQUESTED",
-        prompt: step.inputPrompt ?? `Valor para '${step.nodeLabel}':`,
-        variable: step.nodeLabel,
-        inputType: step.inputType ?? "caractere",
-      });
-      dispatch({ type: "STEP_FORWARD", step });
-    } else {
-      if (step.output !== undefined) {
-        dispatch({ type: "SET_OUTPUTS", outputs: [...state.outputs, step.output] });
+    try {
+      const step = engine.step(input);
+      if (!step) {
+        dispatch({ type: "FINISH" });
+        return;
       }
-      dispatch({ type: "STEP_FORWARD", step });
+
+      if (step.waitingForInput) {
+        if (step.inputEntered) {
+          dispatch({ type: "STEP_FORWARD", step });
+        }
+        dispatch({
+          type: "INPUT_REQUESTED",
+          prompt: step.inputPrompt ?? `Valor para '${step.nodeLabel}':`,
+          variable: step.inputVariable ?? step.nodeLabel,
+          inputType: step.inputType ?? "caractere",
+        });
+      } else {
+        if (step.output !== undefined) {
+          dispatch({ type: "SET_OUTPUTS", outputs: [...state.outputs, step.output] });
+        }
+        dispatch({ type: "STEP_FORWARD", step });
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Erro durante a execução.";
+      dispatch({ type: "SET_ERROR", error: msg });
     }
   }, [state.outputs]);
 
@@ -111,6 +145,7 @@ export function SimulatorProvider({
 
   const cancelInput = useCallback(() => {
     dispatch({ type: "SUBMIT_INPUT" });
+    dispatch({ type: "STOP" });
     callbacks?.onInputCancel?.();
   }, [callbacks]);
 
@@ -157,6 +192,24 @@ export function SimulatorProvider({
     dispatch({ type: "GO_TO_STEP", index })
   }, [state.steps.length])
 
+  useEffect(() => {
+    if (!state.isRunning || state.awaitingInput || state.isFinished) return;
+
+    const timer = window.setTimeout(() => {
+      executeNextStep();
+    }, state.speed);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    state.isRunning,
+    state.awaitingInput,
+    state.isFinished,
+    state.speed,
+    state.currentStepIndex,
+    state.steps.length,
+    executeNextStep,
+  ]);
+
   return (
     <SimulatorContext.Provider
       value={{
@@ -178,6 +231,7 @@ export function SimulatorProvider({
         submitInput,
         cancelInput,
         setEngine,
+        loadDiagram,
       }}
     >
       {children}
