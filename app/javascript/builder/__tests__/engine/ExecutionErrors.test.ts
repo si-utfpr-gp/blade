@@ -5,8 +5,6 @@ import {
   checkValidExpression,
   classifyError,
   buildDivByZeroError,
-  type IExecutionError,
-  type ExecutionErrorType,
 } from "../../engine/errors"
 import { ExecutionEngine } from "../../engine/ExecutionEngine"
 import { parse } from "../../parser/parser"

@@ -267,7 +267,7 @@ A cada instrução executada, a memória é atualizada e novos resultados são p
 
 # 9.1. Formato JSON do Diagrama
 
-O construtor envia o diagrama ao módulo de execução com formato compatível com `@xyflow/react` (React Flow). Os nós (`nodes`) seguem o tipo `Node` da biblioteca, e as arestas (`edges`) seguem o tipo `Edge`, com campos adicionais de handle e label para controle de fluxo.
+O construtor visual pode trabalhar com formato compatível com `@xyflow/react` (React Flow), mas o módulo de execução consome um contrato lógico mais simples. Campos visuais como `position`, `width`, `height` e `selected` são metadados de layout e não são necessários para parser, motor, teste de mesa ou geração de código.
 
 **Tipos de bloco:**
 
@@ -289,7 +289,7 @@ O construtor envia o diagrama ao módulo de execução com formato compatível c
 interface Node {
   id: string              // ex: "n1", "n2"
   type: string            // "startEnd" | "memory" | "input" | "output" | "process" | "decision" | "connector" | "subroutine"
-  position: { x: number; y: number }
+  position?: { x: number; y: number } // opcional; usado apenas pelo construtor visual
   data: {
     label?: string        // Texto exibido no bloco
     variant?: 'start' | 'end'  // Apenas para type = "startEnd"

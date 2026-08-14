@@ -1,5 +1,6 @@
+import { Terminal } from "lucide-react";
 import { TooltipProvider } from "../ui/tooltip";
-import { SimulatorProvider, useSimulator } from "./SimulatorContext";
+import { useSimulator } from "./SimulatorContext";
 import SimulatorHeader from "./SimulatorHeader";
 import SimulatorControl from "./SimulatorControl";
 import SimulatorTabs from "./SimulatorTabs";
@@ -8,27 +9,45 @@ import SimulatorExplain from "./SimulatorExplain";
 import SimulatorCode from "./SimulatorCode";
 import SimulatorStatusBar from "./SimulatorStatusBar";
 import InputDialog from "./InputDialog";
-import type { ISimulatorCallbacks } from "../../interfaces/simulator";
 
-export interface ISimulatorPanelProps {
-  callbacks?: ISimulatorCallbacks;
+interface ISimulatorPanelProps {
+  collapsed?: boolean
+  onToggleCollapsed?: () => void
 }
 
-export default function SimulatorPanel({ callbacks }: ISimulatorPanelProps) {
+export default function SimulatorPanel({ collapsed = false, onToggleCollapsed }: ISimulatorPanelProps) {
   return (
-    <SimulatorProvider callbacks={callbacks}>
-      <TooltipProvider delayDuration={200}>
-      <div className="flex flex-col h-full bg-card border-l border-border">
-        <SimulatorHeader />
-        <SimulatorControl />
-        <SimulatorTabs />
-        <SimulatorPanelContent />
-        <SimulatorStatusBar />
-      </div>
+    <TooltipProvider delayDuration={200}>
+      {collapsed ? (
+        <CollapsedDebuggerRail onToggleCollapsed={onToggleCollapsed} />
+      ) : (
+        <div className="flex flex-col h-full bg-card border-l border-border">
+          <SimulatorHeader onToggleCollapsed={onToggleCollapsed} />
+          <SimulatorControl />
+          <SimulatorTabs />
+          <SimulatorPanelContent />
+          <SimulatorStatusBar />
+        </div>
+      )}
       <InputDialog />
-      </TooltipProvider>
-    </SimulatorProvider>
+    </TooltipProvider>
   );
+}
+
+function CollapsedDebuggerRail({ onToggleCollapsed }: { onToggleCollapsed?: () => void }) {
+  return (
+    <div className="flex h-full flex-col items-center bg-card px-1.5 py-2 border-l border-border">
+      <button
+        type="button"
+        onClick={onToggleCollapsed}
+        className="rounded-md p-2 hover:bg-muted transition-colors"
+        title="Mostrar depurador"
+        aria-label="Mostrar depurador"
+      >
+        <Terminal className="w-4 h-4 text-primary" />
+      </button>
+    </div>
+  )
 }
 
 function SimulatorPanelContent() {

@@ -32,8 +32,15 @@ describe("SimulatorControl", () => {
     expect(screen.getByTitle("Executar tudo")).toBeInTheDocument()
   })
 
-  it("shows speed selector", () => {
+  it("does not show speed selector before starting", () => {
     renderControl()
-    expect(screen.getByRole("combobox")).toBeInTheDocument()
+    expect(screen.queryByRole("combobox", { name: /velocidade/i })).not.toBeInTheDocument()
+  })
+
+  it("shows speed selector after starting, next to auto execution", () => {
+    renderControl()
+    fireEvent.click(screen.getByText("Iniciar Execução"))
+    expect(screen.getByRole("combobox", { name: /velocidade/i })).toBeInTheDocument()
+    expect(screen.getByTitle("Executar tudo")).toBeInTheDocument()
   })
 })

@@ -1,9 +1,18 @@
 import type { IMemory } from "../interfaces/memory"
 import { detectDivisionByZero, checkValidExpression, buildDivByZeroError } from "./errors"
 
+/**
+ * Evaluates the expression subset used by diagram blocks.
+ *
+ * Expressions are first resolved from Portugol-like syntax and memory values
+ * into JavaScript expressions, then evaluated. This is appropriate for the
+ * local educational simulator, but should be sandboxed/replaced before running
+ * untrusted external input in production.
+ */
 export class ExprEvaluator {
   constructor(private memory: IMemory) {}
 
+  /** Replaces variables and Portugol operators with executable JavaScript syntax. */
   resolve(expr: string): string {
     let out = ""
     let i = 0
@@ -83,6 +92,7 @@ export class ExprEvaluator {
     return out
   }
 
+  /** Executes one or more assignments separated by ';' and returns a change log. */
   assign(expr: string, blockId: string | null): string[] {
     return expr.split(";").filter(Boolean).map(s => {
       const [target, ...rest] = s.trim().split("=")
@@ -94,6 +104,14 @@ export class ExprEvaluator {
       const err = checkValidExpression(resolved, blockId)
       if (err) throw new Error(err.message)
       const res = String(new Function(`return (${resolved})`)())
+      const indexTarget = target.trim().match(/^(\w+)\[(-?\d+|\w+)\]$/)
+      if (indexTarget) {
+        const arrName = indexTarget[1]
+        const idxExpr = indexTarget[2]
+        const idx = /^-?\d+$/.test(idxExpr) ? parseInt(idxExpr, 10) : Number(this.resolve(idxExpr))
+        this.memory.setIndex(arrName, idx, res)
+        return `${target.trim()} = ${res}`
+      }
       if (!this.memory.has(target.trim())) {
         this.memory.declare(target.trim(), "caractere")
       }

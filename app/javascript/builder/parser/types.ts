@@ -19,4 +19,5 @@ export interface IParserData {
     startNodeId: string | null
     endNodeId: string | null
     getNextNode(currentId: string, handle?: string): string | null
+    getOutgoing(currentId: string): IParserEdge[]
 }
