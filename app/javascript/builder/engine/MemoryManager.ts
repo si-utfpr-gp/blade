@@ -13,7 +13,7 @@ interface VarEntry {
 export class MemoryManager implements IMemory {
   private vars = new Map<string, VarEntry>()
 
-  declare(name: string, type: string): void {
+  public declare(name: string, type: string): void {
     if (!isValidType(type)) {
       throw new Error(
         `Tipo inválido: '${type}'. Tipos válidos: ${VALID_TYPES.join(", ")}`
@@ -46,15 +46,15 @@ export class MemoryManager implements IMemory {
     }
   }
 
-  isDeclared(name: string): boolean {
+  public isDeclared(name: string): boolean {
     return this.vars.has(name)
   }
 
-  has(name: string): boolean {
+  public has(name: string): boolean {
     return this.isDeclared(name)
   }
 
-  get(name: string): string | null {
+  public get(name: string): string | null {
     const entry = this.vars.get(name)
     if (!entry) throw new Error(`Variável '${name}' não declarada`)
     if (entry.isArray) {
@@ -63,7 +63,7 @@ export class MemoryManager implements IMemory {
     return entry.value
   }
 
-  set(name: string, value: string): void {
+  public set(name: string, value: string): void {
     const entry = this.vars.get(name)
     if (!entry) throw new Error(`Variável '${name}' não declarada`)
     if (entry.isArray) {
@@ -72,7 +72,7 @@ export class MemoryManager implements IMemory {
     entry.value = value
   }
 
-  getIndex(arrayName: string, index: number): string | null {
+  public getIndex(arrayName: string, index: number): string | null {
     const entry = this.vars.get(arrayName)
     if (!entry) throw new Error(`Array '${arrayName}' não declarado`)
     if (!entry.isArray) throw new Error(`'${arrayName}' não é um array`)
@@ -84,7 +84,7 @@ export class MemoryManager implements IMemory {
     return entry.elements[index]
   }
 
-  setIndex(arrayName: string, index: number, value: string): void {
+  public setIndex(arrayName: string, index: number, value: string): void {
     const entry = this.vars.get(arrayName)
     if (!entry) throw new Error(`Array '${arrayName}' não declarado`)
     if (!entry.isArray) throw new Error(`'${arrayName}' não é um array`)
@@ -96,14 +96,14 @@ export class MemoryManager implements IMemory {
     entry.elements[index] = value
   }
 
-  getLength(arrayName: string): number {
+  public getLength(arrayName: string): number {
     const entry = this.vars.get(arrayName)
     if (!entry) throw new Error(`Array '${arrayName}' não declarado`)
     if (!entry.isArray) return 0
     return entry.arraySize
   }
 
-  isInitialized(name: string): boolean {
+  public isInitialized(name: string): boolean {
     const entry = this.vars.get(name)
     if (!entry) return false
     if (entry.isArray) {
@@ -112,11 +112,11 @@ export class MemoryManager implements IMemory {
     return entry.value !== null
   }
 
-  getType(name: string): string | null {
+  public getType(name: string): string | null {
     return this.vars.get(name)?.type ?? null
   }
 
-  snapshot(): IVariable[] {
+  public snapshot(): IVariable[] {
     const result: IVariable[] = []
     for (const [name, entry] of this.vars) {
       if (entry.isArray) {
@@ -140,7 +140,7 @@ export class MemoryManager implements IMemory {
     return result
   }
 
-  reset(): void {
+  public reset(): void {
     this.vars.clear()
   }
 }
