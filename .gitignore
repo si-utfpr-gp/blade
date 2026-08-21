@@ -44,3 +44,6 @@
 !/docs/superpowers/.gitkeep
 .superpowers/*
 !.superpowers/.gitkeep
+
+# Local Git worktrees used during development.
+.worktrees/
