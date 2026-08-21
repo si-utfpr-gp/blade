@@ -1,4 +1,4 @@
-import type { IMemory } from "../interfaces/memory"
+import type { IMemory, IMemoryCheckpoint } from "../interfaces/memory"
 import type { IVariable } from "../interfaces/execution"
 import { isValidType, type VarType, VALID_TYPES } from "./types"
 
@@ -138,6 +138,39 @@ export class MemoryManager implements IMemory {
       }
     }
     return result
+  }
+
+  public createCheckpoint(): IMemoryCheckpoint {
+    return {
+      entries: Array.from(this.vars, ([name, entry]) => ({
+        name,
+        type: entry.type,
+        value: entry.value,
+        isArray: entry.isArray,
+        arraySize: entry.arraySize,
+        elements: [...entry.elements],
+      })),
+    }
+  }
+
+  public restore(checkpoint: IMemoryCheckpoint): void {
+    this.vars = new Map(
+      checkpoint.entries.map((entry) => {
+        if (!isValidType(entry.type)) {
+          throw new Error(`Tipo inválido: '${entry.type}'`)
+        }
+        return [
+          entry.name,
+          {
+            type: entry.type,
+            value: entry.value,
+            isArray: entry.isArray,
+            arraySize: entry.arraySize,
+            elements: [...entry.elements],
+          },
+        ]
+      }),
+    )
   }
 
   public reset(): void {

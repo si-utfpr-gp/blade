@@ -16,6 +16,25 @@ function makeStep(overrides?: Partial<IExecutionStep>): IExecutionStep {
     };
 }
 
+function checkpoint(nextNodeId = "n2") {
+    return {
+        memory: {
+            entries: [{
+                name: "score",
+                type: "inteiro",
+                value: "25",
+                isArray: false,
+                arraySize: 0,
+                elements: [],
+            }],
+        },
+        outputs: ["25"],
+        nextNodeId,
+        pendingInput: null,
+        finished: false,
+    };
+}
+
 describe("SnapshotManager", () => {
     it("store adiciona passo e atualiza índices", () => {
         const sm = new SnapshotManager();
@@ -32,10 +51,33 @@ describe("SnapshotManager", () => {
         const s2 = makeStep({ nodeId: "n2" });
         sm.store(s1);
         sm.store(s2);
-        expect(sm.currentStep?.nodeId).toBe("n2");
-    });
+    expect(sm.currentStep?.nodeId).toBe("n2");
+  });
 
-    it("currentStep undefined quando vazio", () => {
+  it("replaces the active future instead of appending a duplicate step", () => {
+    const sm = new SnapshotManager();
+    sm.store(makeStep({ nodeId: "start" }), checkpoint("input"));
+    sm.store(makeStep({ nodeId: "old" }), checkpoint("end"));
+    sm.goTo(0);
+    sm.store(makeStep({ nodeId: "new" }), checkpoint("end"));
+
+    expect(sm.allSteps.map((step) => step.nodeId)).toEqual(["start", "new"]);
+    expect(sm.currentIndex).toBe(1);
+  });
+
+  it("returns checkpoints without exposing nested mutable state", () => {
+    const sm = new SnapshotManager();
+    sm.store(makeStep(), checkpoint());
+
+    const saved = sm.getCheckpoint(0)!;
+    saved.memory.entries[0].value = "mutated";
+    saved.outputs.push("extra");
+
+    expect(sm.getCheckpoint(0)?.memory.entries[0].value).toBe("25");
+    expect(sm.getCheckpoint(0)?.outputs).toEqual(["25"]);
+  });
+
+  it("currentStep undefined quando vazio", () => {
         const sm = new SnapshotManager();
         expect(sm.currentStep).toBeUndefined();
     });

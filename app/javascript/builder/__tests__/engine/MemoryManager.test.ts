@@ -219,6 +219,24 @@ describe("MemoryManager", () => {
     expect(snap).toContainEqual({ name: "notas[2]", value: "9.0", type: "real", scope: "global" })
   })
 
+  it("restores scalar and vector state without shared references", () => {
+    const mm = new MemoryManager()
+    mm.declare("score", "inteiro")
+    mm.declare("notes[2]", "real")
+    mm.set("score", "25")
+    mm.setIndex("notes", 0, "10")
+    const checkpoint = mm.createCheckpoint()
+
+    mm.set("score", "99")
+    mm.setIndex("notes", 0, "20")
+    mm.restore(checkpoint)
+
+    expect(mm.get("score")).toBe("25")
+    expect(mm.getIndex("notes", 0)).toBe("10")
+    checkpoint.entries[0].value = "mutated"
+    expect(mm.get("score")).toBe("25")
+  })
+
   // --- reset ---
 
   it("clears all variables on reset", () => {

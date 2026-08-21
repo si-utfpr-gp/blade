@@ -1,3 +1,5 @@
+import type { IMemoryCheckpoint } from "./memory"
+
 export interface IVariable {
   name: string
   value: string | null
@@ -42,6 +44,20 @@ export interface ISnapshot {
   explanation: string
   changes: string[]
   nextHint: string
+}
+
+export interface IPendingInputCheckpoint {
+  nodeId: string
+  names: string[]
+  index: number
+}
+
+export interface IExecutionCheckpoint {
+  memory: IMemoryCheckpoint
+  outputs: string[]
+  nextNodeId: string | null
+  pendingInput: IPendingInputCheckpoint | null
+  finished: boolean
 }
 
 export interface IExecutionState {
