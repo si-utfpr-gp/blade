@@ -5,6 +5,26 @@ import type { Node, Edge } from "@xyflow/react"
 
 function g(nodes: Node[], edges: Edge[]) { return parse(nodes, edges) }
 
+function inputProcessOutputEngine() {
+  return new ExecutionEngine(g(
+    [
+      { id:"n1", type:"startEnd", position:{x:0,y:0}, data:{variant:"start"} },
+      { id:"n2", type:"memory", position:{x:0,y:80}, data:{rows:[{type:"inteiro",variables:"x, y"}]} },
+      { id:"n3", type:"input", position:{x:0,y:160}, data:{label:"x"} },
+      { id:"n4", type:"process", position:{x:0,y:240}, data:{label:"y = x"} },
+      { id:"n5", type:"output", position:{x:0,y:320}, data:{label:"y"} },
+      { id:"n6", type:"startEnd", position:{x:0,y:400}, data:{variant:"end"} },
+    ],
+    [
+      { id:"e1", source:"n1", target:"n2" },
+      { id:"e2", source:"n2", target:"n3" },
+      { id:"e3", source:"n3", target:"n4" },
+      { id:"e4", source:"n4", target:"n5" },
+      { id:"e5", source:"n5", target:"n6" },
+    ],
+  ))
+}
+
 describe("ExecutionEngine", () => {
   it("start() retorna passo inicial", () => {
     const e = new ExecutionEngine(g(
@@ -62,6 +82,32 @@ describe("ExecutionEngine", () => {
     expect(e.getSteps()).toHaveLength(2)
     e.reset()
     expect(e.getSteps()).toHaveLength(0)
+  })
+
+  it("restores memory, outputs, and the next node for a selected snapshot", () => {
+    const e = inputProcessOutputEngine()
+    e.start()
+    e.step("25")
+    e.step()
+    e.step()
+
+    expect(e.goToStep(0)).toBe(true)
+    expect(e.getCurrentState().variables.has("x")).toBe(false)
+    expect(e.getCurrentOutputs()).toEqual([])
+    expect(e.step()).toMatchObject({ waitingForInput: true, inputVariable: "x" })
+  })
+
+  it("replaces later steps after a new input instead of adding duplicates", () => {
+    const e = inputProcessOutputEngine()
+    e.start()
+    e.step("25")
+    e.step()
+    e.goToStep(0)
+    e.step("10")
+
+    expect(e.getSteps()).toHaveLength(2)
+    expect(e.getSteps()[1].variables.find((v) => v.name === "x")?.value).toBe("10")
+    expect(e.currentStepIndex).toBe(1)
   })
 
   it("detecta erro de variável não inicializada", () => {
