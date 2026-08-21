@@ -30,7 +30,6 @@ export type ISimulatorAction =
   | { type: "SET_CODE"; js: string; ts: string }
   | { type: "SET_STEPS"; steps: IExecutionStep[] }
   | { type: "SYNC_EXECUTION"; steps: IExecutionStep[]; currentStepIndex: number; outputs: string[]; isFinished: boolean }
-  | { type: "EDIT_VARIABLE"; stepIndex: number; varName: string; newValue: string }
   | { type: "FINISH" }
   | { type: "INPUT_REQUESTED"; prompt: string; variable: string; inputType: string }
   | { type: "SUBMIT_INPUT" }
@@ -43,7 +42,6 @@ export interface ISimulatorCallbacks {
   onRunAll?: () => void
   onStop?: () => void
   onReset?: () => void
-  onVariableEdit?: (stepIndex: number, varName: string, newValue: string) => void
   onInputSubmit?: (value: string) => void
   onInputCancel?: () => void
 }
@@ -105,18 +103,6 @@ export function simulatorReducer(state: ISimulatorState, action: ISimulatorActio
         outputs: action.outputs,
         isFinished: action.isFinished,
       }
-    case "EDIT_VARIABLE": {
-      const newSteps = state.steps.map((step, i) => {
-        if (i !== action.stepIndex) return step
-        return {
-          ...step,
-          variables: step.variables.map((v) =>
-            v.name === action.varName ? { ...v, value: action.newValue } : v
-          ),
-        }
-      })
-      return { ...state, steps: newSteps }
-    }
     case "FINISH":
       return { ...state, isFinished: true, isRunning: false }
     case "INPUT_REQUESTED":

@@ -192,7 +192,9 @@ Cada snapshot contém:
 - Operação realizada;
 - Resultado da operação.
 
-Os snapshots permitem que o usuário navegue livremente entre os passos da execução, retrocedendo ou avançando sem perder o histórico.
+Os snapshots permitem que o usuário navegue livremente entre os passos da execução. Essa navegação apenas restaura um estado já registrado: não executa blocos, não solicita novas entradas e não acrescenta linhas ao teste de mesa.
+
+Quando o usuário escolhe executar um novo **Próximo passo** a partir de um snapshot anterior, o futuro ativo é substituído pelo resultado da nova execução. Dessa forma, o teste de mesa continua representando uma única linha do tempo, sem passos ou variáveis duplicados.
 
 ## Geração do Teste de Mesa
 
@@ -212,8 +214,9 @@ Quando a execução encontra um bloco do tipo **Entrada**, o sistema interrompe 
 
 O sistema oferece as seguintes ações de controle ao usuário:
 
-- **Avançar passo**: executa o próximo bloco e registra um novo snapshot;
-- **Retroceder passo**: retorna ao estado do snapshot anterior;
+- **Próximo no histórico**: restaura o snapshot seguinte já registrado, sem executar o algoritmo;
+- **Próximo passo**: executa o próximo bloco e registra um novo snapshot; se partir de um snapshot anterior, substitui o futuro ativo;
+- **Retroceder passo**: restaura o estado do snapshot anterior, sem executar o algoritmo;
 - **Reiniciar**: reinicializa a execução desde o primeiro bloco;
 - **Ir para passo específico**: restaura o estado de qualquer snapshot anterior.
 

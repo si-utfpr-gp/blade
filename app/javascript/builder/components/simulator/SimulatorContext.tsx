@@ -36,7 +36,6 @@ interface ISimulatorContextValue {
   reset: () => void;
   setSpeed: (speed: number) => void;
   setCode: (js: string, ts: string) => void;
-  editVariable: (stepIndex: number, varName: string, newValue: string) => void;
   goToStep: (index: number) => void;
   submitInput: (value: string) => void;
   cancelInput: () => void;
@@ -196,14 +195,6 @@ export function SimulatorProvider({
     dispatch({ type: "SET_CODE", js, ts });
   }, []);
 
-  const editVariable = useCallback(
-    (stepIndex: number, varName: string, newValue: string) => {
-      dispatch({ type: "EDIT_VARIABLE", stepIndex, varName, newValue });
-      callbacks?.onVariableEdit?.(stepIndex, varName, newValue);
-    },
-    [callbacks],
-  );
-
   const goToStep = useCallback((index: number) => {
     if (index < 0 || index >= state.steps.length) return
     if (engineRef.current?.goToStep(index)) syncFromEngine()
@@ -245,7 +236,6 @@ export function SimulatorProvider({
         reset,
         setSpeed,
         setCode,
-        editVariable,
         goToStep,
         submitInput,
         cancelInput,

@@ -597,12 +597,13 @@ Cada snapshot inclui uma explicação textual gerada automaticamente. A explica�
 
 O sistema permite que o usuário navegue livremente pelo histórico da execução:
 
-- **Avançar (next)**: executa o próximo bloco e adiciona um novo snapshot ao histórico;
-- **Retroceder (prev)**: restaura o estado a partir do snapshot anterior (o snapshot atual não é descartado);
-- **Reiniciar (reset)**: descarta todos os snapshots e reinicia a execução a partir do bloco inicial;
-- **Ir para passo N**: restaura o estado exato do snapshot N, permitindo que o usuário "pule" para qualquer ponto da execução.
+- **Próximo no histórico**: restaura o estado do snapshot seguinte já registrado, sem executar qualquer bloco;
+- **Retroceder (prev)**: restaura o estado a partir do snapshot anterior, sem executar qualquer bloco;
+- **Ir para passo N**: restaura o estado exato do snapshot N, permitindo que o usuário "pule" para qualquer ponto da execução;
+- **Próximo passo**: executa o próximo bloco e registra um novo snapshot;
+- **Reiniciar (reset)**: descarta todos os snapshots e reinicia a execução a partir do bloco inicial.
 
-A navegação não altera os snapshots já registrados, garantindo a integridade do histórico de execução.
+A navegação por histórico não altera os snapshots já registrados nem acrescenta linhas ao teste de mesa. Porém, se o usuário executar **Próximo passo** a partir de um snapshot anterior, os snapshots posteriores da linha do tempo ativa são descartados e substituídos pelos novos resultados. Cada snapshot preservado é imutável, e o teste de mesa representa somente essa linha do tempo ativa, sem passos ou variáveis repetidos.
 
 ---
 
