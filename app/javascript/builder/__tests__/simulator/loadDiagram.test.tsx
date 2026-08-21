@@ -112,7 +112,7 @@ describe("input multi-valor (teste de mesa real)", () => {
     fireEvent.click(screen.getByRole("button", { name: /iniciar execução/i }))
     expect(screen.getByText(/Histórico — Passo 1/)).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("button", { name: "Próximo" }))
+    fireEvent.click(screen.getByRole("button", { name: "Próximo passo" }))
     expect(screen.getByText(/Valor para 'num1':/)).toBeInTheDocument()
     expect(screen.getByText(/Histórico — Passo 1/)).toBeInTheDocument()
 

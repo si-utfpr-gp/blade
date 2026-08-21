@@ -1,10 +1,7 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import {
   Info,
   HelpCircle,
-  Edit3,
-  Check,
-  X,
   Monitor,
   AlertTriangle,
   CheckCircle2,
@@ -34,22 +31,16 @@ function formatValue(v: IVariable | undefined): string {
 }
 
 export default function SimulatorTrace() {
-  const { state, editVariable, goToStep } = useSimulator();
+  const { state, goToStep } = useSimulator();
   const {
     steps,
     currentStepIndex,
     outputs,
     isStarted,
-    isRunning,
     isFinished,
     error,
   } = state;
 
-  const [editingVar, setEditingVar] = useState<{
-    step: number;
-    name: string;
-  } | null>(null);
-  const [editValue, setEditValue] = useState("");
   const traceEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -59,20 +50,6 @@ export default function SimulatorTrace() {
     });
   }, [currentStepIndex]);
 
-  const startEdit = useCallback(
-    (stepIdx: number, varName: string, currentValue: string) => {
-      setEditingVar({ step: stepIdx, name: varName });
-      setEditValue(currentValue);
-    },
-    [],
-  );
-
-  const confirmEdit = useCallback(() => {
-    if (editingVar) {
-      editVariable(editingVar.step, editingVar.name, editValue);
-    }
-    setEditingVar(null);
-  }, [editingVar, editValue, editVariable]);
 
   const currentStep: IExecutionStep | null =
     currentStepIndex >= 0 && currentStepIndex < steps.length
@@ -197,8 +174,6 @@ export default function SimulatorTrace() {
                       const v = step.variables.find((sv) => sv.name === name);
                       const justDeclared = v && !prevDeclared.has(name);
                       const changed = wasChanged(step, name);
-                      const isEditing =
-                        editingVar?.step === i && editingVar?.name === name;
                       const showValue = changed || justDeclared;
 
                       return (
@@ -206,45 +181,8 @@ export default function SimulatorTrace() {
                           key={name}
                           className={`py-1 px-2 text-center font-mono border-r border-border last:border-r-0 transition-all ${changed && isCurrent ? "bg-accent/15 ring-1 ring-inset ring-accent/40 font-bold text-accent-foreground" : changed ? "bg-secondary/10 font-semibold text-foreground" : justDeclared ? "text-muted-foreground italic" : "text-transparent"}`}
                         >
-                          {isEditing ? (
-                            <div className="flex items-center gap-0.5 justify-center">
-                              <input
-                                value={editValue}
-                                onChange={(e) => setEditValue(e.target.value)}
-                                className="w-14 px-1 py-0.5 text-[10px] rounded border border-primary bg-background font-mono focus:outline-none text-center"
-                                autoFocus
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") confirmEdit();
-                                  if (e.key === "Escape") setEditingVar(null);
-                                }}
-                              />
-                              <button
-                                onClick={confirmEdit}
-                                className="text-secondary"
-                              >
-                                <Check className="w-2.5 h-2.5" />
-                              </button>
-                              <button
-                                onClick={() => setEditingVar(null)}
-                                className="text-destructive"
-                              >
-                                <X className="w-2.5 h-2.5" />
-                              </button>
-                            </div>
-                          ) : showValue && v ? (
-                            <div className="flex items-center justify-center gap-0.5 group">
-                              <span>{formatValue(v)}</span>
-                              {isCurrent && !isRunning && (
-                                <button
-                                  onClick={() =>
-                                    startEdit(i, name, v.value ?? "")
-                                  }
-                                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-muted transition-all"
-                                >
-                                  <Edit3 className="w-2.5 h-2.5 text-muted-foreground" />
-                                </button>
-                              )}
-                            </div>
+                          {showValue && v ? (
+                            <span>{formatValue(v)}</span>
                           ) : (
                             <span>·</span>
                           )}

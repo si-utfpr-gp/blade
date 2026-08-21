@@ -26,9 +26,11 @@ interface ISimulatorContextValue {
   setActiveTab: (tab: Tab) => void;
   canStepBack: boolean;
   canStepForward: boolean;
+  canHistoryForward: boolean;
   start: () => void;
   stepForward: () => void;
   stepBack: () => void;
+  stepHistoryForward: () => void;
   runAll: () => void;
   stop: () => void;
   reset: () => void;
@@ -95,6 +97,8 @@ export function SimulatorProvider({
     state.isStarted && state.currentStepIndex > 0 && !state.isRunning && !state.awaitingInput;
   const canStepForward =
     state.isStarted && !state.isFinished && !state.isRunning && !state.awaitingInput;
+  const canHistoryForward =
+    state.isStarted && state.currentStepIndex < state.steps.length - 1 && !state.isRunning && !state.awaitingInput;
 
   const executeNextStep = useCallback((input?: string) => {
     const engine = engineRef.current;
@@ -162,6 +166,12 @@ export function SimulatorProvider({
     callbacks?.onStepBack?.();
   }, [callbacks, state.currentStepIndex, syncFromEngine]);
 
+  const stepHistoryForward = useCallback(() => {
+    if (state.currentStepIndex >= state.steps.length - 1) return;
+    engineRef.current?.goToStep(state.currentStepIndex + 1);
+    syncFromEngine();
+  }, [state.currentStepIndex, state.steps.length, syncFromEngine]);
+
   const runAll = useCallback(() => {
     dispatch({ type: "RUN_ALL" });
     callbacks?.onRunAll?.();
@@ -225,9 +235,11 @@ export function SimulatorProvider({
         setActiveTab,
         canStepBack,
         canStepForward,
+        canHistoryForward,
         start,
         stepForward,
         stepBack,
+        stepHistoryForward,
         runAll,
         stop,
         reset,
