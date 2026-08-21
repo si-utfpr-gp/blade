@@ -107,6 +107,28 @@ describe("simulatorReducer", () => {
     expect(state.steps[0].nodeId).toBe("node-1")
   })
 
+  it("SYNC_EXECUTION replaces the active future instead of appending it", () => {
+    const oldStep = { ...mockStep, nodeId: "old-input" }
+    const newStep = {
+      ...mockStep,
+      nodeId: "new-input",
+      variables: [{ name: "x", value: "10", type: "inteiro", scope: "global" }],
+    }
+    const state = simulatorReducer(
+      { ...initialState, steps: [mockStep, oldStep], currentStepIndex: 0 },
+      {
+        type: "SYNC_EXECUTION",
+        steps: [mockStep, newStep],
+        currentStepIndex: 1,
+        outputs: [],
+        isFinished: false,
+      } as never,
+    )
+
+    expect(state.steps).toEqual([mockStep, newStep])
+    expect(state.currentStepIndex).toBe(1)
+  })
+
   it("FINISH sets isFinished and stops running", () => {
     const state = simulatorReducer(
       { ...initialState, isRunning: true },

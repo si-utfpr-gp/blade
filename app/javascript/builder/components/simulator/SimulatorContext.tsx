@@ -59,6 +59,19 @@ export function SimulatorProvider({
     engineRef.current = engine;
   }, []);
 
+  const syncFromEngine = useCallback(() => {
+    const engine = engineRef.current;
+    if (!engine) return;
+    const execution = engine.getCurrentState();
+    dispatch({
+      type: "SYNC_EXECUTION",
+      steps: execution.steps,
+      currentStepIndex: engine.currentStepIndex,
+      outputs: execution.outputs,
+      isFinished: execution.finished,
+    });
+  }, []);
+
   const loadDiagram = useCallback((nodes: Node[], edges: Edge[]) => {
     try {
       const graph = parse(nodes, edges);
@@ -98,9 +111,7 @@ export function SimulatorProvider({
       }
 
       if (step.waitingForInput) {
-        if (step.inputEntered) {
-          dispatch({ type: "STEP_FORWARD", step });
-        }
+        if (step.inputEntered) syncFromEngine();
         dispatch({
           type: "INPUT_REQUESTED",
           prompt: step.inputPrompt ?? `Valor para '${step.nodeLabel}':`,
@@ -108,16 +119,13 @@ export function SimulatorProvider({
           inputType: step.inputType ?? "caractere",
         });
       } else {
-        if (step.output !== undefined) {
-          dispatch({ type: "SET_OUTPUTS", outputs: [...state.outputs, step.output] });
-        }
-        dispatch({ type: "STEP_FORWARD", step });
+        syncFromEngine();
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Erro durante a execução.";
       dispatch({ type: "SET_ERROR", error: msg });
     }
-  }, [state.outputs]);
+  }, [syncFromEngine]);
 
   const start = useCallback(() => {
     dispatch({ type: "START" });
@@ -126,11 +134,9 @@ export function SimulatorProvider({
     const engine = engineRef.current;
     if (engine) {
       const step = engine.start();
-      if (step) {
-        dispatch({ type: "SET_STEPS", steps: [step] });
-      }
+      if (step) syncFromEngine();
     }
-  }, [callbacks]);
+  }, [callbacks, syncFromEngine]);
 
   const stepForward = useCallback(() => {
     callbacks?.onStepForward?.();
@@ -150,9 +156,11 @@ export function SimulatorProvider({
   }, [callbacks]);
 
   const stepBack = useCallback(() => {
-    dispatch({ type: "STEP_BACK" });
+    if (state.currentStepIndex <= 0) return;
+    engineRef.current?.goToStep(state.currentStepIndex - 1);
+    syncFromEngine();
     callbacks?.onStepBack?.();
-  }, [callbacks]);
+  }, [callbacks, state.currentStepIndex, syncFromEngine]);
 
   const runAll = useCallback(() => {
     dispatch({ type: "RUN_ALL" });
@@ -188,9 +196,8 @@ export function SimulatorProvider({
 
   const goToStep = useCallback((index: number) => {
     if (index < 0 || index >= state.steps.length) return
-    engineRef.current?.goToStep(index)
-    dispatch({ type: "GO_TO_STEP", index })
-  }, [state.steps.length])
+    if (engineRef.current?.goToStep(index)) syncFromEngine()
+  }, [state.steps.length, syncFromEngine])
 
   useEffect(() => {
     if (!state.isRunning || state.awaitingInput || state.isFinished) return;

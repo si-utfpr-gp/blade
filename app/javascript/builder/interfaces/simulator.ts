@@ -29,6 +29,7 @@ export type ISimulatorAction =
   | { type: "SET_OUTPUTS"; outputs: string[] }
   | { type: "SET_CODE"; js: string; ts: string }
   | { type: "SET_STEPS"; steps: IExecutionStep[] }
+  | { type: "SYNC_EXECUTION"; steps: IExecutionStep[]; currentStepIndex: number; outputs: string[]; isFinished: boolean }
   | { type: "EDIT_VARIABLE"; stepIndex: number; varName: string; newValue: string }
   | { type: "FINISH" }
   | { type: "INPUT_REQUESTED"; prompt: string; variable: string; inputType: string }
@@ -96,6 +97,14 @@ export function simulatorReducer(state: ISimulatorState, action: ISimulatorActio
       return { ...state, jsCode: action.js, tsCode: action.ts }
     case "SET_STEPS":
       return { ...state, steps: action.steps }
+    case "SYNC_EXECUTION":
+      return {
+        ...state,
+        steps: action.steps,
+        currentStepIndex: action.currentStepIndex,
+        outputs: action.outputs,
+        isFinished: action.isFinished,
+      }
     case "EDIT_VARIABLE": {
       const newSteps = state.steps.map((step, i) => {
         if (i !== action.stepIndex) return step
