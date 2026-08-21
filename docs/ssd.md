@@ -366,9 +366,11 @@ O **Sistema para Simulação de Teste de Mesa em Diagrama de Blocos** é o motor
 ```mermaid
 graph TB
     subgraph Builder["Módulo de Construção"]
-        DIAGRAM[JSON do Diagrama]
+        DIAGRAM[Algoritmo Principal]
+        ROUTINES[Diagramas de Sub-rotinas]
         VAL[Validador Estrutural]
         DIAGRAM --> VAL
+        ROUTINES --> VAL
     end
     subgraph Parser["Camada de Parsing"]
         GRAPH[Construtor de Grafo de Execução]
@@ -406,6 +408,25 @@ graph TB
 ```
 
 O motor de execução é composto por quatro subsistemas que trabalham em conjunto:
+
+### Modelo-alvo de Sub-rotinas Visuais
+
+O construtor deve organizar o algoritmo **Principal** e cada sub-rotina em canvases internos separados. Cada sub-rotina é um diagrama de blocos desenhado pelo usuário, identificado por nome e com lista ordenada de parâmetros. O bloco `subroutine` do algoritmo chamador referencia essa definição e expressa a chamada, por exemplo `resultado = fatorial(m)`.
+
+O contrato lógico deverá conter o diagrama principal e as definições de sub-rotina. Cada definição precisa fornecer, no mínimo, seu identificador, nome, parâmetros e grafo de nós/arestas. A representação visual exata do ponto de entrada e do retorno será definida antes da implementação, mas o contrato deve permitir que uma rotina devolva um único valor ao chamador.
+
+Na execução de uma chamada, o motor deve:
+
+1. Resolver a sub-rotina pelo nome ou identificador;
+2. Avaliar os argumentos no escopo do chamador;
+3. Criar um frame de chamada com memória local, rotina ativa e ponto de retorno;
+4. Executar o grafo da sub-rotina até seu retorno;
+5. Atribuir o valor retornado à variável destino no escopo do chamador;
+6. Retomar o algoritmo chamador no bloco seguinte.
+
+Os snapshots devem incluir toda a pilha de frames. Assim, voltar ou avançar no histórico restaura não só as variáveis exibidas, mas também qual rotina estava em execução, seus parâmetros, sua memória local e o próximo ponto de retorno. O gerador de código deve converter cada definição visual em uma função JavaScript/TypeScript e manter a chamada correspondente no algoritmo principal.
+
+> **Estado atual:** o handler `subroutine` apenas registra a explicação da chamada. O modelo acima é requisito arquitetural planejado, ainda não implementado.
 
 ### Controlador de Fluxo
 

@@ -61,7 +61,7 @@ Desenvolver uma plataforma integrada para construção, interpretação e simula
 | process | Bloco de atribuição ou processamento. |
 | decision | Bloco de desvio condicional. |
 | connector | Bloco de roteamento de fluxo. Não gera passo de execução. |
-| subroutine | Bloco de chamada de sub-rotina/função. |
+| subroutine | Bloco de chamada de uma função visual definida pelo usuário em seu próprio diagrama. |
 | variant | Propriedade do bloco `startEnd` que indica início (`'start'`) ou término (`'end'`). |
 | Fluxo | Conexão entre blocos. |
 | Parser | Componente responsável por interpretar o diagrama. |
@@ -167,6 +167,22 @@ Suas principais responsabilidades são:
 - **Controle de fluxo**: avalia condições em blocos de decisão para determinar o caminho a seguir;
 - **Detecção de erros**: identifica erros estruturais e de execução, interrompendo a simulação quando necessário.
 
+## Sub-rotinas Visuais Definidas pelo Usuário
+
+O Blade representa programação de alto nível de forma visual. Além do algoritmo **Principal**, o usuário poderá criar sub-rotinas como algoritmos separados, cada uma desenhada em seu próprio canvas interno do construtor. Esses canvases não são abas do navegador: são áreas do próprio editor, por exemplo **Principal** e **fatorial**.
+
+Uma chamada no algoritmo principal poderá ser representada por um bloco `subroutine`, como:
+
+```text
+resultado = fatorial(m)
+```
+
+Nesse caso, o motor deve localizar a sub-rotina `fatorial`, avaliar o argumento `m`, executar o diagrama da função e atribuir seu valor de retorno à variável `resultado`. A sub-rotina possui parâmetros e memória local; suas variáveis internas não devem vazar para o escopo de quem a chamou. Ao terminar, o motor retorna ao próximo bloco do algoritmo chamador.
+
+Esse fluxo também deve aparecer no teste de mesa e nas explicações, identificando a chamada, os passos internos da função e o retorno. A navegação por snapshots deve restaurar a execução completa, inclusive a rotina ativa, a memória local e o ponto de retorno de cada chamada.
+
+> **Status atual:** o bloco `subroutine` existente apenas registra a chamada e gera código textual. A execução de sub-rotinas visuais é requisito planejado e ainda não está implementada.
+
 ## Gerenciamento de Memória
 
 A memória do sistema é uma estrutura que armazena todas as variáveis criadas durante a execução. Ela funciona como um dicionário mutável que é atualizado a cada operação.
@@ -178,7 +194,8 @@ Características da memória:
 - **Tipagem declarativa com execução dinâmica**: o tipo declarado no bloco `memory` serve como documentação e validação, mas o valor é tratado dinamicamente durante a execução;
 - **Suporte a vetores**: variáveis indexadas são declaradas como `nome[tamanho]` (ex: `notas[5]`);
 - **Imutabilidade de snapshots**: uma vez registrado, um snapshot não pode ser alterado;
-- **Escopo único**: todas as variáveis compartilham o mesmo escopo global do algoritmo.
+- **Escopo do algoritmo principal**: as variáveis declaradas no diagrama principal compartilham o escopo global desse algoritmo;
+- **Escopo local de sub-rotina**: cada função visual terá sua própria memória local e receberá valores pelos parâmetros, sem expor suas variáveis internas ao chamador.
 
 ## Sistema de Snapshots
 
@@ -191,6 +208,7 @@ Cada snapshot contém:
 - Estado completo das variáveis no momento;
 - Operação realizada;
 - Resultado da operação.
+- Quando houver sub-rotinas visuais: pilha de chamadas, rotina ativa, memórias locais e ponto de retorno.
 
 Os snapshots permitem que o usuário navegue livremente entre os passos da execução. Essa navegação apenas restaura um estado já registrado: não executa blocos, não solicita novas entradas e não acrescenta linhas ao teste de mesa.
 

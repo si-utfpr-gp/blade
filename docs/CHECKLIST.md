@@ -1,7 +1,7 @@
 # Checklist - Blade
 
 **Versao:** 2.0.0
-**Atualizado em:** 2026-08-11 (Execução automática, Code Generator e contrato JSON de teste sem `position`)
+**Atualizado em:** 2026-08-21 (navegação por snapshots e planejamento de sub-rotinas visuais)
 
 ---
 
@@ -40,6 +40,23 @@
 | 13 | — | Aceitar JSON de execução sem `position` nos nós | ✅ Feito |
 | 14 | — | Gerar código JS/TS com inputs tipados, operadores Portugol e `while` para loops simples | ✅ Feito |
 | 15 | — | Verificar propagação de erros estruturados no `ExprEvaluator`: atualmente `assign`, `condition` e `output` recebem `blockId`, mas os objetos produzidos por `buildDivByZeroError` e `checkValidExpression` são reduzidos à propriedade `message` ao lançar `Error`, descartando `type` e `blockId`. A `ExecutionEngine` reconstrói posteriormente o contexto com o bloco atual. Decidir entre implementar a propagação completa de `{ type, message, blockId }`, conforme o SSD §10.7, ou remover por enquanto o parâmetro redundante. Não alterar a implementação antes dessa decisão. | ⬜ Pendente |
+
+---
+
+## Sub-rotinas Visuais Definidas pelo Usuário
+
+| # | Tarefa | Status |
+|---|--------|--------|
+| 1 | Definir o contrato JSON do algoritmo Principal e das sub-rotinas (identificador, nome, parâmetros, nós e arestas) | ⬜ Pendente |
+| 2 | Criar canvases internos para **Principal** e cada sub-rotina, com criação, seleção e edição de funções | ⬜ Pendente |
+| 3 | Definir a representação visual e o contrato do retorno de uma sub-rotina | ⬜ Pendente |
+| 4 | Validar chamadas: função existente, parâmetros, variável de destino e retorno obrigatório | ⬜ Pendente |
+| 5 | Estender Parser e grafo de execução para resolver diagramas de sub-rotinas | ⬜ Pendente |
+| 6 | Implementar frames de chamada: memória local, parâmetros, rotina ativa e ponto de retorno | ⬜ Pendente |
+| 7 | Executar `resultado = fatorial(m)` e atribuir o retorno no escopo do chamador | ⬜ Pendente |
+| 8 | Incluir pilha de chamadas e memórias locais em snapshots, restauração e teste de mesa | ⬜ Pendente |
+| 9 | Gerar funções JavaScript/TypeScript a partir dos diagramas e chamadas entre elas | ⬜ Pendente |
+| 10 | Cobrir chamada simples, parâmetros, retorno, erro de contrato e navegação por snapshots com testes automatizados | ⬜ Pendente |
 
 ---
 
