@@ -43,20 +43,14 @@
 
 ---
 
-## Sub-rotinas Visuais Definidas pelo Usuário
+## Sub-rotinas — Módulo de Execução (Lucas)
 
 | # | Tarefa | Status |
 |---|--------|--------|
-| 1 | Definir o contrato JSON do algoritmo Principal e das sub-rotinas (identificador, nome, parâmetros, nós e arestas) | ⬜ Pendente |
-| 2 | Criar canvases internos para **Principal** e cada sub-rotina, com criação, seleção e edição de funções | ⬜ Pendente |
-| 3 | Definir a representação visual e o contrato do retorno de uma sub-rotina | ⬜ Pendente |
-| 4 | Validar chamadas: função existente, parâmetros, variável de destino e retorno obrigatório | ⬜ Pendente |
-| 5 | Estender Parser e grafo de execução para resolver diagramas de sub-rotinas | ⬜ Pendente |
-| 6 | Implementar frames de chamada: memória local, parâmetros, rotina ativa e ponto de retorno | ⬜ Pendente |
-| 7 | Executar `resultado = fatorial(m)` e atribuir o retorno no escopo do chamador | ⬜ Pendente |
-| 8 | Incluir pilha de chamadas e memórias locais em snapshots, restauração e teste de mesa | ⬜ Pendente |
-| 9 | Gerar funções JavaScript/TypeScript a partir dos diagramas e chamadas entre elas | ⬜ Pendente |
-| 10 | Cobrir chamada simples, parâmetros, retorno, erro de contrato e navegação por snapshots com testes automatizados | ⬜ Pendente |
+| 1 | Executar sub-rotinas visuais: interpretar chamada, parâmetros, memória local, retorno, pilha de chamadas, snapshots e geração de código JS/TS | ⬜ Pendente |
+| 2 | Testar chamada simples, parâmetros, retorno, erro de contrato e navegação por snapshots durante uma sub-rotina | ⬜ Pendente |
+
+> A criação dos canvases internos (**Principal** e sub-rotinas), a seleção de funções e a representação visual do retorno pertencem ao módulo de Construção.
 
 ---
 
