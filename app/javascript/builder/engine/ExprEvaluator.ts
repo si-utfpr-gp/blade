@@ -18,7 +18,7 @@ export class ExprEvaluator {
 
   /** Executes one or more assignments separated by ';' and returns a change log. */
   assign(expr: string, blockId: string | null): string[] {
-    return expr.split(";").filter(Boolean).map(s => {
+    return this.splitStatements(expr, blockId).map(s => {
       const [target, ...rest] = s.trim().split("=")
       const src = rest.join("=").trim()
       const res = String(this.evaluateSource(src, blockId))
@@ -59,6 +59,43 @@ export class ExprEvaluator {
       }
       throw this.toExecutionError(error, blockId)
     }
+  }
+
+  private splitStatements(source: string, blockId: string | null): string[] {
+    const statements: string[] = []
+    let start = 0
+    let quote: "'" | '"' | null = null
+    let escaped = false
+
+    for (let index = 0; index < source.length; index++) {
+      const char = source[index]
+      if (quote) {
+        if (escaped) {
+          escaped = false
+          continue
+        }
+        if (char === "\\") {
+          escaped = true
+          continue
+        }
+        if (char === quote) quote = null
+        continue
+      }
+
+      if (char === "'" || char === '"') {
+        quote = char
+      } else if (char === ";") {
+        const statement = source.slice(start, index).trim()
+        if (statement) statements.push(statement)
+        start = index + 1
+      }
+    }
+
+    if (quote) throw this.invalidExpression("texto não terminado", blockId)
+
+    const lastStatement = source.slice(start).trim()
+    if (lastStatement) statements.push(lastStatement)
+    return statements
   }
 
   private evaluate(node: ExpressionNode, blockId: string | null): ExpressionValue {

@@ -4,7 +4,7 @@ import { ExprEvaluator } from "./ExprEvaluator";
 import { MemoryManager } from "./MemoryManager";
 import { SnapshotManager } from "./SnapshotManager";
 import { ExplanationGenerator } from "./ExplanationGenerator";
-import { classifyError } from "./errors";
+import { classifyError, ExecutionError } from "./errors";
 
 /**
  * Stateful interpreter for a parsed diagram.
@@ -69,7 +69,7 @@ export class ExecutionEngine {
             if (step) this.snapshots.store(step, this.checkpoint())
             return step
         } catch (e) {
-          const structured = classifyError(e, this.current)
+          const structured = e instanceof ExecutionError ? e : classifyError(e, this.current)
           this._err = structured.message
           throw e
         }
@@ -135,7 +135,7 @@ export class ExecutionEngine {
             if (step) this.snapshots.store(step, this.checkpoint())
             return step
         } catch (e) {
-          const structured = classifyError(e, this.current)
+          const structured = e instanceof ExecutionError ? e : classifyError(e, this.current)
           this._err = structured.message
           throw e
         }

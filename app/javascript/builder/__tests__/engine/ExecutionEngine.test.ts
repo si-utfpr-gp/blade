@@ -1,9 +1,24 @@
 import { describe, it, expect } from "vitest"
 import { parse } from "../../parser/parser"
 import { ExecutionEngine } from "../../engine/ExecutionEngine"
+import { ExecutionError } from "../../engine/errors"
 import type { Node, Edge } from "@xyflow/react"
 
 function g(nodes: Node[], edges: Edge[]) { return parse(nodes, edges) }
+
+function processEngine(label: string, processId = "process-1") {
+  return new ExecutionEngine(g(
+    [
+      { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+      { id: processId, type: "process", position: { x: 0, y: 100 }, data: { label } },
+      { id: "end", type: "startEnd", position: { x: 0, y: 200 }, data: { variant: "end" } },
+    ],
+    [
+      { id: "start-process", source: "start", target: processId },
+      { id: "process-end", source: processId, target: "end" },
+    ],
+  ))
+}
 
 function inputProcessOutputEngine() {
   return new ExecutionEngine(g(
@@ -52,6 +67,30 @@ describe("ExecutionEngine", () => {
     const s3 = e.step()
     expect(s3?.nodeType).toBe("startEnd")
     expect(e.getCurrentState().finished).toBe(true)
+  })
+
+  it("keeps semicolons and equals signs inside string assignments", () => {
+    const e = processEngine("mensagem = 'a; b = c'; contador = 1")
+    e.start()
+
+    const step = e.step()
+
+    expect(step?.variables.find((v) => v.name === "mensagem")?.value).toBe("a; b = c")
+    expect(step?.variables.find((v) => v.name === "contador")?.value).toBe("1")
+  })
+
+  it("preserves the blockId from an expression error", () => {
+    const e = processEngine("resultado = fetch('x')")
+    e.start()
+
+    try {
+      e.step()
+      expect.unreachable("the invalid expression should throw")
+    } catch (error) {
+      expect(error).toBeInstanceOf(ExecutionError)
+      expect(error).toMatchObject({ blockId: "process-1", type: "INVALID_EXPRESSION" })
+    }
+    expect(e.getCurrentState().error).toContain("Expressão inválida")
   })
 
   it("decision segue yes/no", () => {
