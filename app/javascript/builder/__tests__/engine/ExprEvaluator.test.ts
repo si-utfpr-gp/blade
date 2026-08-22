@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest"
 import { ExprEvaluator } from "../../engine/ExprEvaluator"
+import { ExecutionError } from "../../engine/errors"
 import type { IMemory } from "../../interfaces/memory"
 import type { IVariable } from "../../interfaces/execution"
 
@@ -290,6 +291,25 @@ describe("ExprEvaluator", () => {
       mem.declare("x", "inteiro")
       const ev = new ExprEvaluator(mem)
       expect(() => ev.output("x + 1", null)).toThrow("não inicializada")
+    })
+
+    it("keeps blockId when rejecting a function call", () => {
+      const evaluator = setup({})
+
+      expect(() => evaluator.output("fetch('x')", "node-9")).toThrow("Expressão inválida")
+      try {
+        evaluator.output("fetch('x')", "node-9")
+      } catch (error) {
+        expect(error).toBeInstanceOf(ExecutionError)
+        expect(error).toMatchObject({ blockId: "node-9" })
+      }
+    })
+
+    it("rejects JavaScript constructor payloads", () => {
+      const evaluator = setup({})
+      const payload = "[]['constructor']['constructor']('return 42')()"
+
+      expect(() => evaluator.output(payload, null)).toThrow("Expressão inválida")
     })
   })
 
