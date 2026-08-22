@@ -1,4 +1,4 @@
-# 📄 Software Design Document (SSD)
+# 📄 Software Design Document (SDD)
 
 **Projeto:** Blade – Plataforma de Ensino de Algoritmos por Diagramas de Blocos
 
