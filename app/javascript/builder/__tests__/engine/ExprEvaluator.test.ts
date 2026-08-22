@@ -311,6 +311,18 @@ describe("ExprEvaluator", () => {
 
       expect(() => evaluator.output(payload, null)).toThrow("Expressão inválida")
     })
+
+    it.each([
+      "alert(1)",
+      "a.constructor",
+      "[]['constructor']",
+    ])("rejects JavaScript syntax outside the expression grammar: %s", (source) => {
+      expect(() => setup({ a: "1" }).output(source, null)).toThrow("Expressão inválida")
+    })
+
+    it("treats globalThis as a regular undeclared variable, without JavaScript access", () => {
+      expect(() => setup({}).output("globalThis", null)).toThrow("não declarada")
+    })
   })
 
   describe("mixed expressions", () => {
