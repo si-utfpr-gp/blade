@@ -26,15 +26,16 @@ interface ISimulatorContextValue {
   setActiveTab: (tab: Tab) => void;
   canStepBack: boolean;
   canStepForward: boolean;
+  canHistoryForward: boolean;
   start: () => void;
   stepForward: () => void;
   stepBack: () => void;
+  stepHistoryForward: () => void;
   runAll: () => void;
   stop: () => void;
   reset: () => void;
   setSpeed: (speed: number) => void;
   setCode: (js: string, ts: string) => void;
-  editVariable: (stepIndex: number, varName: string, newValue: string) => void;
   goToStep: (index: number) => void;
   submitInput: (value: string) => void;
   cancelInput: () => void;
@@ -57,6 +58,19 @@ export function SimulatorProvider({
 
   const setEngine = useCallback((engine: ExecutionEngine) => {
     engineRef.current = engine;
+  }, []);
+
+  const syncFromEngine = useCallback(() => {
+    const engine = engineRef.current;
+    if (!engine) return;
+    const execution = engine.getCurrentState();
+    dispatch({
+      type: "SYNC_EXECUTION",
+      steps: execution.steps,
+      currentStepIndex: engine.currentStepIndex,
+      outputs: execution.outputs,
+      isFinished: execution.finished,
+    });
   }, []);
 
   const loadDiagram = useCallback((nodes: Node[], edges: Edge[]) => {
@@ -82,6 +96,8 @@ export function SimulatorProvider({
     state.isStarted && state.currentStepIndex > 0 && !state.isRunning && !state.awaitingInput;
   const canStepForward =
     state.isStarted && !state.isFinished && !state.isRunning && !state.awaitingInput;
+  const canHistoryForward =
+    state.isStarted && state.currentStepIndex < state.steps.length - 1 && !state.isRunning && !state.awaitingInput;
 
   const executeNextStep = useCallback((input?: string) => {
     const engine = engineRef.current;
@@ -98,9 +114,7 @@ export function SimulatorProvider({
       }
 
       if (step.waitingForInput) {
-        if (step.inputEntered) {
-          dispatch({ type: "STEP_FORWARD", step });
-        }
+        if (step.inputEntered) syncFromEngine();
         dispatch({
           type: "INPUT_REQUESTED",
           prompt: step.inputPrompt ?? `Valor para '${step.nodeLabel}':`,
@@ -108,16 +122,13 @@ export function SimulatorProvider({
           inputType: step.inputType ?? "caractere",
         });
       } else {
-        if (step.output !== undefined) {
-          dispatch({ type: "SET_OUTPUTS", outputs: [...state.outputs, step.output] });
-        }
-        dispatch({ type: "STEP_FORWARD", step });
+        syncFromEngine();
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Erro durante a execução.";
       dispatch({ type: "SET_ERROR", error: msg });
     }
-  }, [state.outputs]);
+  }, [syncFromEngine]);
 
   const start = useCallback(() => {
     dispatch({ type: "START" });
@@ -126,11 +137,9 @@ export function SimulatorProvider({
     const engine = engineRef.current;
     if (engine) {
       const step = engine.start();
-      if (step) {
-        dispatch({ type: "SET_STEPS", steps: [step] });
-      }
+      if (step) syncFromEngine();
     }
-  }, [callbacks]);
+  }, [callbacks, syncFromEngine]);
 
   const stepForward = useCallback(() => {
     callbacks?.onStepForward?.();
@@ -150,9 +159,17 @@ export function SimulatorProvider({
   }, [callbacks]);
 
   const stepBack = useCallback(() => {
-    dispatch({ type: "STEP_BACK" });
+    if (state.currentStepIndex <= 0) return;
+    engineRef.current?.goToStep(state.currentStepIndex - 1);
+    syncFromEngine();
     callbacks?.onStepBack?.();
-  }, [callbacks]);
+  }, [callbacks, state.currentStepIndex, syncFromEngine]);
+
+  const stepHistoryForward = useCallback(() => {
+    if (state.currentStepIndex >= state.steps.length - 1) return;
+    engineRef.current?.goToStep(state.currentStepIndex + 1);
+    syncFromEngine();
+  }, [state.currentStepIndex, state.steps.length, syncFromEngine]);
 
   const runAll = useCallback(() => {
     dispatch({ type: "RUN_ALL" });
@@ -178,19 +195,10 @@ export function SimulatorProvider({
     dispatch({ type: "SET_CODE", js, ts });
   }, []);
 
-  const editVariable = useCallback(
-    (stepIndex: number, varName: string, newValue: string) => {
-      dispatch({ type: "EDIT_VARIABLE", stepIndex, varName, newValue });
-      callbacks?.onVariableEdit?.(stepIndex, varName, newValue);
-    },
-    [callbacks],
-  );
-
   const goToStep = useCallback((index: number) => {
     if (index < 0 || index >= state.steps.length) return
-    engineRef.current?.goToStep(index)
-    dispatch({ type: "GO_TO_STEP", index })
-  }, [state.steps.length])
+    if (engineRef.current?.goToStep(index)) syncFromEngine()
+  }, [state.steps.length, syncFromEngine])
 
   useEffect(() => {
     if (!state.isRunning || state.awaitingInput || state.isFinished) return;
@@ -218,15 +226,16 @@ export function SimulatorProvider({
         setActiveTab,
         canStepBack,
         canStepForward,
+        canHistoryForward,
         start,
         stepForward,
         stepBack,
+        stepHistoryForward,
         runAll,
         stop,
         reset,
         setSpeed,
         setCode,
-        editVariable,
         goToStep,
         submitInput,
         cancelInput,

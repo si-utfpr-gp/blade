@@ -6,9 +6,11 @@ export default function SimulatorControl() {
     state,
     canStepBack,
     canStepForward,
+    canHistoryForward,
     start,
     stepForward,
     stepBack,
+    stepHistoryForward,
     runAll,
     stop,
     reset,
@@ -44,12 +46,20 @@ export default function SimulatorControl() {
             <StepBack className="w-3.5 h-3.5" />
           </button>
           <button
+            onClick={stepHistoryForward}
+            disabled={!canHistoryForward}
+            className="flex items-center gap-1 px-2 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Próximo no histórico"
+          >
+            <StepForward className="w-3.5 h-3.5" />
+          </button>
+          <button
             onClick={stepForward}
             disabled={!canStepForward}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <StepForward className="w-3.5 h-3.5" />
-            Próximo
+            Próximo passo
           </button>
           <div className="flex items-center gap-1 rounded-md border border-border bg-muted/30 px-1 py-0.5">
             {!isRunning ? (

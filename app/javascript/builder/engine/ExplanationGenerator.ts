@@ -8,64 +8,64 @@ interface ExplanationResult {
 }
 
 export class ExplanationGenerator {
-    public generate(ctx: IExplanationContext): ExplanationResult {
-        switch (ctx.nodeType) {
+    public generate(context: IExplanationContext): ExplanationResult {
+        switch (context.nodeType) {
             case "startEnd":
-                return this.startEnd(ctx);
+                return this.startEnd(context);
             case "input":
-                return this.input(ctx);
+                return this.input(context);
             case "output":
-                return this.output(ctx);
+                return this.output(context);
             case "process":
-                return this.process(ctx);
+                return this.process(context);
             case "decision":
-                return this.decision(ctx);
+                return this.decision(context);
             case "subroutine":
-                return this.subroutine(ctx);
+                return this.subroutine(context);
             default:
                 return { log: "", explanation: "", changes: [], nextHint: "" };
         }
     }
 
-    private startEnd(ctx: IExplanationContext): ExplanationResult {
-        if (ctx.variant === "start") {
+    private startEnd(context: IExplanationContext): ExplanationResult {
+        if (context.variant === "start") {
             return { log: "Iniciando o algoritmo.", explanation: "Iniciando o algoritmo.", changes: [], nextHint: "Avançar." };
         }
         return { log: "Algoritmo finalizado.", explanation: "Algoritmo finalizado.", changes: [], nextHint: "Concluído." };
     }
 
-    private input(ctx: IExplanationContext): ExplanationResult {
-        if (ctx.inputValue === undefined) {
-            return { log: `Solicitando ${ctx.nodeLabel}.`, explanation: `Aguardando valor para '${ctx.nodeLabel}'.`, changes: [], nextHint: "Informe o valor." };
+    private input(context: IExplanationContext): ExplanationResult {
+        if (context.inputValue === undefined) {
+            return { log: `Solicitando ${context.nodeLabel}.`, explanation: `Aguardando valor para '${context.nodeLabel}'.`, changes: [], nextHint: "Informe o valor." };
         }
-        return { log: `Lendo ${ctx.nodeLabel}.`, explanation: `Armazenando '${ctx.inputValue}' em '${ctx.nodeLabel}'.`, changes: [`${ctx.nodeLabel} = ${ctx.inputValue}`], nextHint: "Avançar." };
+        return { log: `Lendo ${context.nodeLabel}.`, explanation: `Armazenando '${context.inputValue}' em '${context.nodeLabel}'.`, changes: [`${context.nodeLabel} = ${context.inputValue}`], nextHint: "Avançar." };
     }
 
-    private output(ctx: IExplanationContext): ExplanationResult {
-        const value = ctx.expressionResult ?? "";
-        return { log: `Exibindo ${ctx.nodeLabel}.`, explanation: `Resultado: ${value}.`, changes: [`Saída: ${value}`], nextHint: "Avançar." };
+    private output(context: IExplanationContext): ExplanationResult {
+        const value = context.expressionResult ?? "";
+        return { log: `Exibindo ${context.nodeLabel}.`, explanation: `Resultado: ${value}.`, changes: [`Saída: ${value}`], nextHint: "Avançar." };
     }
 
-    private process(ctx: IExplanationContext): ExplanationResult {
-        const changes = ctx.changes ?? [];
+    private process(context: IExplanationContext): ExplanationResult {
+        const changes = context.changes ?? [];
         const explanation = changes.length === 1
             ? `${changes[0]}.`
             : `Múltiplos: ${changes.join("; ")}.`;
-        return { log: ctx.nodeLabel, changes, explanation, nextHint: "Avançar." };
+        return { log: context.nodeLabel, changes, explanation, nextHint: "Avançar." };
     }
 
-    private decision(ctx: IExplanationContext): ExplanationResult {
-        const ok = ctx.conditionResult ?? false;
+    private decision(context: IExplanationContext): ExplanationResult {
+        const ok = context.conditionResult ?? false;
         return {
-            log: `${ctx.nodeLabel} → ${ok ? "V" : "F"}`,
+            log: `${context.nodeLabel} → ${ok ? "V" : "F"}`,
             changes: [`Decisão: ${ok ? "VERDADEIRO" : "FALSO"}`],
-            explanation: `'${ctx.nodeLabel}' é ${ok ? "verdadeiro" : "falso"}.`,
+            explanation: `'${context.nodeLabel}' é ${ok ? "verdadeiro" : "falso"}.`,
             nextHint: `Seguindo ${ok ? "VERDADEIRO" : "FALSO"}.`,
         };
     }
 
-    private subroutine(ctx: IExplanationContext): ExplanationResult {
-        const name = ctx.subroutineName ?? ctx.nodeLabel;
+    private subroutine(context: IExplanationContext): ExplanationResult {
+        const name = context.subroutineName ?? context.nodeLabel;
         return { log: `Chamando ${name}.`, explanation: `Chamando '${name}'.`, changes: [`Chamada: ${name}`], nextHint: "Retornando." };
     }
 }
