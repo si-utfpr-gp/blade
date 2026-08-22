@@ -1,11 +1,40 @@
-import type { IExecutionStep, ISnapshot } from "../interfaces/execution";
+import type { IExecutionCheckpoint, IExecutionStep, ISnapshot } from "../interfaces/execution";
+
+interface SnapshotRecord {
+    step: IExecutionStep;
+    checkpoint?: IExecutionCheckpoint;
+}
+
+function cloneStep(step: IExecutionStep): IExecutionStep {
+    return {
+        ...step,
+        variables: step.variables.map((variable) => ({ ...variable })),
+        changes: [...step.changes],
+    };
+}
+
+function cloneCheckpoint(checkpoint: IExecutionCheckpoint): IExecutionCheckpoint {
+    return {
+        ...checkpoint,
+        memory: {
+            entries: checkpoint.memory.entries.map((entry) => ({
+                ...entry,
+                elements: [...entry.elements],
+            })),
+        },
+        outputs: [...checkpoint.outputs],
+        pendingInput: checkpoint.pendingInput
+            ? { ...checkpoint.pendingInput, names: [...checkpoint.pendingInput.names] }
+            : null,
+    };
+}
 
 export class SnapshotManager {
-    private steps: IExecutionStep[] = [];
+    private records: SnapshotRecord[] = [];
     private _idx: number = -1;
 
     public get size(): number {
-        return this.steps.length;
+        return this.records.length;
     }
 
     public get currentIndex(): number {
@@ -13,47 +42,56 @@ export class SnapshotManager {
     }
 
     public get allSteps(): readonly IExecutionStep[] {
-        return this.steps;
+        return this.records.map((record) => cloneStep(record.step));
     }
 
     public get currentStep(): IExecutionStep | undefined {
-        if (this._idx < 0 || this._idx >= this.steps.length) return undefined;
-        return this.steps[this._idx];
+        const step = this.records[this._idx]?.step;
+        return step ? cloneStep(step) : undefined;
     }
 
-    public store(step: IExecutionStep): void {
-        this.steps.push(step);
-        this._idx = this.steps.length - 1;
+    public store(step: IExecutionStep, checkpoint?: IExecutionCheckpoint): void {
+        this.records = this.records.slice(0, this._idx + 1);
+        this.records.push({
+            step: cloneStep(step),
+            checkpoint: checkpoint ? cloneCheckpoint(checkpoint) : undefined,
+        });
+        this._idx = this.records.length - 1;
     }
 
     public goTo(index: number): void {
-        if (index < 0 || index >= this.steps.length) return;
+        if (index < 0 || index >= this.records.length) return;
         this._idx = index;
     }
 
     public getStep(index: number): IExecutionStep | undefined {
-        if (index < 0 || index >= this.steps.length) return undefined;
-        return this.steps[index];
+        const step = this.records[index]?.step;
+        return step ? cloneStep(step) : undefined;
+    }
+
+    public getCheckpoint(index: number): IExecutionCheckpoint | undefined {
+        const checkpoint = this.records[index]?.checkpoint;
+        return checkpoint ? cloneCheckpoint(checkpoint) : undefined;
     }
 
     public getSnapshot(index: number): ISnapshot | undefined {
-        if (index < 0 || index >= this.steps.length) return undefined;
-        const step = this.steps[index];
+        const step = this.getStep(index);
+        if (!step) return undefined;
         return {
             step: index,
             blockId: step.nodeId,
             blockLabel: step.nodeLabel,
             blockType: step.nodeType,
-            variables: step.variables,
+            variables: step.variables.map((variable) => ({ ...variable })),
             output: step.output,
             explanation: step.explanation,
-            changes: step.changes,
+            changes: [...step.changes],
             nextHint: step.nextHint,
         };
     }
 
     public reset(): void {
-        this.steps = [];
+        this.records = [];
         this._idx = -1;
     }
 }

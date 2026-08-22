@@ -28,7 +28,8 @@ describe("SimulatorControl", () => {
     renderControl()
     fireEvent.click(screen.getByText("Iniciar Execução"))
     expect(screen.getByTitle("Passo anterior")).toBeInTheDocument()
-    expect(screen.getByText("Próximo")).toBeInTheDocument()
+    expect(screen.getByText("Próximo passo")).toBeInTheDocument()
+    expect(screen.getByTitle("Próximo no histórico")).toBeInTheDocument()
     expect(screen.getByTitle("Executar tudo")).toBeInTheDocument()
   })
 

@@ -1,142 +1,209 @@
 import type { IMemory } from "../interfaces/memory"
-import { detectDivisionByZero, checkValidExpression, buildDivByZeroError } from "./errors"
+import {
+  ExpressionSyntaxError,
+  parseExpression,
+  type ExpressionNode,
+  type ExpressionValue,
+} from "./ExpressionParser"
+import { ERROR_TYPES, ExecutionError, classifyError } from "./errors"
 
 /**
  * Evaluates the expression subset used by diagram blocks.
  *
- * Expressions are first resolved from Portugol-like syntax and memory values
- * into JavaScript expressions, then evaluated. This is appropriate for the
- * local educational simulator, but should be sandboxed/replaced before running
- * untrusted external input in production.
+ * Expressions are parsed as a restricted Portugol grammar and evaluated from
+ * that AST. JavaScript source is never generated or executed.
  */
 export class ExprEvaluator {
   constructor(private memory: IMemory) {}
 
-  /** Replaces variables and Portugol operators with executable JavaScript syntax. */
-  resolve(expr: string): string {
-    let out = ""
-    let i = 0
-    while (i < expr.length) {
-      if (expr[i] === '"' || expr[i] === "'") {
-        const q = expr[i]
-        let j = i + 1
-        while (j < expr.length && expr[j] !== q) j++
-        out += expr.slice(i, j + 1)
-        i = j + 1
-        continue
-      }
-
-      if (/^verdadeiro\b/i.test(expr.slice(i))) {
-        out += "true"
-        i += 10
-        continue
-      }
-      if (/^falso\b/i.test(expr.slice(i))) {
-        out += "false"
-        i += 5
-        continue
-      }
-
-      if (/^nao\b/i.test(expr.slice(i))) {
-        out += "!"
-        i += 3
-        continue
-      }
-      if (/^ou\b/i.test(expr.slice(i))) {
-        out += "||"
-        i += 2
-        continue
-      }
-      if (/^e\b/i.test(expr.slice(i))) {
-        out += "&&"
-        i += 1
-        continue
-      }
-
-      const varMatch = expr.slice(i).match(/^[a-zA-Z_]\w*(\[\d+\])?/)
-      if (varMatch) {
-        const full = varMatch[0]
-        const arrayAccess = full.match(/^(\w+)\[(\d+)\]$/)
-        let val: string | null
-        if (arrayAccess) {
-          const arrName = arrayAccess[1]
-          const idx = parseInt(arrayAccess[2], 10)
-          if (!this.memory.has(arrName)) {
-            throw new Error(`Array '${arrName}' não declarado`)
-          }
-          val = this.memory.getIndex(arrName, idx)
-        } else {
-          if (!this.memory.has(full)) {
-            throw new Error(`Variável '${full}' não declarada`)
-          }
-          val = this.memory.get(full)
-        }
-        const varName = full.replace(/\[\d+\]$/, "")
-        if (val === null) throw new Error(`Variável '${varName}' não inicializada`)
-        const isNum = /^-?\d+(\.\d+)?$/.test(val)
-        const isBool = val === "true" || val === "false"
-        out += isNum || isBool ? val : `"${val.replace(/"/g, '\\"')}"`
-        i += varMatch[0].length
-        continue
-      }
-
-      if (/^>=/.test(expr.slice(i))) { out += ">="; i += 2; continue }
-      if (/^<=/.test(expr.slice(i))) { out += "<="; i += 2; continue }
-      if (/^!=/.test(expr.slice(i))) { out += "!=="; i += 2; continue }
-      if (/^==/.test(expr.slice(i))) { out += "==="; i += 2; continue }
-      if (/^=(?!\w)/.test(expr.slice(i))) { out += "==="; i += 1; continue }
-
-      out += expr[i]
-      i++
-    }
-    return out
-  }
-
   /** Executes one or more assignments separated by ';' and returns a change log. */
   assign(expr: string, blockId: string | null): string[] {
-    return expr.split(";").filter(Boolean).map(s => {
+    return this.splitStatements(expr, blockId).map(s => {
       const [target, ...rest] = s.trim().split("=")
       const src = rest.join("=").trim()
-      const resolved = this.resolve(src)
-      if (detectDivisionByZero(resolved)) {
-        throw new Error(buildDivByZeroError(blockId).message)
-      }
-      const err = checkValidExpression(resolved, blockId)
-      if (err) throw new Error(err.message)
-      const res = String(new Function(`return (${resolved})`)())
-      const indexTarget = target.trim().match(/^(\w+)\[(-?\d+|\w+)\]$/)
+      const res = String(this.evaluateSource(src, blockId))
+      const indexTarget = target.trim().match(/^([a-zA-Z_]\w*)\[(.+)\]$/)
       if (indexTarget) {
         const arrName = indexTarget[1]
-        const idxExpr = indexTarget[2]
-        const idx = /^-?\d+$/.test(idxExpr) ? parseInt(idxExpr, 10) : Number(this.resolve(idxExpr))
-        this.memory.setIndex(arrName, idx, res)
+        const idx = this.indexValue(this.evaluateSource(indexTarget[2], blockId), blockId)
+        this.runWithExecutionError(blockId, () => this.memory.setIndex(arrName, idx, res))
         return `${target.trim()} = ${res}`
       }
-      if (!this.memory.has(target.trim())) {
-        this.memory.declare(target.trim(), "caractere")
+      const variable = target.trim()
+      if (!/^[a-zA-Z_]\w*$/.test(variable)) {
+        throw this.invalidExpression(`destino de atribuição inválido: ${variable}`, blockId)
       }
-      this.memory.set(target.trim(), res)
-      return `${target.trim()} = ${res}`
+      if (!this.memory.has(variable)) {
+        this.runWithExecutionError(blockId, () => this.memory.declare(variable, "caractere"))
+      }
+      this.runWithExecutionError(blockId, () => this.memory.set(variable, res))
+      return `${variable} = ${res}`
     })
   }
 
   condition(expr: string, blockId: string | null): boolean {
-    const resolved = this.resolve(expr)
-    if (detectDivisionByZero(resolved)) {
-      throw new Error(buildDivByZeroError(blockId).message)
-    }
-    const err = checkValidExpression(resolved, blockId)
-    if (err) throw new Error(err.message)
-    return Boolean(new Function(`return (${resolved})`)())
+    return Boolean(this.evaluateSource(expr, blockId))
   }
 
   output(expr: string, blockId: string | null): string {
-    const resolved = this.resolve(expr)
-    if (detectDivisionByZero(resolved)) {
-      throw new Error(buildDivByZeroError(blockId).message)
+    return String(this.evaluateSource(expr, blockId))
+  }
+
+  private evaluateSource(source: string, blockId: string | null): ExpressionValue {
+    try {
+      return this.evaluate(parseExpression(source), blockId)
+    } catch (error) {
+      if (error instanceof ExecutionError) throw error
+      if (error instanceof ExpressionSyntaxError) {
+        throw this.invalidExpression(error.message.replace(/^Expressão inválida: /, ""), blockId)
+      }
+      throw this.toExecutionError(error, blockId)
     }
-    const err = checkValidExpression(resolved, blockId)
-    if (err) throw new Error(err.message)
-    return String(new Function(`return (${resolved})`)())
+  }
+
+  private splitStatements(source: string, blockId: string | null): string[] {
+    const statements: string[] = []
+    let start = 0
+    let quote: "'" | '"' | null = null
+    let escaped = false
+
+    for (let index = 0; index < source.length; index++) {
+      const char = source[index]
+      if (quote) {
+        if (escaped) {
+          escaped = false
+          continue
+        }
+        if (char === "\\") {
+          escaped = true
+          continue
+        }
+        if (char === quote) quote = null
+        continue
+      }
+
+      if (char === "'" || char === '"') {
+        quote = char
+      } else if (char === ";") {
+        const statement = source.slice(start, index).trim()
+        if (statement) statements.push(statement)
+        start = index + 1
+      }
+    }
+
+    if (quote) throw this.invalidExpression("texto não terminado", blockId)
+
+    const lastStatement = source.slice(start).trim()
+    if (lastStatement) statements.push(lastStatement)
+    return statements
+  }
+
+  private evaluate(node: ExpressionNode, blockId: string | null): ExpressionValue {
+    switch (node.kind) {
+      case "literal":
+        return node.value
+      case "variable":
+        return this.valueFromMemory(node.name, this.readValue(node.name, blockId), blockId)
+      case "arrayAccess": {
+        const index = this.indexValue(this.evaluate(node.index, blockId), blockId)
+        const value = this.runWithExecutionError(blockId, () => this.memory.getIndex(node.name, index))
+        if (value === null) {
+          throw new ExecutionError(ERROR_TYPES.UNINITIALIZED_VARIABLE, `Variável '${node.name}' não inicializada`, blockId)
+        }
+        return this.valueFromMemory(node.name, value, blockId)
+      }
+      case "unary": {
+        const value = this.evaluate(node.operand, blockId)
+        return node.operator === "nao" ? !value : this.toNumber(value, blockId) * -1
+      }
+      case "binary":
+        return this.evaluateBinary(node, blockId)
+    }
+  }
+
+  private evaluateBinary(node: Extract<ExpressionNode, { kind: "binary" }>, blockId: string | null): ExpressionValue {
+    const left = this.evaluate(node.left, blockId)
+    if (node.operator === "e" && !left) return false
+    if (node.operator === "ou" && left) return true
+
+    const right = this.evaluate(node.right, blockId)
+    switch (node.operator) {
+      case "e": return Boolean(right)
+      case "ou": return Boolean(right)
+      case "+": return typeof left === "string" || typeof right === "string" ? `${left}${right}` : left + right
+      case "-": return this.toNumber(left, blockId) - this.toNumber(right, blockId)
+      case "*": return this.toNumber(left, blockId) * this.toNumber(right, blockId)
+      case "/": {
+        const divisor = this.toNumber(right, blockId)
+        if (divisor === 0) {
+          throw new ExecutionError(ERROR_TYPES.DIVISION_BY_ZERO, "Divisão por zero detectada", blockId)
+        }
+        return this.toNumber(left, blockId) / divisor
+      }
+      case "%": return this.toNumber(left, blockId) % this.toNumber(right, blockId)
+      case "<": return left < right
+      case "<=": return left <= right
+      case ">": return left > right
+      case ">=": return left >= right
+      case "=":
+      case "==": return left === right
+      case "!=": return left !== right
+      default: throw this.invalidExpression(`operador '${node.operator}' não permitido`, blockId)
+    }
+  }
+
+  private readValue(name: string, blockId: string | null): string {
+    if (!this.memory.has(name)) {
+      throw new ExecutionError(ERROR_TYPES.UNDECLARED_VARIABLE, `Variável '${name}' não declarada`, blockId)
+    }
+    const value = this.runWithExecutionError(blockId, () => this.memory.get(name))
+    if (value === null) {
+      throw new ExecutionError(ERROR_TYPES.UNINITIALIZED_VARIABLE, `Variável '${name}' não inicializada`, blockId)
+    }
+    return value
+  }
+
+  private valueFromMemory(name: string, value: string, blockId: string | null): ExpressionValue {
+    if (/^-?(?:\d+(?:\.\d+)?|\.\d+)$/.test(value)) return Number(value)
+    if (value === "true") return true
+    if (value === "false") return false
+    if (value === null) {
+      throw new ExecutionError(ERROR_TYPES.UNINITIALIZED_VARIABLE, `Variável '${name}' não inicializada`, blockId)
+    }
+    return value
+  }
+
+  private indexValue(value: ExpressionValue, blockId: string | null): number {
+    const index = this.toNumber(value, blockId)
+    if (!Number.isInteger(index)) {
+      throw this.invalidExpression("índice de vetor deve ser um inteiro", blockId)
+    }
+    return index
+  }
+
+  private toNumber(value: ExpressionValue, blockId: string | null): number {
+    const number = Number(value)
+    if (Number.isNaN(number)) {
+      throw this.invalidExpression(`valor numérico esperado, recebido '${value}'`, blockId)
+    }
+    return number
+  }
+
+  private runWithExecutionError<T>(blockId: string | null, action: () => T): T {
+    try {
+      return action()
+    } catch (error) {
+      throw this.toExecutionError(error, blockId)
+    }
+  }
+
+  private toExecutionError(error: unknown, blockId: string | null): ExecutionError {
+    if (error instanceof ExecutionError) return error
+    const classified = classifyError(error, blockId)
+    return new ExecutionError(classified.type, classified.message, classified.blockId)
+  }
+
+  private invalidExpression(detail: string, blockId: string | null): ExecutionError {
+    return new ExecutionError(ERROR_TYPES.INVALID_EXPRESSION, `Expressão inválida: ${detail}`, blockId)
   }
 }

@@ -1,7 +1,7 @@
 # Checklist - Blade
 
 **Versao:** 2.0.0
-**Atualizado em:** 2026-08-11 (Execução automática, Code Generator e contrato JSON de teste sem `position`)
+**Atualizado em:** 2026-08-21 (navegação por snapshots e planejamento de sub-rotinas visuais)
 
 ---
 
@@ -18,6 +18,19 @@
 | 7 | — | Validação Estrutural (RN01–RN16) | ⬜ Pendente |
 | 8 | — | Exportar JSON `{ nodes, edges }` para o simulador | ⬜ Pendente |
 | 9 | — | Normalizar JSON do construtor removendo dados visuais antes da execução (`position`, dimensões, seleção) | ⬜ Pendente |
+
+---
+
+## Sub-rotinas Visuais — Módulo de Construção (Emanuel)
+
+| # | Tarefa | Status |
+|---|--------|--------|
+| 1 | Criar canvases internos para o algoritmo **Principal** e para cada sub-rotina definida pelo usuário | ⬜ Pendente |
+| 2 | Criar fluxo de criação, seleção, renomeação e exclusão de sub-rotinas no construtor | ⬜ Pendente |
+| 3 | Permitir configurar nome e parâmetros de cada sub-rotina | ⬜ Pendente |
+| 4 | Criar o bloco visual `subroutine` para selecionar a função chamada, informar argumentos e variável de retorno | ⬜ Pendente |
+| 5 | Definir e implementar a representação visual do retorno da sub-rotina | ⬜ Pendente |
+| 6 | Exportar o contrato JSON com algoritmo principal e diagramas de sub-rotinas, sem metadados de layout | ⬜ Pendente |
 
 ---
 
@@ -39,6 +52,16 @@
 | 12 | [#62](https://github.com/si-utfpr-gp/blade/issues/62) | Custom Hooks (useExecutionEngine, useParser, useCodeGeneration) | ⬜ Pendente |
 | 13 | — | Aceitar JSON de execução sem `position` nos nós | ✅ Feito |
 | 14 | — | Gerar código JS/TS com inputs tipados, operadores Portugol e `while` para loops simples | ✅ Feito |
+| 15 | — | Avaliador seguro e erros estruturados: `ExprEvaluator` interpreta apenas a AST interna permitida, sem `eval` ou `new Function`; `ExecutionError` preserva `{ type, message, blockId }` até a `ExecutionEngine`. Chamadas, propriedades e payloads de construtor fora da gramática são rejeitados. | ✅ Feito |
+
+---
+
+## Sub-rotinas — Módulo de Execução (Lucas)
+
+| # | Tarefa | Status |
+|---|--------|--------|
+| 1 | Executar sub-rotinas visuais: interpretar chamada, parâmetros, memória local, retorno, pilha de chamadas, snapshots e geração de código JS/TS | ⬜ Pendente |
+| 2 | Testar chamada simples, parâmetros, retorno, erro de contrato e navegação por snapshots durante uma sub-rotina | ⬜ Pendente |
 
 ---
 

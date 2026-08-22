@@ -1,10 +1,10 @@
-import type { IExecutionStep } from "../interfaces/execution";
+import type { IExecutionCheckpoint, IExecutionStep, IPendingInputCheckpoint } from "../interfaces/execution";
 import type { IParserData, IParserNode } from "../parser/types";
 import { ExprEvaluator } from "./ExprEvaluator";
 import { MemoryManager } from "./MemoryManager";
 import { SnapshotManager } from "./SnapshotManager";
 import { ExplanationGenerator } from "./ExplanationGenerator";
-import { classifyError } from "./errors";
+import { classifyError, ExecutionError } from "./errors";
 
 /**
  * Stateful interpreter for a parsed diagram.
@@ -23,7 +23,7 @@ export class ExecutionEngine {
     private _done = false;
     private current: string | null = null;
     private max = 10000;
-    private pendingInput: { nodeId: string; names: string[]; index: number } | null = null;
+    private pendingInput: IPendingInputCheckpoint | null = null;
 
     public constructor(private graph: IParserData) { }
 
@@ -55,28 +55,39 @@ export class ExecutionEngine {
         try {
             const step = this.exec(node, input)
             const isOnlyAskingForInput = step?.waitingForInput && step.inputEntered === false
-            if (step && !isOnlyAskingForInput) this.snapshots.store(step)
-            if (step?.waitingForInput) return step
+            if (isOnlyAskingForInput) return step
+
+            if (step?.waitingForInput) {
+                this.snapshots.store(step, this.checkpoint())
+                return step
+            }
 
             this.current = this.next(node)
             if (this.current === null && node.type === "startEnd" && node.variant === "end") {
                 this._done = true
             }
+            if (step) this.snapshots.store(step, this.checkpoint())
             return step
         } catch (e) {
-          const structured = classifyError(e, this.current)
+          const structured = e instanceof ExecutionError ? e : classifyError(e, this.current)
           this._err = structured.message
           throw e
         }
     }
 
-    public goToStep(i: number): void {
-        const step = this.snapshots.getStep(i);
-        if (!step) return;
+    public goToStep(i: number): boolean {
+        const checkpoint = this.snapshots.getCheckpoint(i);
+        if (!checkpoint) return false;
         this.snapshots.goTo(i);
-        this.current = step.nodeId;
+        this.memory.restore(checkpoint.memory);
+        this.outputs = [...checkpoint.outputs];
+        this.current = checkpoint.nextNodeId;
+        this.pendingInput = checkpoint.pendingInput
+            ? { ...checkpoint.pendingInput, names: [...checkpoint.pendingInput.names] }
+            : null;
         this._err = null;
-        this._done = false;
+        this._done = checkpoint.finished;
+        return true;
     }
 
     public reset(): void {
@@ -117,11 +128,14 @@ export class ExecutionEngine {
 
         try {
             const step = this.exec(node)
-            if (step) this.snapshots.store(step)
             this.current = this.next(node)
+            if (this.current === null && node.type === "startEnd" && node.variant === "end") {
+                this._done = true
+            }
+            if (step) this.snapshots.store(step, this.checkpoint())
             return step
         } catch (e) {
-          const structured = classifyError(e, this.current)
+          const structured = e instanceof ExecutionError ? e : classifyError(e, this.current)
           this._err = structured.message
           throw e
         }
@@ -318,6 +332,18 @@ export class ExecutionEngine {
     private next(node: IParserNode): string | null {
         if (node.type === "decision") return this.graph.getNextNode(node.id, this.expr.condition(node.label ?? "", node.id) ? "yes" : "no")
         return this.graph.getNextNode(node.id)
+    }
+
+    private checkpoint(): IExecutionCheckpoint {
+        return {
+            memory: this.memory.createCheckpoint(),
+            outputs: [...this.outputs],
+            nextNodeId: this.current,
+            pendingInput: this.pendingInput
+                ? { ...this.pendingInput, names: [...this.pendingInput.names] }
+                : null,
+            finished: this._done,
+        }
     }
 
 }

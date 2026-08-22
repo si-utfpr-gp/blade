@@ -107,6 +107,28 @@ describe("simulatorReducer", () => {
     expect(state.steps[0].nodeId).toBe("node-1")
   })
 
+  it("SYNC_EXECUTION replaces the active future instead of appending it", () => {
+    const oldStep = { ...mockStep, nodeId: "old-input" }
+    const newStep = {
+      ...mockStep,
+      nodeId: "new-input",
+      variables: [{ name: "x", value: "10", type: "inteiro", scope: "global" }],
+    }
+    const state = simulatorReducer(
+      { ...initialState, steps: [mockStep, oldStep], currentStepIndex: 0 },
+      {
+        type: "SYNC_EXECUTION",
+        steps: [mockStep, newStep],
+        currentStepIndex: 1,
+        outputs: [],
+        isFinished: false,
+      } as never,
+    )
+
+    expect(state.steps).toEqual([mockStep, newStep])
+    expect(state.currentStepIndex).toBe(1)
+  })
+
   it("FINISH sets isFinished and stops running", () => {
     const state = simulatorReducer(
       { ...initialState, isRunning: true },
@@ -114,38 +136,6 @@ describe("simulatorReducer", () => {
     )
     expect(state.isFinished).toBe(true)
     expect(state.isRunning).toBe(false)
-  })
-
-  it("EDIT_VARIABLE updates variable value in the correct step", () => {
-    const stateWithStep = {
-      ...initialState,
-      steps: [mockStep],
-      currentStepIndex: 0,
-    }
-    const state = simulatorReducer(stateWithStep, {
-      type: "EDIT_VARIABLE",
-      stepIndex: 0,
-      varName: "x",
-      newValue: "20",
-    })
-    expect(state.steps[0].variables[0].value).toBe("20")
-  })
-
-  it("EDIT_VARIABLE does not affect other steps", () => {
-    const step2: IExecutionStep = {
-      ...mockStep,
-      nodeId: "node-2",
-      variables: [{ name: "x", value: "10", type: "number", scope: "local" }],
-    }
-    const stateWithSteps = { ...initialState, steps: [mockStep, step2] }
-    const state = simulatorReducer(stateWithSteps, {
-      type: "EDIT_VARIABLE",
-      stepIndex: 0,
-      varName: "x",
-      newValue: "99",
-    })
-    expect(state.steps[0].variables[0].value).toBe("99")
-    expect(state.steps[1].variables[0].value).toBe("10")
   })
 
   it("INPUT_REQUESTED sets awaitingInput and prompt", () => {

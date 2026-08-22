@@ -1,9 +1,44 @@
 import { describe, it, expect } from "vitest"
 import { parse } from "../../parser/parser"
 import { ExecutionEngine } from "../../engine/ExecutionEngine"
+import { ExecutionError } from "../../engine/errors"
 import type { Node, Edge } from "@xyflow/react"
 
 function g(nodes: Node[], edges: Edge[]) { return parse(nodes, edges) }
+
+function processEngine(label: string, processId = "process-1") {
+  return new ExecutionEngine(g(
+    [
+      { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+      { id: processId, type: "process", position: { x: 0, y: 100 }, data: { label } },
+      { id: "end", type: "startEnd", position: { x: 0, y: 200 }, data: { variant: "end" } },
+    ],
+    [
+      { id: "start-process", source: "start", target: processId },
+      { id: "process-end", source: processId, target: "end" },
+    ],
+  ))
+}
+
+function inputProcessOutputEngine() {
+  return new ExecutionEngine(g(
+    [
+      { id:"n1", type:"startEnd", position:{x:0,y:0}, data:{variant:"start"} },
+      { id:"n2", type:"memory", position:{x:0,y:80}, data:{rows:[{type:"inteiro",variables:"x, y"}]} },
+      { id:"n3", type:"input", position:{x:0,y:160}, data:{label:"x"} },
+      { id:"n4", type:"process", position:{x:0,y:240}, data:{label:"y = x"} },
+      { id:"n5", type:"output", position:{x:0,y:320}, data:{label:"y"} },
+      { id:"n6", type:"startEnd", position:{x:0,y:400}, data:{variant:"end"} },
+    ],
+    [
+      { id:"e1", source:"n1", target:"n2" },
+      { id:"e2", source:"n2", target:"n3" },
+      { id:"e3", source:"n3", target:"n4" },
+      { id:"e4", source:"n4", target:"n5" },
+      { id:"e5", source:"n5", target:"n6" },
+    ],
+  ))
+}
 
 describe("ExecutionEngine", () => {
   it("start() retorna passo inicial", () => {
@@ -34,6 +69,30 @@ describe("ExecutionEngine", () => {
     expect(e.getCurrentState().finished).toBe(true)
   })
 
+  it("keeps semicolons and equals signs inside string assignments", () => {
+    const e = processEngine("mensagem = 'a; b = c'; contador = 1")
+    e.start()
+
+    const step = e.step()
+
+    expect(step?.variables.find((v) => v.name === "mensagem")?.value).toBe("a; b = c")
+    expect(step?.variables.find((v) => v.name === "contador")?.value).toBe("1")
+  })
+
+  it("preserves the blockId from an expression error", () => {
+    const e = processEngine("resultado = fetch('x')")
+    e.start()
+
+    try {
+      e.step()
+      expect.unreachable("the invalid expression should throw")
+    } catch (error) {
+      expect(error).toBeInstanceOf(ExecutionError)
+      expect(error).toMatchObject({ blockId: "process-1", type: "INVALID_EXPRESSION" })
+    }
+    expect(e.getCurrentState().error).toContain("Expressão inválida")
+  })
+
   it("decision segue yes/no", () => {
     const graph = g(
       [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
@@ -62,6 +121,32 @@ describe("ExecutionEngine", () => {
     expect(e.getSteps()).toHaveLength(2)
     e.reset()
     expect(e.getSteps()).toHaveLength(0)
+  })
+
+  it("restores memory, outputs, and the next node for a selected snapshot", () => {
+    const e = inputProcessOutputEngine()
+    e.start()
+    e.step("25")
+    e.step()
+    e.step()
+
+    expect(e.goToStep(0)).toBe(true)
+    expect(e.getCurrentState().variables.has("x")).toBe(false)
+    expect(e.getCurrentOutputs()).toEqual([])
+    expect(e.step()).toMatchObject({ waitingForInput: true, inputVariable: "x" })
+  })
+
+  it("replaces later steps after a new input instead of adding duplicates", () => {
+    const e = inputProcessOutputEngine()
+    e.start()
+    e.step("25")
+    e.step()
+    e.goToStep(0)
+    e.step("10")
+
+    expect(e.getSteps()).toHaveLength(2)
+    expect(e.getSteps()[1].variables.find((v) => v.name === "x")?.value).toBe("10")
+    expect(e.currentStepIndex).toBe(1)
   })
 
   it("detecta erro de variável não inicializada", () => {
@@ -258,5 +343,91 @@ describe("ExecutionEngine", () => {
     expect(mediaStep?.nodeType).toBe("process")
     const out = e.step()
     expect(out?.output).toBe("Média: 20")
+  })
+
+  it("executa decisão composta e aninhada", () => {
+    const e = new ExecutionEngine(g(
+      [
+        { id:"n1", type:"startEnd", position:{x:0,y:0}, data:{variant:"start"} },
+        { id:"n2", type:"memory", position:{x:0,y:80}, data:{rows:[{type:"inteiro",variables:"a, b, resultado"}]} },
+        { id:"n3", type:"process", position:{x:0,y:160}, data:{label:"a = 3; b = 7"} },
+        { id:"n4", type:"decision", position:{x:0,y:240}, data:{label:"a < b e b > 0"} },
+        { id:"n5", type:"decision", position:{x:120,y:320}, data:{label:"b > 5"} },
+        { id:"n6", type:"process", position:{x:220,y:400}, data:{label:"resultado = 1"} },
+        { id:"n7", type:"process", position:{x:20,y:400}, data:{label:"resultado = 2"} },
+        { id:"n8", type:"process", position:{x:-160,y:320}, data:{label:"resultado = 3"} },
+        { id:"n9", type:"output", position:{x:0,y:480}, data:{label:"resultado"} },
+        { id:"n10", type:"startEnd", position:{x:0,y:560}, data:{variant:"end"} },
+      ],
+      [
+        { id:"e1", source:"n1", target:"n2" },
+        { id:"e2", source:"n2", target:"n3" },
+        { id:"e3", source:"n3", target:"n4" },
+        { id:"e4", source:"n4", target:"n5", sourceHandle:"yes" },
+        { id:"e5", source:"n4", target:"n8", sourceHandle:"no" },
+        { id:"e6", source:"n5", target:"n6", sourceHandle:"yes" },
+        { id:"e7", source:"n5", target:"n7", sourceHandle:"no" },
+        { id:"e8", source:"n6", target:"n9" },
+        { id:"e9", source:"n7", target:"n9" },
+        { id:"e10", source:"n8", target:"n9" },
+        { id:"e11", source:"n9", target:"n10" },
+      ],
+    ))
+
+    e.start()
+    while (e.step() !== null) { /* execute até o fim */ }
+
+    expect(e.getCurrentOutputs()).toEqual(["1"])
+  })
+
+  it("executa faça-enquanto antes de avaliar a condição", () => {
+    const e = new ExecutionEngine(g(
+      [
+        { id:"n1", type:"startEnd", position:{x:0,y:0}, data:{variant:"start"} },
+        { id:"n2", type:"memory", position:{x:0,y:80}, data:{rows:[{type:"inteiro",variables:"i, soma"}]} },
+        { id:"n3", type:"process", position:{x:0,y:160}, data:{label:"i = 0; soma = 0"} },
+        { id:"n4", type:"process", position:{x:0,y:240}, data:{label:"i = i + 1; soma = soma + i"} },
+        { id:"n5", type:"decision", position:{x:0,y:320}, data:{label:"i < 3"} },
+        { id:"n6", type:"output", position:{x:0,y:400}, data:{label:"soma"} },
+        { id:"n7", type:"startEnd", position:{x:0,y:480}, data:{variant:"end"} },
+      ],
+      [
+        { id:"e1", source:"n1", target:"n2" },
+        { id:"e2", source:"n2", target:"n3" },
+        { id:"e3", source:"n3", target:"n4" },
+        { id:"e4", source:"n4", target:"n5" },
+        { id:"e5", source:"n5", target:"n4", sourceHandle:"yes" },
+        { id:"e6", source:"n5", target:"n6", sourceHandle:"no" },
+        { id:"e7", source:"n6", target:"n7" },
+      ],
+    ))
+
+    e.start()
+    while (e.step() !== null) { /* execute até o fim */ }
+
+    expect(e.getCurrentOutputs()).toEqual(["6"])
+  })
+
+  it("lê vetor por índice variável em uma expressão", () => {
+    const e = new ExecutionEngine(g(
+      [
+        { id:"n1", type:"startEnd", position:{x:0,y:0}, data:{variant:"start"} },
+        { id:"n2", type:"memory", position:{x:0,y:80}, data:{rows:[{type:"inteiro",variables:"i, total, notas[2]"}]} },
+        { id:"n3", type:"process", position:{x:0,y:160}, data:{label:"i = 1; notas[0] = 10; notas[i] = 20; total = notas[0] + notas[i]"} },
+        { id:"n4", type:"output", position:{x:0,y:240}, data:{label:"total"} },
+        { id:"n5", type:"startEnd", position:{x:0,y:320}, data:{variant:"end"} },
+      ],
+      [
+        { id:"e1", source:"n1", target:"n2" },
+        { id:"e2", source:"n2", target:"n3" },
+        { id:"e3", source:"n3", target:"n4" },
+        { id:"e4", source:"n4", target:"n5" },
+      ],
+    ))
+
+    e.start()
+    const process = e.step()
+    expect(process?.variables.find((variable) => variable.name === "total")?.value).toBe("30")
+    expect(e.step()?.output).toBe("30")
   })
 })
