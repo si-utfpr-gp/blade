@@ -53,14 +53,17 @@ export class ExprEvaluator {
         continue
       }
 
-      const varMatch = expr.slice(i).match(/^[a-zA-Z_]\w*(\[\d+\])?/)
+      const varMatch = expr.slice(i).match(/^[a-zA-Z_]\w*(\[(-?\d+|[a-zA-Z_]\w*)\])?/)
       if (varMatch) {
         const full = varMatch[0]
-        const arrayAccess = full.match(/^(\w+)\[(\d+)\]$/)
+        const arrayAccess = full.match(/^(\w+)\[(-?\d+|[a-zA-Z_]\w*)\]$/)
         let val: string | null
         if (arrayAccess) {
           const arrName = arrayAccess[1]
-          const idx = parseInt(arrayAccess[2], 10)
+          const indexExpr = arrayAccess[2]
+          const idx = /^-?\d+$/.test(indexExpr)
+            ? parseInt(indexExpr, 10)
+            : Number(this.resolve(indexExpr))
           if (!this.memory.has(arrName)) {
             throw new Error(`Array '${arrName}' não declarado`)
           }
