@@ -1,7 +1,7 @@
 # Checklist - Blade
 
 **Versao:** 2.0.0
-**Atualizado em:** 2026-08-21 (navegação por snapshots e planejamento de sub-rotinas visuais)
+**Atualizado em:** 2026-08-25 (execução de sub-rotinas visuais e exemplos JSON atualizados)
 
 ---
 

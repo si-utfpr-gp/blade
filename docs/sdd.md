@@ -413,7 +413,7 @@ O motor de execução é composto por quatro subsistemas que trabalham em conjun
 
 O construtor deve organizar o algoritmo **Principal** e cada sub-rotina em canvases internos separados. Cada sub-rotina é um diagrama de blocos desenhado pelo usuário, identificado por nome e com lista ordenada de parâmetros. O bloco `subroutine` do algoritmo chamador referencia essa definição e expressa a chamada, por exemplo `resultado = fatorial(m)`.
 
-O contrato lógico deverá conter o diagrama principal e as definições de sub-rotina. Cada definição precisa fornecer, no mínimo, seu identificador, nome, parâmetros e grafo de nós/arestas. A representação visual exata do ponto de entrada e do retorno será definida antes da implementação, mas o contrato deve permitir que uma rotina devolva um único valor ao chamador.
+O contrato lógico pode conter o diagrama principal e as definições de sub-rotina no campo opcional `subroutines`. Cada definição fornece seu identificador, nome, parâmetros, variável de retorno e grafo de nós/arestas. A rotina devolve um único valor por meio de `returnVariable`, lida na memória local ao alcançar o bloco final da sub-rotina.
 
 Na execução de uma chamada, o motor deve:
 
@@ -426,7 +426,7 @@ Na execução de uma chamada, o motor deve:
 
 Os snapshots devem incluir toda a pilha de frames. Assim, voltar ou avançar no histórico restaura não só as variáveis exibidas, mas também qual rotina estava em execução, seus parâmetros, sua memória local e o próximo ponto de retorno. O gerador de código deve converter cada definição visual em uma função JavaScript/TypeScript e manter a chamada correspondente no algoritmo principal.
 
-> **Estado atual:** o handler `subroutine` apenas registra a explicação da chamada. O modelo acima é requisito arquitetural planejado, ainda não implementado.
+> **Estado atual:** o módulo de execução já executa sub-rotinas visuais pelo contrato `subroutines`, com parâmetros, memória local, retorno, pilha de chamadas, snapshots de frames e geração de código JS/TS. O módulo de construção ainda precisa criar e exportar esses canvases visualmente.
 
 ### Controlador de Fluxo
 
