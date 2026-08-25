@@ -20,6 +20,45 @@ function processEngine(label: string, processId = "process-1") {
   ))
 }
 
+function subroutineDobroEngine() {
+  return new ExecutionEngine(parse(
+    [
+      { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+      { id: "memory", type: "memory", position: { x: 0, y: 80 }, data: { rows: [{ type: "inteiro", variables: "n, resultado" }] } },
+      { id: "set-n", type: "process", position: { x: 0, y: 160 }, data: { label: "n = 7" } },
+      { id: "call", type: "subroutine", position: { x: 0, y: 240 }, data: { label: "resultado = dobro(n)" } },
+      { id: "end", type: "startEnd", position: { x: 0, y: 320 }, data: { variant: "end" } },
+    ],
+    [
+      { id: "e1", source: "start", target: "memory" },
+      { id: "e2", source: "memory", target: "set-n" },
+      { id: "e3", source: "set-n", target: "call" },
+      { id: "e4", source: "call", target: "end" },
+    ],
+    {
+      subroutines: [
+        {
+          id: "routine-dobro",
+          name: "dobro",
+          parameters: ["valor"],
+          returnVariable: "retorno",
+          nodes: [
+            { id: "r-start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+            { id: "r-memory", type: "memory", position: { x: 0, y: 80 }, data: { rows: [{ type: "inteiro", variables: "retorno" }] } },
+            { id: "r-process", type: "process", position: { x: 0, y: 160 }, data: { label: "retorno = valor * 2" } },
+            { id: "r-end", type: "startEnd", position: { x: 0, y: 240 }, data: { variant: "end" } },
+          ],
+          edges: [
+            { id: "re1", source: "r-start", target: "r-memory" },
+            { id: "re2", source: "r-memory", target: "r-process" },
+            { id: "re3", source: "r-process", target: "r-end" },
+          ],
+        },
+      ],
+    },
+  ))
+}
+
 function inputProcessOutputEngine() {
   return new ExecutionEngine(g(
     [
@@ -69,6 +108,25 @@ describe("ExecutionEngine", () => {
     expect(e.getCurrentState().finished).toBe(true)
   })
 
+  it("executes a visual subroutine with parameter, local memory, and return assignment", () => {
+    const e = subroutineDobroEngine()
+
+    e.start()
+    e.step()
+    const call = e.step()
+    expect(call?.nodeType).toBe("subroutine")
+    expect(call?.callStack?.map((frame) => frame.routineName)).toEqual(["Principal", "dobro"])
+
+    const inner = e.step()
+    expect(inner?.nodeId).toBe("r-start")
+    e.step()
+    e.step()
+
+    const state = e.getCurrentState()
+    expect(state.variables.get("resultado")?.value).toBe("14")
+    expect(state.variables.has("retorno")).toBe(false)
+  })
+
   it("keeps semicolons and equals signs inside string assignments", () => {
     const e = processEngine("mensagem = 'a; b = c'; contador = 1")
     e.start()
@@ -91,6 +149,87 @@ describe("ExecutionEngine", () => {
       expect(error).toMatchObject({ blockId: "process-1", type: "INVALID_EXPRESSION" })
     }
     expect(e.getCurrentState().error).toContain("Expressão inválida")
+  })
+
+  it("throws a structured contract error when the called subroutine does not exist", () => {
+    const e = new ExecutionEngine(parse(
+      [
+        { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+        { id: "call", type: "subroutine", position: { x: 0, y: 100 }, data: { label: "resultado = ausente(1)" } },
+        { id: "end", type: "startEnd", position: { x: 0, y: 200 }, data: { variant: "end" } },
+      ],
+      [
+        { id: "e1", source: "start", target: "call" },
+        { id: "e2", source: "call", target: "end" },
+      ],
+    ))
+
+    e.start()
+    expect(() => e.step()).toThrow(ExecutionError)
+    expect(e.getCurrentState().error).toContain("Sub-rotina 'ausente' não encontrada")
+  })
+
+  it("throws a structured contract error when argument count differs from parameters", () => {
+    const e = new ExecutionEngine(parse(
+      [
+        { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+        { id: "call", type: "subroutine", position: { x: 0, y: 100 }, data: { label: "resultado = dobro(1, 2)" } },
+        { id: "end", type: "startEnd", position: { x: 0, y: 200 }, data: { variant: "end" } },
+      ],
+      [
+        { id: "e1", source: "start", target: "call" },
+        { id: "e2", source: "call", target: "end" },
+      ],
+      {
+        subroutines: [{
+          id: "routine-dobro",
+          name: "dobro",
+          parameters: ["valor"],
+          returnVariable: "retorno",
+          nodes: [
+            { id: "r-start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+            { id: "r-end", type: "startEnd", position: { x: 0, y: 80 }, data: { variant: "end" } },
+          ],
+          edges: [{ id: "re1", source: "r-start", target: "r-end" }],
+        }],
+      },
+    ))
+
+    e.start()
+    expect(() => e.step()).toThrow(ExecutionError)
+    expect(e.getCurrentState().error).toContain("esperava 1 argumento(s), recebeu 2")
+  })
+
+  it("throws a structured contract error when a returning call has no return variable", () => {
+    const e = new ExecutionEngine(parse(
+      [
+        { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+        { id: "call", type: "subroutine", position: { x: 0, y: 100 }, data: { label: "resultado = semRetorno()" } },
+        { id: "end", type: "startEnd", position: { x: 0, y: 200 }, data: { variant: "end" } },
+      ],
+      [
+        { id: "e1", source: "start", target: "call" },
+        { id: "e2", source: "call", target: "end" },
+      ],
+      {
+        subroutines: [{
+          id: "routine-sem-retorno",
+          name: "semRetorno",
+          parameters: [],
+          nodes: [
+            { id: "r-start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+            { id: "r-end", type: "startEnd", position: { x: 0, y: 80 }, data: { variant: "end" } },
+          ],
+          edges: [{ id: "re1", source: "r-start", target: "r-end" }],
+        }],
+      },
+    ))
+
+    e.start()
+    e.step()
+    e.step()
+    expect(() => e.step()).toThrow(ExecutionError)
+    expect(e.getCurrentState().error).toContain("não possui variável de retorno")
   })
 
   it("decision segue yes/no", () => {
@@ -121,6 +260,23 @@ describe("ExecutionEngine", () => {
     expect(e.getSteps()).toHaveLength(2)
     e.reset()
     expect(e.getSteps()).toHaveLength(0)
+  })
+
+  it("restores the active routine and local memory when navigating to a subroutine snapshot", () => {
+    const e = subroutineDobroEngine()
+    e.start()
+    e.step()
+    e.step()
+    const innerStartIndex = e.currentStepIndex + 1
+    e.step()
+    e.step()
+    e.goToStep(innerStartIndex)
+
+    const state = e.getCurrentState()
+    expect(state.callStack?.map((frame) => frame.routineName)).toEqual(["Principal", "dobro"])
+    expect(state.currentNodeId).toBe("r-memory")
+    expect(Array.from(state.variables.keys())).not.toContain("retorno")
+    expect(e.step()?.nodeId).toBe("r-process")
   })
 
   it("restores memory, outputs, and the next node for a selected snapshot", () => {
