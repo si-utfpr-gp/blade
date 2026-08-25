@@ -27,6 +27,7 @@ export interface IExecutionStep {
   changes: string[]
   nextHint: string
   callStack?: ICallStackFrame[]
+  inputVariable?: string
 }
 
 export interface IExplanationContext {
