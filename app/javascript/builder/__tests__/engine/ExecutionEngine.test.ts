@@ -119,8 +119,10 @@ describe("ExecutionEngine", () => {
 
     const inner = e.step()
     expect(inner?.nodeId).toBe("r-start")
+    expect(inner?.log).toBe("Iniciando sub-rotina dobro.")
     e.step()
-    e.step()
+    const innerEnd = e.step()
+    expect(innerEnd?.log).toBe("Sub-rotina dobro finalizada.")
 
     const state = e.getCurrentState()
     expect(state.variables.get("resultado")?.value).toBe("14")

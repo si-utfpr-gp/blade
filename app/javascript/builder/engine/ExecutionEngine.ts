@@ -206,6 +206,18 @@ export class ExecutionEngine {
         switch (node.type) {
             case "startEnd": {
                 if (node.variant !== "start" && node.variant !== "end") return null;
+                if (frame.routineName !== "Principal") {
+                    const log = node.variant === "start"
+                        ? `Iniciando sub-rotina ${frame.routineName}.`
+                        : `Sub-rotina ${frame.routineName} finalizada.`
+                    return {
+                        ...base(),
+                        log,
+                        explanation: log,
+                        changes: [],
+                        nextHint: node.variant === "start" ? "Avançar." : "Retornando."
+                    };
+                }
                 const text = this.explanations.generate({
                     nodeType: node.type,
                     variant: node.variant,
