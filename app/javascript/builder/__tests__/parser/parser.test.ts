@@ -55,4 +55,46 @@ describe("parse", () => {
     expect(graph.startNodeId).toBeNull()
     expect(graph.endNodeId).toBeNull()
   })
+
+  it("parses optional visual subroutine definitions", () => {
+    const main = parse(
+      [
+        { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+        { id: "call", type: "subroutine", position: { x: 0, y: 100 }, data: { label: "resultado = dobro(n)" } },
+        { id: "end", type: "startEnd", position: { x: 0, y: 200 }, data: { variant: "end" } },
+      ],
+      [
+        { id: "e1", source: "start", target: "call" },
+        { id: "e2", source: "call", target: "end" },
+      ],
+      {
+        subroutines: [
+          {
+            id: "routine-dobro",
+            name: "dobro",
+            parameters: ["valor"],
+            returnVariable: "retorno",
+            nodes: [
+              { id: "r-start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+              { id: "r-memory", type: "memory", position: { x: 0, y: 80 }, data: { rows: [{ type: "inteiro", variables: "retorno" }] } },
+              { id: "r-process", type: "process", position: { x: 0, y: 160 }, data: { label: "retorno = valor * 2" } },
+              { id: "r-end", type: "startEnd", position: { x: 0, y: 240 }, data: { variant: "end" } },
+            ],
+            edges: [
+              { id: "re1", source: "r-start", target: "r-memory" },
+              { id: "re2", source: "r-memory", target: "r-process" },
+              { id: "re3", source: "r-process", target: "r-end" },
+            ],
+          },
+        ],
+      },
+    )
+
+    const routine = main.subroutines?.get("dobro")
+    expect(routine?.parameters).toEqual(["valor"])
+    expect(routine?.returnVariable).toBe("retorno")
+    expect(routine?.graph.startNodeId).toBe("r-start")
+    expect(routine?.graph.getNextNode("r-process")).toBe("r-end")
+  })
+
 })
