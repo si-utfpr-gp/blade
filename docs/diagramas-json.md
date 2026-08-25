@@ -354,21 +354,21 @@ Armazena as notas em um vetor `notas[5]` e calcula a média. Usa atribuição in
 
 ---
 
-# 9. Sub-rotina Visual — DOBRO COM RETORNO
+# 9. Sub-rotina Visual — FATORIAL COM RETORNO
 
-Exemplo completo de sub-rotina visual. O algoritmo principal define `n`, chama `resultado = dobro(n)` e recebe o retorno calculado no diagrama interno `dobro`. A variável `retorno` pertence à memória local da sub-rotina e não aparece na memória global do algoritmo principal.
+Exemplo completo de sub-rotina visual. O algoritmo principal lê `n`, chama `resultado = fatorial(n)` e recebe o retorno calculado no diagrama interno `fatorial`. As variáveis `retorno` e `i` pertencem à memória local da sub-rotina e não aparecem na memória global do algoritmo principal.
 
-**Entradas:** nenhuma; o exemplo atribui `n = 7` para facilitar o teste.
-**Saída esperada:** `Dobro: 14`.
+**Entradas:** `n` (inteiro, ex.: `5`).
+**Saída esperada:** `Fatorial: 120`.
 
 ```json
 {
   "nodes": [
     { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
     { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "n, resultado" } ] } },
-    { "id": "n3", "type": "process", "data": { "label": "n = 7" } },
-    { "id": "n4", "type": "subroutine", "data": { "label": "resultado = dobro(n)" } },
-    { "id": "n5", "type": "output", "data": { "label": "'Dobro: ' + resultado" } },
+    { "id": "n3", "type": "input", "data": { "label": "n" } },
+    { "id": "n4", "type": "subroutine", "data": { "label": "resultado = fatorial(n)" } },
+    { "id": "n5", "type": "output", "data": { "label": "'Fatorial: ' + resultado" } },
     { "id": "n6", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
@@ -380,20 +380,25 @@ Exemplo completo de sub-rotina visual. O algoritmo principal define `n`, chama `
   ],
   "subroutines": [
     {
-      "id": "routine-dobro",
-      "name": "dobro",
+      "id": "routine-fatorial",
+      "name": "fatorial",
       "parameters": ["valor"],
       "returnVariable": "retorno",
       "nodes": [
-        { "id": "r1", "type": "startEnd", "data": { "label": "Início dobro", "variant": "start" } },
-        { "id": "r2", "type": "memory", "data": { "label": "Memória local", "rows": [ { "type": "inteiro", "variables": "retorno" } ] } },
-        { "id": "r3", "type": "process", "data": { "label": "retorno = valor * 2" } },
-        { "id": "r4", "type": "startEnd", "data": { "label": "Fim dobro", "variant": "end" } }
+        { "id": "r1", "type": "startEnd", "data": { "label": "Início fatorial", "variant": "start" } },
+        { "id": "r2", "type": "memory", "data": { "label": "Memória local", "rows": [ { "type": "inteiro", "variables": "retorno, i" } ] } },
+        { "id": "r3", "type": "process", "data": { "label": "retorno = 1; i = 1" } },
+        { "id": "r4", "type": "decision", "data": { "label": "i <= valor" } },
+        { "id": "r5", "type": "process", "data": { "label": "retorno = retorno * i; i = i + 1" } },
+        { "id": "r6", "type": "startEnd", "data": { "label": "Fim fatorial", "variant": "end" } }
       ],
       "edges": [
         { "id": "re1", "source": "r1", "target": "r2" },
         { "id": "re2", "source": "r2", "target": "r3" },
-        { "id": "re3", "source": "r3", "target": "r4" }
+        { "id": "re3", "source": "r3", "target": "r4" },
+        { "id": "re4", "source": "r4", "target": "r5", "sourceHandle": "yes" },
+        { "id": "re5", "source": "r5", "target": "r4" },
+        { "id": "re6", "source": "r4", "target": "r6", "sourceHandle": "no" }
       ]
     }
   ]
