@@ -32,7 +32,7 @@ motor de execução ignoram esse campo.
     { "id": "n4", "type": "process","data": { "label": "soma = 0; i = 0" } },
     { "id": "n5", "type": "decision","data": { "label": "i < n" } },
     { "id": "n6", "type": "output", "data": { "label": "'Média: ' + media" } },
-    { "id": "n7", "type": "subroutine", "data": { "label": "fatorial(n)" } }
+    { "id": "n7", "type": "subroutine", "data": { "label": "resultado = dobro(n)" } }
   ],
   "edges": [ // conexões
     { "id": "e1", "source": "n1", "target": "n2" },
@@ -44,8 +44,8 @@ motor de execução ignoram esse campo.
       "name": "dobro",
       "parameters": ["valor"],
       "returnVariable": "retorno",
-      "nodes": [],
-      "edges": []
+      "nodes": [ /* diagrama interno da rotina */ ],
+      "edges": [ /* conexões internas da rotina */ ]
     }
   ]
 }
@@ -54,7 +54,7 @@ motor de execução ignoram esse campo.
 **Tipos de bloco:** `startEnd` (com `variant: "start"|"end"`), `memory`, `input`, `process`,
 `output`, `decision`, `subroutine`, `connector`.
 
-**Sub-rotinas:** o campo opcional `subroutines` define diagramas internos chamados por blocos `subroutine`. Cada item deve conter `id`, `name`, `parameters`, `returnVariable`, `nodes` e `edges`. A chamada no bloco usa o formato `resultado = nome(argumento)`.
+**Sub-rotinas:** o campo opcional `subroutines` define diagramas internos chamados por blocos `subroutine`. Cada item deve conter `id`, `name`, `parameters`, `returnVariable`, `nodes` e `edges`. A chamada no bloco usa o formato `resultado = nome(argumento)`, e `nome` precisa existir em `subroutines[].name`. O resumo acima é ilustrativo; para copiar e executar, use o exemplo completo de sub-rotina na seção 9.
 
 **Campos de layout:** `position`, `width`, `height`, `selected` e outros metadados do React Flow são
 opcionais para execução. Eles podem aparecer no JSON exportado pelo construtor, mas não devem ser
