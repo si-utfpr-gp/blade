@@ -17,6 +17,7 @@ import { ExecutionEngine } from "../../engine/ExecutionEngine";
 import { parse } from "../../parser";
 import { CodeGenerator } from "../../engine/CodeGenerator";
 import type { Node, Edge } from "@xyflow/react";
+import type { IRawSubroutineDefinition } from "../../parser/types";
 
 type Tab = "trace" | "explain" | "code";
 
@@ -40,7 +41,7 @@ interface ISimulatorContextValue {
   submitInput: (value: string) => void;
   cancelInput: () => void;
   setEngine: (engine: ExecutionEngine) => void;
-  loadDiagram: (nodes: Node[], edges: Edge[]) => { ok: true } | { ok: false; error: string };
+  loadDiagram: (nodes: Node[], edges: Edge[], options?: { subroutines?: IRawSubroutineDefinition[] }) => { ok: true } | { ok: false; error: string };
 }
 
 const SimulatorContext = createContext<ISimulatorContextValue | null>(null);
@@ -73,9 +74,9 @@ export function SimulatorProvider({
     });
   }, []);
 
-  const loadDiagram = useCallback((nodes: Node[], edges: Edge[]) => {
+  const loadDiagram = useCallback((nodes: Node[], edges: Edge[], options?: { subroutines?: IRawSubroutineDefinition[] }) => {
     try {
-      const graph = parse(nodes, edges);
+      const graph = parse(nodes, edges, { subroutines: options?.subroutines });
       if (!graph.startNodeId) {
         return { ok: false, error: "Nenhum bloco de início (RN01)" };
       }
