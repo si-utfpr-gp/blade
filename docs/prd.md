@@ -55,12 +55,12 @@ Desenvolver uma plataforma integrada para construção, interpretação e simula
 | Diagrama | Representação gráfica de um algoritmo. |
 | Bloco | Elemento que representa uma instrução do algoritmo. |
 | startEnd | Bloco que representa início ou término, diferenciado pela propriedade `variant` (`'start'` ou `'end'`). |
-| memory | Bloco de declaração de variáveis com tipo e nome. Não gera passo de execução. |
+| memory | Bloco de declaração de variáveis com tipo e nome. Gera um passo didático no teste de mesa. |
 | input | Bloco de entrada de dados pelo usuário. |
 | output | Bloco de saída/exibição de dados. |
 | process | Bloco de atribuição ou processamento. |
 | decision | Bloco de desvio condicional. |
-| connector | Bloco de roteamento de fluxo. Não gera passo de execução. |
+| connector | Bloco de roteamento de fluxo. Gera um passo didático no teste de mesa. |
 | subroutine | Bloco de chamada de uma função visual definida pelo usuário em seu próprio diagrama. |
 | variant | Propriedade do bloco `startEnd` que indica início (`'start'`) ou término (`'end'`). |
 | Fluxo | Conexão entre blocos. |
@@ -69,7 +69,7 @@ Desenvolver uma plataforma integrada para construção, interpretação e simula
 | Memória | Estrutura que armazena todas as variáveis. |
 | Snapshot | Registro completo da memória em determinado instante. |
 | Teste de Mesa | Simulação passo a passo do algoritmo. |
-| Passo | Execução individual de um bloco (blocos `memory` e `connector` não geram passos). |
+| Passo | Registro didático de cada bloco visitado e de cada ramo selecionado em uma decisão. |
 | Explicação | Descrição textual da ação realizada em um passo. |
 | Conversão | Transformação do diagrama para código-fonte. |
 
@@ -146,7 +146,7 @@ O **Sistema para Simulação de Teste de Mesa em Diagrama de Blocos** é o compo
 O sistema opera em ciclos de execução controlados pelo usuário. A cada ciclo, o motor de execução:
 
 1. Identifica o bloco atual a ser processado com base no fluxo do diagrama;
-2. Se o bloco for `connector` ou `memory`, o motor **não gera passo** — apenas avança para o próximo bloco;
+2. Registra no teste de mesa cada bloco visitado, inclusive `connector` e `memory`, e o ramo selecionado em decisões;
 3. Interpreta o tipo de bloco e sua operação específica;
 4. Executa a operação, atualizando o estado da memória;
 5. Registra um snapshot completo do estado após a execução;
@@ -181,7 +181,7 @@ Nesse caso, o motor deve localizar a sub-rotina `fatorial`, avaliar o argumento 
 
 Esse fluxo também deve aparecer no teste de mesa e nas explicações, identificando a chamada, os passos internos da função e o retorno. A navegação por snapshots deve restaurar a execução completa, inclusive a rotina ativa, a memória local e o ponto de retorno de cada chamada.
 
-> **Status atual:** o bloco `subroutine` existente apenas registra a chamada e gera código textual. A execução de sub-rotinas visuais é requisito planejado e ainda não está implementada.
+> **Status atual:** o módulo de execução interpreta chamadas `subroutine`, avalia argumentos, cria memória local, controla pilha de chamadas, restaura snapshots com frames de sub-rotina e gera funções JavaScript/TypeScript. A criação visual dos canvases e a exportação pelo construtor ainda pertencem ao módulo de construção.
 
 ## Gerenciamento de Memória
 
@@ -190,7 +190,7 @@ A memória do sistema é uma estrutura que armazena todas as variáveis criadas 
 Características da memória:
 
 - **Declaração explícita**: as variáveis são declaradas no bloco `memory` com nome e tipo (`inteiro`, `real`, `caractere`, `logico`);
-- **Inicialização tardia**: variáveis só recebem valor após sua primeira atribuição (bloco `input` ou `process`);
+- **Inicialização opcional na declaração**: uma linha de `memory` pode informar `initialValue`; sem ele, a variável recebe valor somente por `input` ou `process`;
 - **Tipagem declarativa com execução dinâmica**: o tipo declarado no bloco `memory` serve como documentação e validação, mas o valor é tratado dinamicamente durante a execução;
 - **Suporte a vetores**: variáveis indexadas são declaradas como `nome[tamanho]` (ex: `notas[5]`);
 - **Imutabilidade de snapshots**: uma vez registrado, um snapshot não pode ser alterado;
@@ -216,15 +216,17 @@ Quando o usuário escolhe executar um novo **Próximo passo** a partir de um sna
 
 ## Geração do Teste de Mesa
 
-O teste de mesa é construído automaticamente a partir da sequência de snapshots registrados. Ele é apresentado como uma tabela onde cada linha representa um passo da execução.
+O teste de mesa é construído automaticamente a partir da sequência de snapshots registrados. Ele é apresentado como uma tabela onde cada linha representa um passo principal da execução. O ramo escolhido por uma decisão aparece imediatamente abaixo da decisão como subpasso (`N.1`), sem aumentar a contagem de passos principais.
 
 A tabela do teste de mesa exibe:
 
 - Número do passo;
 - Bloco executado (tipo e identificador);
 - Operação realizada (descrição textual);
-- Valores de todas as variáveis após a execução;
+- Valores das variáveis declaradas ou alteradas naquele passo; células vazias indicam que a variável não mudou;
 - Resultado ou saída produzida (se aplicável).
+
+Os rótulos didáticos identificam o tipo de bloco: `Entrada`, `Processo (...)`, `Condição (...)`, `Conector`, `Caso Verdadeiro` ou `Caso Falso`. A condição não repete o resultado, pois este é informado pelo subpasso de caso seguinte.
 
 ## Interação com o Usuário
 
@@ -279,7 +281,7 @@ Blocos de decisão devem possuir exatamente dois caminhos de saída, identificad
 
 ### RN07
 
-Cada passo executado gera um snapshot da memória. Blocos `memory` e `connector` **não geram passos nem snapshots**.
+Cada bloco visitado e cada ramo selecionado em uma decisão gera um snapshot imutável. Os passos de `memory` e `connector` preservam a memória sem alterar seus valores.
 
 ### RN08
 
@@ -287,15 +289,15 @@ A memória deve representar fielmente o estado do algoritmo.
 
 ### RN09
 
-Variáveis somente podem ser utilizadas após sua declaração no bloco `memory` e inicialização via `input` ou `process`.
+Variáveis somente podem ser utilizadas após sua declaração no bloco `memory` e inicialização via `initialValue`, `input` ou `process`.
 
 ### RN10
 
-O teste de mesa deve refletir exatamente a execução realizada.
+O teste de mesa deve refletir exatamente a execução realizada. Casos de decisão são exibidos como subpassos (`N.1`) e não entram no total de passos principais exibido pela interface.
 
 ### RN11
 
-O código gerado deve ser semanticamente equivalente ao algoritmo representado no diagrama.
+O código gerado deve ser semanticamente equivalente ao algoritmo representado no diagrama. O gerador deve reconhecer laços de decisão anterior (`while`) e ciclos cujo teste ocorre após o corpo (`do...while`), preservando a rota de saída do diagrama.
 
 ### RN12
 

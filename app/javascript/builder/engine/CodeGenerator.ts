@@ -1,4 +1,4 @@
-import type { IParserData, IParserNode } from "../parser/types"
+import type { IParserData, IParserNode, IParserRoutineDefinition } from "../parser/types"
 import type { IExecutionStep } from "../interfaces/execution"
 
 type Lang = "js" | "ts"
@@ -22,6 +22,7 @@ export class CodeGenerator {
   generate(options?: { lang?: Lang }): string {
     const lang = options?.lang ?? "js"
     const lines: string[] = []
+    this.emitSubroutines(lines, lang)
     this.emitPath(this.graph.startNodeId, lines, 0, lang, new Set())
     return this.compact(lines).join("\n")
   }
@@ -50,6 +51,54 @@ export class CodeGenerator {
     return this.compact(lines).join("\n")
   }
 
+  private emitSubroutines(lines: string[], lang: Lang): void {
+    if (!this.graph.subroutines?.size) return
+
+    for (const [, routine] of this.graph.subroutines) {
+      lines.push(...this.translateSubroutineDefinition(routine, lang))
+      lines.push("")
+    }
+  }
+
+  private translateSubroutineDefinition(routine: IParserRoutineDefinition, lang: Lang): string[] {
+    const returnType = this.returnTypeFor(routine)
+    const params = routine.parameters.map((parameter) => lang === "ts" ? `${parameter}: number` : parameter).join(", ")
+    const signature = lang === "ts"
+      ? `function ${routine.name}(${params}): ${returnType} {`
+      : `function ${routine.name}(${params}) {`
+    const bodyGenerator = new CodeGenerator(routine.graph)
+    const body: string[] = []
+
+    bodyGenerator.emitPath(routine.graph.startNodeId, body, 1, lang, new Set())
+
+    const lines = [signature]
+    lines.push(...body.filter((line) => {
+      const trimmed = line.trim()
+      return trimmed !== "// Início do algoritmo" && trimmed !== "// Fim do algoritmo"
+    }))
+    if (routine.returnVariable) lines.push(`  return ${routine.returnVariable};`)
+    lines.push("}")
+    return lines
+  }
+
+  private returnTypeFor(routine: IParserRoutineDefinition): string {
+    if (!routine.returnVariable) return "void"
+    const type = this.declaredTypeInGraph(routine.graph, routine.returnVariable)
+    return this.typeToTS(type ?? "inteiro")
+  }
+
+  private declaredTypeInGraph(graph: IParserData, variable: string): string | null {
+    for (const [, node] of graph.nodes) {
+      if (node.type !== "memory") continue
+      for (const row of node.rows ?? []) {
+        for (const raw of row.variables.split(",").map(s => s.trim()).filter(Boolean)) {
+          if (this.baseVarName(raw) === variable) return row.type
+        }
+      }
+    }
+    return null
+  }
+
   /** Walks the graph from one node until the end or a known merge/loop point. */
   private emitPath(
     nodeId: string | null,
@@ -67,6 +116,12 @@ export class CodeGenerator {
 
     const node = this.graph.nodes.get(nodeId)
     if (!node) return
+
+    const doWhile = this.findDoWhileLoop(nodeId, emitted)
+    if (doWhile) {
+      this.emitDoWhile(doWhile, lines, indent, lang, emitted, stopAt)
+      return
+    }
 
     if (node.type === "connector") {
       this.emitPath(this.graph.getNextNode(nodeId), lines, indent, lang, emitted, stopAt)
@@ -127,6 +182,61 @@ export class CodeGenerator {
     this.emitPath(merge, lines, indent, lang, emitted, stopAt)
   }
 
+  private findDoWhileLoop(
+    startNodeId: string,
+    emitted: Set<string>,
+  ): { body: IParserNode[]; decision: IParserNode; exitNodeId: string } | null {
+    const body: IParserNode[] = []
+    const visited = new Set<string>()
+    let currentId: string | null = startNodeId
+
+    while (currentId && !visited.has(currentId)) {
+      visited.add(currentId)
+      const current = this.graph.nodes.get(currentId)
+      if (!current) return null
+
+      if (current.type === "connector") {
+        currentId = this.graph.getNextNode(current.id)
+        continue
+      }
+
+      if (current.type === "decision") {
+        if (emitted.has(current.id)) return null
+        const yesNext = this.graph.getNextNode(current.id, "yes")
+        const noNext = this.graph.getNextNode(current.id, "no")
+        if (body.length === 0 || !yesNext || !noNext || !this.pathReaches(yesNext, startNodeId)) {
+          return null
+        }
+        return { body, decision: current, exitNodeId: noNext }
+      }
+
+      if (emitted.has(currentId) || current.type === "startEnd") return null
+      body.push(current)
+      currentId = this.graph.getNextNode(current.id)
+    }
+
+    return null
+  }
+
+  private emitDoWhile(
+    loop: { body: IParserNode[]; decision: IParserNode; exitNodeId: string },
+    lines: string[],
+    indent: number,
+    lang: Lang,
+    emitted: Set<string>,
+    stopAt?: string | null,
+  ): void {
+    const ind = this.indent(indent)
+    lines.push(`${ind}do {`)
+    for (const node of loop.body) {
+      emitted.add(node.id)
+      lines.push(...this.translate(node, lang, indent + 1))
+    }
+    emitted.add(loop.decision.id)
+    lines.push(`${ind}} while (${this.translateExpression(loop.decision.label ?? "false")});`)
+    this.emitPath(loop.exitNodeId, lines, indent, lang, emitted, stopAt)
+  }
+
   private translate(node: IParserNode, lang: Lang, indent: number): string[] {
     switch (node.type) {
       case "startEnd":
@@ -171,9 +281,12 @@ export class CodeGenerator {
             ? `${ind}let ${name}: ${tsType}[] = new Array(${size});`
             : `${ind}let ${name} = new Array(${size});`)
         } else {
+          const initialValue = row.initialValue === undefined
+            ? ""
+            : ` = ${this.translateExpression(row.initialValue)}`
           lines.push(lang === "ts"
-            ? `${ind}let ${raw}: ${this.typeToTS(row.type)};`
-            : `${ind}let ${raw};`)
+            ? `${ind}let ${raw}: ${this.typeToTS(row.type)}${initialValue};`
+            : `${ind}let ${raw}${initialValue};`)
         }
       }
     }

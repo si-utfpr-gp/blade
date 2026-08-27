@@ -1,4 +1,5 @@
 import { useSimulator } from "./SimulatorContext";
+import { displayStepNumber, mainStepCount } from "./tracePresentation";
 
 export default function SimulatorStatusBar() {
   const { state } = useSimulator();
@@ -8,7 +9,7 @@ export default function SimulatorStatusBar() {
     <div className="flex items-center justify-between px-3 py-1.5 border-t border-border bg-muted/20 text-[10px]">
       <span className="text-muted-foreground">
         {isStarted
-          ? `Passo ${currentStepIndex + 1} de ${steps.length}`
+          ? `Passo ${displayStepNumber(steps, currentStepIndex)} de ${mainStepCount(steps)}`
           : "Aguardando início"}
       </span>
       {outputs.length > 0 && (

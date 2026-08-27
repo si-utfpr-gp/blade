@@ -9,6 +9,7 @@ export const ERROR_TYPES = {
   INVALID_TYPE: "INVALID_TYPE",
   MAX_STEPS_EXCEEDED: "MAX_STEPS_EXCEEDED",
   UNKNOWN_BLOCK: "UNKNOWN_BLOCK",
+  SUBROUTINE_CONTRACT: "SUBROUTINE_CONTRACT",
 } as const
 
 export type ExecutionErrorType = typeof ERROR_TYPES[keyof typeof ERROR_TYPES]
@@ -63,6 +64,9 @@ function errorTypeFor(message: string): ExecutionErrorType {
     "fora dos limites": ERROR_TYPES.OUT_OF_BOUNDS,
     "Limite de passos": ERROR_TYPES.MAX_STEPS_EXCEEDED,
     "Bloco desconhecido": ERROR_TYPES.UNKNOWN_BLOCK,
+    "Sub-rotina": ERROR_TYPES.SUBROUTINE_CONTRACT,
+    "Chamada de sub-rotina": ERROR_TYPES.SUBROUTINE_CONTRACT,
+    "Retorno da sub-rotina": ERROR_TYPES.SUBROUTINE_CONTRACT,
     "Tipo inválido": ERROR_TYPES.INVALID_TYPE,
     "Divisão por zero": ERROR_TYPES.DIVISION_BY_ZERO,
     "Expressão inválida": ERROR_TYPES.INVALID_EXPRESSION,

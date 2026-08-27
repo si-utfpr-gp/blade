@@ -10,6 +10,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { useSimulator } from "./SimulatorContext";
 import { nodeTypeLabel } from "./labels";
+import { displayStepNumber, mainStepCount } from "./tracePresentation";
 import type { IExecutionStep, IVariable } from "../../interfaces";
 
 function getAllVarNames(steps: IExecutionStep[], upTo: number): string[] {
@@ -21,13 +22,46 @@ function getAllVarNames(steps: IExecutionStep[], upTo: number): string[] {
 }
 
 function wasChanged(step: IExecutionStep, varName: string): boolean {
-  return step.changes.some((c) => c.includes(varName));
+  const arrayBaseName = varName.replace(/\[\d+\]$/, "");
+  const declaration = `Declarada: ${arrayBaseName}`;
+
+  return step.changes.some((change) =>
+    change === declaration ||
+    change.startsWith(`${declaration}[`) ||
+    change.startsWith(`${varName} =`),
+  );
 }
 
 function formatValue(v: IVariable | undefined): string {
   if (!v) return "";
   if (v.value === null || v.value === undefined) return "null";
   return v.value;
+}
+
+export function traceCellDisplay(step: IExecutionStep, varName: string): string | null {
+  if (!wasChanged(step, varName)) return null;
+  const variable = step.variables.find((sv) => sv.name === varName);
+  return variable ? formatValue(variable) : null;
+}
+
+export function traceInstruction(step: IExecutionStep): string {
+  const log = step.log.replace(/\.$/, "");
+  if (step.nodeType === "input") return "Entrada";
+  if (step.nodeType === "process") {
+    const selfAddition = log.match(/^([A-Za-z_]\w*(?:\[[^\]]+\])?)\s*=\s*\1\s*\+\s*([^;]+)$/);
+    const expression = selfAddition
+      ? `${selfAddition[1]} += ${selfAddition[2].trim()}`
+      : log;
+    return `Processo (${expression})`;
+  }
+  if (step.nodeType !== "decision") return log;
+
+  const [condition] = log.split(" → ");
+  return `Condição (${condition})`;
+}
+
+export function finishedSummaryClassName(): string {
+  return "text-[10px] text-emerald-700 dark:text-emerald-400 mt-1";
 }
 
 export default function SimulatorTrace() {
@@ -58,6 +92,7 @@ export default function SimulatorTrace() {
 
   const visibleVarNames = getAllVarNames(steps, currentStepIndex);
   const currentVars = currentStep?.variables || [];
+  const currentStepNumber = currentStep ? displayStepNumber(steps, currentStepIndex) : "—";
 
   if (!isStarted) {
     return (
@@ -76,7 +111,7 @@ export default function SimulatorTrace() {
       <div className="p-2 space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-            Histórico — Passo {currentStepIndex + 1}/{steps.length}
+            Histórico — Passo {currentStepNumber}/{mainStepCount(steps)}
           </span>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -86,9 +121,8 @@ export default function SimulatorTrace() {
             </TooltipTrigger>
             <TooltipContent side="left" className="max-w-65">
               <p className="text-xs">
-                Cada linha mostra uma instrução executada. Apenas as variáveis
-                <strong> alteradas naquele passo</strong> aparecem preenchidas.
-                Células vazias significam &quot;valor inalterado&quot;.
+                Cada linha mostra o estado das variáveis após a instrução executada.
+                Células vazias indicam que a variável não foi alterada naquele passo.
                 <em> null</em> significa &quot;declarada, mas sem valor&quot;.
               </p>
             </TooltipContent>
@@ -131,14 +165,14 @@ export default function SimulatorTrace() {
                     <td
                       className={`py-1 px-2 font-mono text-center border-r border-border sticky left-0 z-10 ${isCurrent ? "bg-primary/10 font-bold text-primary" : "bg-card text-muted-foreground"}`}
                     >
-                      {i + 1}
+                          {displayStepNumber(steps, i)}
                     </td>
                     <td className="py-1 px-2 border-r border-border max-w-35">
                       <div className="flex items-center gap-1">
                         <span
                           className={`truncate ${isCurrent ? "font-semibold text-foreground" : "text-muted-foreground"}`}
                         >
-                          {step.log.replace(/\.$/, "")}
+                          {traceInstruction(step)}
                         </span>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -174,15 +208,15 @@ export default function SimulatorTrace() {
                       const v = step.variables.find((sv) => sv.name === name);
                       const justDeclared = v && !prevDeclared.has(name);
                       const changed = wasChanged(step, name);
-                      const showValue = changed || justDeclared;
+                      const display = traceCellDisplay(step, name);
 
                       return (
                         <td
                           key={name}
-                          className={`py-1 px-2 text-center font-mono border-r border-border last:border-r-0 transition-all ${changed && isCurrent ? "bg-accent/15 ring-1 ring-inset ring-accent/40 font-bold text-accent-foreground" : changed ? "bg-secondary/10 font-semibold text-foreground" : justDeclared ? "text-muted-foreground italic" : "text-transparent"}`}
+                          className={`py-1 px-2 text-center font-mono border-r border-border last:border-r-0 transition-all ${changed && isCurrent ? "bg-accent/15 ring-1 ring-inset ring-accent/40 font-bold text-accent-foreground" : changed ? "bg-secondary/10 font-semibold text-foreground" : justDeclared ? "text-muted-foreground italic" : display !== null ? "text-foreground" : "text-transparent"}`}
                         >
-                          {showValue && v ? (
-                            <span>{formatValue(v)}</span>
+                          {display !== null ? (
+                            <span>{display}</span>
                           ) : (
                             <span>·</span>
                           )}
@@ -291,12 +325,12 @@ export default function SimulatorTrace() {
         )}
 
         {isFinished && !error && (
-          <div className="rounded-lg border border-secondary/30 bg-secondary/5 p-3 text-center">
-            <p className="flex items-center justify-center gap-1.5 text-xs text-secondary font-semibold">
-              <CheckCircle2 className="w-4 h-4" /> Algoritmo executado com sucesso!
+          <div className="rounded-lg border border-emerald-300/70 bg-emerald-50/60 p-3 text-center ">
+            <p className="flex items-center justify-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
+              <CheckCircle2 className="w-4 h-4"/> Algoritmo finalizado com sucesso!
             </p>
-            <p className="text-[10px] text-muted-foreground mt-1">
-              Total de passos: {steps.length}
+            <p className={finishedSummaryClassName()}>
+              Total de passos: {mainStepCount(steps)}
               {outputs.length > 0 && ` · Saídas: ${outputs.length}`}
             </p>
           </div>

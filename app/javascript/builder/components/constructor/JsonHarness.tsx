@@ -1,5 +1,6 @@
 import { useState } from "react"
 import type { Node, Edge } from "@xyflow/react"
+import type { IRawSubroutineDefinition } from "../../parser/types"
 import { useSimulator } from "../simulator/SimulatorContext"
 
 const EXAMPLE_JSON = {
@@ -33,12 +34,12 @@ export default function JsonHarness() {
       setStatus({ ok: false, message: "JSON inválido: verifique a sintaxe." })
       return
     }
-    const data = parsed as { nodes?: Node[]; edges?: Edge[] }
+    const data = parsed as { nodes?: Node[]; edges?: Edge[]; subroutines?: IRawSubroutineDefinition[] }
     if (!Array.isArray(data?.nodes)) {
       setStatus({ ok: false, message: "O campo 'nodes' é obrigatório e deve ser um array." })
       return
     }
-    const result = loadDiagram(data.nodes, data.edges ?? [])
+    const result = loadDiagram(data.nodes, data.edges ?? [], { subroutines: data.subroutines })
     if (result.ok) {
       setStatus({ ok: true, message: "Diagrama carregado. Código JS/TS gerado. Use o simulador ao lado para executar." })
     } else {
@@ -61,7 +62,7 @@ export default function JsonHarness() {
       <div className="mb-3">
         <h2 className="text-sm font-semibold text-foreground">Harness — JSON do Diagrama</h2>
         <p className="text-xs text-muted-foreground mt-1">
-          Cole aqui o JSON <code>{"{ nodes, edges }"}</code> do módulo de construção para
+          Cole aqui o JSON <code>{"{ nodes, edges, subroutines? }"}</code> do módulo de construção para
           validar o módulo de execução (teste de mesa, explicação e código) no simulador ao lado.
         </p>
       </div>
@@ -73,7 +74,7 @@ export default function JsonHarness() {
         id="diagram-json"
         value={json}
         onChange={(e) => setJson(e.target.value)}
-        placeholder='{ "nodes": [...], "edges": [...] }'
+        placeholder='{ "nodes": [...], "edges": [...], "subroutines": [...] }'
         spellCheck={false}
         className="flex-1 min-h-0 w-full resize-none rounded-lg border border-border bg-muted/10 p-3 text-[11px] font-mono leading-relaxed text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
       />

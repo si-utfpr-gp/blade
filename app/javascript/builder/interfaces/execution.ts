@@ -7,6 +7,11 @@ export interface IVariable {
   scope: string
 }
 
+export interface ICallStackFrame {
+  routineName: string
+  nodeId: string | null
+}
+
 export interface IExecutionStep {
   nodeId: string
   nodeLabel: string
@@ -21,6 +26,8 @@ export interface IExecutionStep {
   explanation: string
   changes: string[]
   nextHint: string
+  callStack?: ICallStackFrame[]
+  inputVariable?: string
 }
 
 export interface IExplanationContext {
@@ -52,12 +59,32 @@ export interface IPendingInputCheckpoint {
   index: number
 }
 
+export interface IPendingDecisionCheckpoint {
+  nodeId: string
+  nodeLabel: string
+  handle: "yes" | "no"
+}
+
+export interface IExecutionFrameCheckpoint {
+  routineName: string
+  graphName: string
+  memory: IMemoryCheckpoint
+  nextNodeId: string | null
+  pendingInput: IPendingInputCheckpoint | null
+  pendingDecision: IPendingDecisionCheckpoint | null
+  returnTarget?: string
+  returnToNode?: string | null
+  returnVariable?: string
+}
+
 export interface IExecutionCheckpoint {
   memory: IMemoryCheckpoint
   outputs: string[]
   nextNodeId: string | null
   pendingInput: IPendingInputCheckpoint | null
+  pendingDecision: IPendingDecisionCheckpoint | null
   finished: boolean
+  frames?: IExecutionFrameCheckpoint[]
 }
 
 export interface IExecutionState {
@@ -72,4 +99,5 @@ export interface IExecutionState {
   inputIndex: number
   stepCount: number
   pendingInputCursor?: number
+  callStack?: ICallStackFrame[]
 }

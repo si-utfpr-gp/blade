@@ -1,58 +1,84 @@
-import type { IExecutionCheckpoint, IExecutionStep, IPendingInputCheckpoint } from "../interfaces/execution";
+import type { ICallStackFrame, IExecutionCheckpoint, IExecutionFrameCheckpoint, IExecutionStep, IPendingDecisionCheckpoint, IPendingInputCheckpoint } from "../interfaces/execution";
 import type { IParserData, IParserNode } from "../parser/types";
 import { ExprEvaluator } from "./ExprEvaluator";
 import { MemoryManager } from "./MemoryManager";
 import { SnapshotManager } from "./SnapshotManager";
 import { ExplanationGenerator } from "./ExplanationGenerator";
-import { classifyError, ExecutionError } from "./errors";
+import { classifyError, ERROR_TYPES, ExecutionError } from "./errors";
+
+interface ExecutionFrame {
+    routineName: string
+    graphName: string
+    graph: IParserData
+    memory: MemoryManager
+    expr: ExprEvaluator
+    current: string | null
+    pendingInput: IPendingInputCheckpoint | null
+    pendingDecision: IPendingDecisionCheckpoint | null
+    returnTarget?: string
+    returnToNode?: string | null
+    returnVariable?: string
+}
+
+interface SubroutineCall {
+    returnTarget?: string
+    name: string
+    args: string[]
+}
 
 /**
  * Stateful interpreter for a parsed diagram.
  *
- * It walks the graph one executable block at a time, skips declarative/routing
- * blocks (`memory` and `connector`), updates memory, stores snapshots, and
- * pauses when an `input` block needs a value from the UI.
+ * It walks the graph one visual block at a time, recording declarations,
+ * connectors, decisions, and the selected decision branch in the desk check.
  */
 export class ExecutionEngine {
-    private memory = new MemoryManager();
-    private expr = new ExprEvaluator(this.memory);
+    private frames: ExecutionFrame[] = [];
     private snapshots = new SnapshotManager();
     private explanations = new ExplanationGenerator();
     private outputs: string[] = [];
     private _err: string | null = null;
     private _done = false;
-    private current: string | null = null;
     private max = 10000;
-    private pendingInput: IPendingInputCheckpoint | null = null;
+    private shouldAdvanceCurrent = true;
 
-    public constructor(private graph: IParserData) { }
+    public constructor(private rootGraph: IParserData) { }
 
     public start(): IExecutionStep | null {
         this.reset();
-        this.current = this.graph.startNodeId;
-        if (!this.current) {
+        const root = this.createFrame("Principal", "Principal", this.rootGraph, this.rootGraph.startNodeId)
+        this.frames = [root]
+        if (!root.current) {
             this._err = "Nenhum bloco de início"; return null;
         }
         return this.advance();
     }
 
     public step(input?: string): IExecutionStep | null {
-        if (this._done || !this.current) return null
+        const frame = this.activeFrame()
+        if (this._done || !frame?.current) return null
         if (this.snapshots.size >= this.max) {
             this._err = "Limite de passos excedido"
             return null
         }
 
-        this.skipNonExecutableBlocks()
-        if (!this.current) return null
+        const decisionBranch = this.advancePendingDecision()
+        if (decisionBranch) {
+            this.snapshots.store(decisionBranch, this.checkpoint())
+            return decisionBranch
+        }
 
-        const node = this.graph.nodes.get(this.current)
+        const active = this.activeFrame()
+        if (!active?.current) return null
+
+        const node = active.graph.nodes.get(active.current)
         if (!node) {
-            this._err = `Bloco '${this.current}' não encontrado`
+            this._err = `Bloco '${active.current}' não encontrado`
             return null
         }
 
         try {
+            this.shouldAdvanceCurrent = true
             const step = this.exec(node, input)
             const isOnlyAskingForInput = step?.waitingForInput && step.inputEntered === false
             if (isOnlyAskingForInput) return step
@@ -62,14 +88,11 @@ export class ExecutionEngine {
                 return step
             }
 
-            this.current = this.next(node)
-            if (this.current === null && node.type === "startEnd" && node.variant === "end") {
-                this._done = true
-            }
+            if (this.shouldAdvanceCurrent) this.moveAfter(node)
             if (step) this.snapshots.store(step, this.checkpoint())
             return step
         } catch (e) {
-          const structured = e instanceof ExecutionError ? e : classifyError(e, this.current)
+          const structured = e instanceof ExecutionError ? e : classifyError(e, this.activeFrame()?.current ?? null)
           this._err = structured.message
           throw e
         }
@@ -79,25 +102,31 @@ export class ExecutionEngine {
         const checkpoint = this.snapshots.getCheckpoint(i);
         if (!checkpoint) return false;
         this.snapshots.goTo(i);
-        this.memory.restore(checkpoint.memory);
+
+        if (checkpoint.frames?.length) {
+            this.frames = checkpoint.frames.map((frame) => this.restoreFrame(frame))
+        } else {
+            const root = this.createFrame("Principal", "Principal", this.rootGraph, checkpoint.nextNodeId)
+            root.memory.restore(checkpoint.memory)
+            root.pendingInput = checkpoint.pendingInput
+                ? { ...checkpoint.pendingInput, names: [...checkpoint.pendingInput.names] }
+                : null
+            this.frames = [root]
+        }
+
         this.outputs = [...checkpoint.outputs];
-        this.current = checkpoint.nextNodeId;
-        this.pendingInput = checkpoint.pendingInput
-            ? { ...checkpoint.pendingInput, names: [...checkpoint.pendingInput.names] }
-            : null;
         this._err = null;
         this._done = checkpoint.finished;
         return true;
     }
 
     public reset(): void {
-        this.memory.reset();
+        this.frames = [];
         this.snapshots.reset();
         this.outputs = [];
         this._err = null;
         this._done = false;
-        this.current = null;
-        this.pendingInput = null;
+        this.shouldAdvanceCurrent = true;
     }
 
     public getSteps(): IExecutionStep[] { return this.snapshots.allSteps as IExecutionStep[]; }
@@ -110,32 +139,33 @@ export class ExecutionEngine {
     public getCurretnOutputs(): string[] { return this.getCurrentOutputs(); }
 
     public getCurrentState() {
+        const root = this.frames[0]
+        const active = this.activeFrame()
         return {
-            currentNodeId: this.current,
-            variables: new Map(this.memory.snapshot().map(v => [v.name, v])),
+            currentNodeId: active?.current ?? null,
+            variables: new Map((root?.memory.snapshot() ?? []).map(v => [v.name, v])),
             steps: this.snapshots.allSteps as IExecutionStep[], logs: this.snapshots.allSteps.map(s => s.log), outputs: this.outputs,
             finished: this._done, error: this._err,
             inputQueue: [], inputIndex: 0, stepCount: this.snapshots.size,
+            callStack: this.callStack(),
         }
     }
 
     private advance(): IExecutionStep | null {
-        this.skipNonExecutableBlocks()
-        if (!this.current) return null
+        const frame = this.activeFrame()
+        if (!frame?.current) return null
 
-        const node = this.graph.nodes.get(this.current)
+        const node = frame.graph.nodes.get(frame.current)
         if (!node) return null
 
         try {
+            this.shouldAdvanceCurrent = true
             const step = this.exec(node)
-            this.current = this.next(node)
-            if (this.current === null && node.type === "startEnd" && node.variant === "end") {
-                this._done = true
-            }
+            if (this.shouldAdvanceCurrent) this.moveAfter(node)
             if (step) this.snapshots.store(step, this.checkpoint())
             return step
         } catch (e) {
-          const structured = e instanceof ExecutionError ? e : classifyError(e, this.current)
+          const structured = e instanceof ExecutionError ? e : classifyError(e, this.activeFrame()?.current ?? null)
           this._err = structured.message
           throw e
         }
@@ -168,16 +198,30 @@ export class ExecutionEngine {
 
     /** Executes one block and returns the UI-facing step/snapshot data for it. */
     private exec(node: IParserNode, input?: string): IExecutionStep | null {
+        const frame = this.requireActiveFrame()
         const base = (): IExecutionStep => ({
             nodeId: node.id, nodeLabel: node.label ?? "", nodeType: node.type,
-            variables: this.memory.snapshot(), log: "", output: undefined,
+            variables: frame.memory.snapshot(), log: "", output: undefined,
             waitingForInput: false, inputPrompt: undefined, inputType: undefined,
             explanation: "", changes: [], nextHint: "",
+            callStack: this.callStack(),
         });
 
         switch (node.type) {
             case "startEnd": {
                 if (node.variant !== "start" && node.variant !== "end") return null;
+                if (frame.routineName !== "Principal") {
+                    const log = node.variant === "start"
+                        ? `Iniciando sub-rotina ${frame.routineName}.`
+                        : `Sub-rotina ${frame.routineName} finalizada.`
+                    return {
+                        ...base(),
+                        log,
+                        explanation: log,
+                        changes: [],
+                        nextHint: node.variant === "start" ? "Avançar." : "Retornando."
+                    };
+                }
                 const text = this.explanations.generate({
                     nodeType: node.type,
                     variant: node.variant,
@@ -186,18 +230,28 @@ export class ExecutionEngine {
                 return { ...base(), ...text };
             }
 
-            case "memory": return null;
+            case "memory": {
+                const changes = this.processMemory(node)
+                return {
+                    ...base(),
+                    variables: frame.memory.snapshot(),
+                    log: "Definição das variáveis.",
+                    explanation: "As variáveis do algoritmo foram declaradas.",
+                    changes,
+                    nextHint: "Avançar.",
+                }
+            }
 
             case "input": {
                 const varNames = (node.label ?? "").split(",").map(s => s.trim()).filter(Boolean)
-                if (!this.pendingInput || this.pendingInput.nodeId !== node.id) {
-                    this.pendingInput = { nodeId: node.id, names: varNames, index: 0 }
+                if (!frame.pendingInput || frame.pendingInput.nodeId !== node.id) {
+                    frame.pendingInput = { nodeId: node.id, names: varNames, index: 0 }
                 }
-                const pi = this.pendingInput
+                const pi = frame.pendingInput
                 const name = pi.names[pi.index]
 
                 if (input === undefined) {
-                    const type = this.memory.getType(name) ?? "caractere"
+                    const type = frame.memory.getType(name) ?? "caractere"
                     const text = this.explanations.generate({
                         nodeType: node.type,
                         nodeLabel: name,
@@ -214,11 +268,11 @@ export class ExecutionEngine {
                     };
                 }
 
-                const declaredType = this.memory.getType(name) ?? "caractere"
-                if (!this.memory.has(name)) this.memory.declare(name, "caractere")
+                const declaredType = frame.memory.getType(name) ?? "caractere"
+                if (!frame.memory.has(name)) frame.memory.declare(name, "caractere")
                 const validationError = this.validateInput(input, declaredType)
                 if (validationError) throw new Error(validationError)
-                this.memory.set(name, input)
+                frame.memory.set(name, input)
 
                 const remaining = pi.index + 1 < pi.names.length
                 pi.index += 1
@@ -232,18 +286,20 @@ export class ExecutionEngine {
                     const nextName = pi.names[pi.index]
                     return {
                         ...base(),
+                        variables: frame.memory.snapshot(),
                         waitingForInput: true,
                         inputEntered: true,
                         inputPrompt: `Valor para '${nextName}':`,
                         inputVariable: nextName,
-                        inputType: this.memory.getType(nextName) ?? "caractere",
+                        inputType: frame.memory.getType(nextName) ?? "caractere",
                         ...text,
                     };
                 }
 
-                this.pendingInput = null
+                frame.pendingInput = null
                 return {
                     ...base(),
+                    variables: frame.memory.snapshot(),
                     waitingForInput: false,
                     inputEntered: true,
                     inputType: declaredType,
@@ -252,7 +308,7 @@ export class ExecutionEngine {
             }
 
             case "output": {
-                const v = this.expr.output(node.label ?? "", node.id);
+                const v = frame.expr.output(node.label ?? "", node.id);
                 this.outputs.push(v);
                 const text = this.explanations.generate({
                     nodeType: node.type,
@@ -263,86 +319,289 @@ export class ExecutionEngine {
             }
 
             case "process": {
-                const changes = this.expr.assign(node.label ?? "", node.id);
+                const changes = frame.expr.assign(node.label ?? "", node.id);
                 const text = this.explanations.generate({
                     nodeType: node.type,
                     nodeLabel: node.label ?? "",
                     changes,
                 });
-                return { ...base(), variables: this.memory.snapshot(), ...text };
+                return { ...base(), variables: frame.memory.snapshot(), ...text };
             }
 
             case "decision": {
                 const cond = node.label ?? "";
-                const ok = this.expr.condition(cond, node.id);
+                const ok = frame.expr.condition(cond, node.id);
                 const text = this.explanations.generate({
                     nodeType: node.type,
                     nodeLabel: cond,
                     conditionResult: ok,
                 });
+                frame.pendingDecision = {
+                    nodeId: node.id,
+                    nodeLabel: cond,
+                    handle: ok ? "yes" : "no",
+                }
+                this.shouldAdvanceCurrent = false
                 return { ...base(), ...text };
             }
 
-            case "connector": return null;
+            case "connector": {
+                return {
+                    ...base(),
+                    log: "Conector.",
+                    explanation: "O fluxo segue pelo conector até o próximo bloco.",
+                    changes: [],
+                    nextHint: "Avançar.",
+                }
+            }
 
             case "subroutine": {
                 const sub = node.label ?? "sub-rotina";
+                this.enterSubroutine(node)
                 const text = this.explanations.generate({
                     nodeType: node.type,
                     nodeLabel: sub,
                     subroutineName: sub,
                 });
-                return { ...base(), ...text };
+                this.shouldAdvanceCurrent = false
+                return { ...base(), callStack: this.callStack(), ...text };
             }
 
             default: throw new Error(`Bloco desconhecido: '${node.type}'`);
         }
     }
 
-    private skipNonExecutableBlocks(): void {
-        while (this.current) {
-            const node = this.graph.nodes.get(this.current)
-            if (!node) {
-                this._err = `Bloco '${this.current}' não encontrado`
-                return
-            }
-            if (node.type === "memory") {
-                this.processMemory(node)
-                this.current = this.graph.getNextNode(this.current)
-                continue
-            }
-            if (node.type === "connector") {
-                this.current = this.graph.getNextNode(this.current)
-                continue
-            }
-            return
-        }
-    }
-
-    private processMemory(node: IParserNode): void {
+    private processMemory(node: IParserNode): string[] {
+        const frame = this.requireActiveFrame()
+        const changes: string[] = []
         node.rows?.forEach(row => {
             row.variables
                 .split(",")
                 .map(variable => variable.trim())
                 .filter(Boolean)
-                .forEach(variable => this.memory.declare(variable, row.type))
+                .forEach(variable => {
+                    frame.memory.declare(variable, row.type)
+                    changes.push(`Declarada: ${variable}`)
+                    if (row.initialValue !== undefined) {
+                        changes.push(...frame.expr.assign(`${variable} = ${row.initialValue}`, node.id))
+                    }
+                })
         })
+        return changes
     }
 
     private next(node: IParserNode): string | null {
-        if (node.type === "decision") return this.graph.getNextNode(node.id, this.expr.condition(node.label ?? "", node.id) ? "yes" : "no")
-        return this.graph.getNextNode(node.id)
+        const frame = this.requireActiveFrame()
+        if (node.type === "decision") return frame.graph.getNextNode(node.id, frame.expr.condition(node.label ?? "", node.id) ? "yes" : "no")
+        return frame.graph.getNextNode(node.id)
+    }
+
+    private advancePendingDecision(): IExecutionStep | null {
+        const frame = this.activeFrame()
+        const pending = frame?.pendingDecision
+        if (!frame || !pending) return null
+
+        frame.pendingDecision = null
+        frame.current = frame.graph.getNextNode(pending.nodeId, pending.handle)
+        const isTrue = pending.handle === "yes"
+        return {
+            nodeId: pending.nodeId,
+            nodeLabel: pending.nodeLabel,
+            nodeType: "branch",
+            variables: frame.memory.snapshot(),
+            log: `Caso ${isTrue ? "Verdadeiro" : "Falso"}.`,
+            explanation: `O fluxo segue pelo caso ${isTrue ? "verdadeiro" : "falso"}.`,
+            changes: [`Ramo: ${isTrue ? "VERDADEIRO" : "FALSO"}`],
+            nextHint: "Avançar.",
+            callStack: this.callStack(),
+        }
+    }
+
+    private moveAfter(node: IParserNode): void {
+        const frame = this.requireActiveFrame()
+        frame.current = this.next(node)
+        if (frame.current === null && node.type === "startEnd" && node.variant === "end") {
+            if (this.frames.length > 1) {
+                this.completeSubroutine()
+                return
+            }
+            this._done = true
+        }
+    }
+
+    private enterSubroutine(node: IParserNode): void {
+        const caller = this.requireActiveFrame()
+        const call = this.parseSubroutineCall(node.label ?? "")
+        const routine = this.rootGraph.subroutines?.get(call.name)
+        if (!routine) throw this.subroutineContract(`Sub-rotina '${call.name}' não encontrada`, node.id)
+        if (call.args.length !== routine.parameters.length) {
+            throw this.subroutineContract(`Sub-rotina '${call.name}' esperava ${routine.parameters.length} argumento(s), recebeu ${call.args.length}`, node.id)
+        }
+
+        const localMemory = new MemoryManager()
+        const localExpr = new ExprEvaluator(localMemory)
+        routine.parameters.forEach((parameter, index) => {
+            localMemory.declare(parameter, "caractere")
+            localMemory.set(parameter, caller.expr.output(call.args[index], node.id))
+        })
+
+        this.frames.push({
+            routineName: routine.name,
+            graphName: routine.name,
+            graph: routine.graph,
+            memory: localMemory,
+            expr: localExpr,
+            current: routine.graph.startNodeId,
+            pendingInput: null,
+            pendingDecision: null,
+            returnTarget: call.returnTarget,
+            returnToNode: caller.graph.getNextNode(node.id),
+            returnVariable: routine.returnVariable,
+        })
+    }
+
+    private completeSubroutine(): void {
+        const finished = this.frames.pop()
+        const caller = this.activeFrame()
+        if (!finished || !caller) return
+        if (finished.returnTarget) {
+            if (!finished.returnVariable) throw this.subroutineContract(`Sub-rotina '${finished.routineName}' não possui variável de retorno`, null)
+            const value = finished.memory.get(finished.returnVariable)
+            if (value === null) throw this.subroutineContract(`Retorno da sub-rotina '${finished.routineName}' não inicializado`, null)
+            if (!caller.memory.has(finished.returnTarget)) caller.memory.declare(finished.returnTarget, "caractere")
+            caller.memory.set(finished.returnTarget, value)
+        }
+        caller.current = finished.returnToNode ?? null
+    }
+
+    private parseSubroutineCall(label: string): SubroutineCall {
+        const match = label.trim().match(/^(?:(?<target>[a-zA-Z_]\w*)\s*=\s*)?(?<name>[a-zA-Z_]\w*)\s*\((?<args>.*)\)\s*$/)
+        if (!match?.groups?.name) throw this.subroutineContract(`Chamada de sub-rotina inválida: '${label}'`, null)
+        return {
+            returnTarget: match.groups.target,
+            name: match.groups.name,
+            args: this.splitArguments(match.groups.args ?? ""),
+        }
+    }
+
+    private splitArguments(source: string): string[] {
+        const trimmed = source.trim()
+        if (!trimmed) return []
+
+        const args: string[] = []
+        let current = ""
+        let quote: string | null = null
+        let depth = 0
+
+        for (let i = 0; i < source.length; i++) {
+            const ch = source[i]
+            if (quote) {
+                current += ch
+                if (ch === "\\") {
+                    current += source[++i] ?? ""
+                    continue
+                }
+                if (ch === quote) quote = null
+                continue
+            }
+            if (ch === "'" || ch === '"') {
+                quote = ch
+                current += ch
+                continue
+            }
+            if (ch === "(" || ch === "[") depth++
+            if (ch === ")" || ch === "]") depth--
+            if (ch === "," && depth === 0) {
+                args.push(current.trim())
+                current = ""
+                continue
+            }
+            current += ch
+        }
+
+        if (current.trim()) args.push(current.trim())
+        return args
+    }
+
+    private activeFrame(): ExecutionFrame | undefined {
+        return this.frames[this.frames.length - 1]
+    }
+
+    private requireActiveFrame(): ExecutionFrame {
+        const frame = this.activeFrame()
+        if (!frame) throw new Error("Execução não iniciada")
+        return frame
+    }
+
+    private createFrame(routineName: string, graphName: string, graph: IParserData, current: string | null): ExecutionFrame {
+        const memory = new MemoryManager()
+        return {
+            routineName,
+            graphName,
+            graph,
+            memory,
+            expr: new ExprEvaluator(memory),
+            current,
+            pendingInput: null,
+            pendingDecision: null,
+        }
+    }
+
+    private restoreFrame(checkpoint: IExecutionFrameCheckpoint): ExecutionFrame {
+        const graph = this.graphByName(checkpoint.graphName)
+        const frame = this.createFrame(checkpoint.routineName, checkpoint.graphName, graph, checkpoint.nextNodeId)
+        frame.memory.restore(checkpoint.memory)
+        frame.pendingInput = checkpoint.pendingInput
+            ? { ...checkpoint.pendingInput, names: [...checkpoint.pendingInput.names] }
+            : null
+        frame.pendingDecision = checkpoint.pendingDecision ? { ...checkpoint.pendingDecision } : null
+        frame.returnTarget = checkpoint.returnTarget
+        frame.returnToNode = checkpoint.returnToNode
+        frame.returnVariable = checkpoint.returnVariable
+        return frame
+    }
+
+    private graphByName(name: string): IParserData {
+        if (name === "Principal") return this.rootGraph
+        const routine = this.rootGraph.subroutines?.get(name)
+        if (!routine) throw this.subroutineContract(`Sub-rotina '${name}' não encontrada`, null)
+        return routine.graph
+    }
+
+    private callStack(): ICallStackFrame[] {
+        return this.frames.map((frame) => ({ routineName: frame.routineName, nodeId: frame.current }))
+    }
+
+    private subroutineContract(message: string, blockId: string | null): ExecutionError {
+        return new ExecutionError(ERROR_TYPES.SUBROUTINE_CONTRACT, message, blockId)
     }
 
     private checkpoint(): IExecutionCheckpoint {
+        const root = this.frames[0]
         return {
-            memory: this.memory.createCheckpoint(),
+            memory: root?.memory.createCheckpoint() ?? { entries: [] },
             outputs: [...this.outputs],
-            nextNodeId: this.current,
-            pendingInput: this.pendingInput
-                ? { ...this.pendingInput, names: [...this.pendingInput.names] }
+            nextNodeId: this.activeFrame()?.current ?? null,
+            pendingInput: this.activeFrame()?.pendingInput
+                ? { ...this.activeFrame()!.pendingInput!, names: [...this.activeFrame()!.pendingInput!.names] }
+                : null,
+            pendingDecision: this.activeFrame()?.pendingDecision
+                ? { ...this.activeFrame()!.pendingDecision! }
                 : null,
             finished: this._done,
+            frames: this.frames.map((frame) => ({
+                routineName: frame.routineName,
+                graphName: frame.graphName,
+                memory: frame.memory.createCheckpoint(),
+                nextNodeId: frame.current,
+                pendingInput: frame.pendingInput
+                    ? { ...frame.pendingInput, names: [...frame.pendingInput.names] }
+                    : null,
+                pendingDecision: frame.pendingDecision ? { ...frame.pendingDecision } : null,
+                returnTarget: frame.returnTarget,
+                returnToNode: frame.returnToNode,
+                returnVariable: frame.returnVariable,
+            })),
         }
     }
 
