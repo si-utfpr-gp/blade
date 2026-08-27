@@ -2,7 +2,8 @@ import { describe, it, expect } from "vitest"
 import { render, screen, fireEvent } from "@testing-library/react"
 import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
 import { TooltipProvider } from "../../components/ui/tooltip"
-import SimulatorTrace, { displayStepNumber, traceCellDisplay, traceInstruction } from "../../components/simulator/SimulatorTrace"
+import SimulatorTrace, { traceCellDisplay, traceInstruction } from "../../components/simulator/SimulatorTrace"
+import { displayStepNumber, mainStepCount } from "../../components/simulator/tracePresentation"
 import SimulatorControl from "../../components/simulator/SimulatorControl"
 
 function renderTrace() {
@@ -102,6 +103,10 @@ describe("displayStepNumber", () => {
     expect(displayStepNumber(steps, 2)).toBe("2.1")
     expect(displayStepNumber(steps, 3)).toBe("3")
     expect(displayStepNumber(steps, 5)).toBe("4.1")
+  })
+
+  it("counts decision cases as substeps", () => {
+    expect(mainStepCount(steps)).toBe(4)
   })
 })
 

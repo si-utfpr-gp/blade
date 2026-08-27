@@ -198,6 +198,7 @@ describe("ExecutionEngine", () => {
       "Caso Verdadeiro.",
       "Caso Falso.",
     ])
+    expect(e.getSteps().filter((step) => step.nodeType !== "branch")).toHaveLength(21)
     expect(e.getCurrentOutputs()).toEqual(["Soma: 23"])
     expect(e.getSteps()[1].variables).toEqual(expect.arrayContaining([
       expect.objectContaining({ name: "n", value: null }),

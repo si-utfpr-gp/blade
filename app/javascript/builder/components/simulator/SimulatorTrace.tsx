@@ -10,6 +10,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { useSimulator } from "./SimulatorContext";
 import { nodeTypeLabel } from "./labels";
+import { displayStepNumber, mainStepCount } from "./tracePresentation";
 import type { IExecutionStep, IVariable } from "../../interfaces";
 
 function getAllVarNames(steps: IExecutionStep[], upTo: number): string[] {
@@ -43,17 +44,6 @@ export function traceCellDisplay(step: IExecutionStep, varName: string): string 
   return variable ? formatValue(variable) : null;
 }
 
-export function displayStepNumber(
-  steps: Array<Pick<IExecutionStep, "nodeType">>,
-  index: number,
-): string {
-  const mainStep = steps
-    .slice(0, index + 1)
-    .filter((step) => step.nodeType !== "branch").length;
-
-  return steps[index]?.nodeType === "branch" ? `${mainStep}.1` : String(mainStep);
-}
-
 export function traceInstruction(step: IExecutionStep): string {
   const log = step.log.replace(/\.$/, "");
   if (step.nodeType === "input") return "Entrada";
@@ -68,10 +58,6 @@ export function traceInstruction(step: IExecutionStep): string {
 
   const [condition] = log.split(" → ");
   return `Condição (${condition})`;
-}
-
-function mainStepCount(steps: IExecutionStep[]): number {
-  return steps.filter((step) => step.nodeType !== "branch").length;
 }
 
 export default function SimulatorTrace() {
