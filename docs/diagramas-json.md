@@ -227,13 +227,17 @@ Soma números fornecidos até que o valor informado seja `0` (o `0` não altera 
 {
   "nodes": [
     { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
-    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "num, soma" } ] } },
-    { "id": "n3", "type": "process", "data": { "label": "soma = 0" } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [
+      { "type": "inteiro", "variables": "num" },
+      { "type": "inteiro", "variables": "soma", "initialValue": "0" }
+    ] } },
+    { "id": "n3", "type": "connector", "data": { "label": "Iniciar leitura" } },
     { "id": "n4", "type": "input", "data": { "label": "num" } },
     { "id": "n5", "type": "process", "data": { "label": "soma = soma + num" } },
     { "id": "n6", "type": "decision", "data": { "label": "num != 0" } },
-    { "id": "n7", "type": "output", "data": { "label": "'A soma é: ' + soma" } },
-    { "id": "n8", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n7", "type": "connector", "data": { "label": "Ler próximo número" } },
+    { "id": "n8", "type": "output", "data": { "label": "'A soma é: ' + soma" } },
+    { "id": "n9", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
@@ -241,12 +245,16 @@ Soma números fornecidos até que o valor informado seja `0` (o `0` não altera 
     { "id": "e3", "source": "n3", "target": "n4" },
     { "id": "e4", "source": "n4", "target": "n5" },
     { "id": "e5", "source": "n5", "target": "n6" },
-    { "id": "e6", "source": "n6", "target": "n4", "sourceHandle": "yes" },
-    { "id": "e7", "source": "n6", "target": "n7", "sourceHandle": "no" },
-    { "id": "e8", "source": "n7", "target": "n8" }
+    { "id": "e6", "source": "n6", "target": "n7", "sourceHandle": "yes" },
+    { "id": "e7", "source": "n7", "target": "n4" },
+    { "id": "e8", "source": "n6", "target": "n8", "sourceHandle": "no" },
+    { "id": "e9", "source": "n8", "target": "n9" }
   ]
 }
 ```
+
+Com as entradas `2`, `7`, `14`, `0`, os passos principais são: conector `3`, entrada `4`,
+processo `5`, condição `6`, caso `6.1`, conector `7` e entrada `8`.
 
 ---
 
