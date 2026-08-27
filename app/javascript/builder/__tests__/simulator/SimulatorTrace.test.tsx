@@ -153,7 +153,7 @@ describe("traceInstruction", () => {
 
 describe("finishedSummaryClassName", () => {
   it("uses the success color for the completed algorithm summary", () => {
-    expect(finishedSummaryClassName()).toContain("text-secondary")
+    expect(finishedSummaryClassName()).toContain("text-emerald-700")
   })
 })
 

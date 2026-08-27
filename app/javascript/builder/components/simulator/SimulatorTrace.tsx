@@ -61,7 +61,7 @@ export function traceInstruction(step: IExecutionStep): string {
 }
 
 export function finishedSummaryClassName(): string {
-  return "text-[10px] text-secondary mt-1";
+  return "text-[10px] text-emerald-700 dark:text-emerald-400 mt-1";
 }
 
 export default function SimulatorTrace() {
@@ -325,9 +325,9 @@ export default function SimulatorTrace() {
         )}
 
         {isFinished && !error && (
-          <div className="rounded-lg border border-secondary/30 bg-secondary/5 p-3 text-center">
-            <p className="flex items-center justify-center gap-1.5 text-xs text-secondary font-semibold">
-              <CheckCircle2 className="w-4 h-4" /> Algoritmo executado com sucesso!
+          <div className="rounded-lg border border-emerald-300/70 bg-emerald-50/60 p-3 text-center dark:border-emerald-800/50 dark:bg-emerald-950/20">
+            <p className="flex items-center justify-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
+              <CheckCircle2 className="w-4 h-4" /> !
             </p>
             <p className={finishedSummaryClassName()}>
               Total de passos: {mainStepCount(steps)}
