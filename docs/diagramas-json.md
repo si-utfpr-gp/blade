@@ -410,7 +410,7 @@ Exemplo completo de sub-rotina visual. O algoritmo principal lê `n`, chama `res
 # Checklist de validação
 
 - [ ] O JSON carrega sem erro de sintaxe (botão **Carregar** retorna uma mensagem de diagrama carregado).
-- [ ] O teste de mesa mostra um passo por bloco executado (blocos `memory` e `connector` não geram passo).
+- [ ] O teste de mesa mostra cada bloco visitado, inclusive `memory` e `connector`, e o caso selecionado após cada decisão.
 - [ ] As variáveis aparecem preenchidas no passo em que são alteradas.
 - [ ] A explicação descreve a operação de cada passo.
 - [ ] O código gerado é semanticamente equivalente ao diagrama.

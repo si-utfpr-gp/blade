@@ -55,12 +55,12 @@ Desenvolver uma plataforma integrada para construção, interpretação e simula
 | Diagrama | Representação gráfica de um algoritmo. |
 | Bloco | Elemento que representa uma instrução do algoritmo. |
 | startEnd | Bloco que representa início ou término, diferenciado pela propriedade `variant` (`'start'` ou `'end'`). |
-| memory | Bloco de declaração de variáveis com tipo e nome. Não gera passo de execução. |
+| memory | Bloco de declaração de variáveis com tipo e nome. Gera um passo didático no teste de mesa. |
 | input | Bloco de entrada de dados pelo usuário. |
 | output | Bloco de saída/exibição de dados. |
 | process | Bloco de atribuição ou processamento. |
 | decision | Bloco de desvio condicional. |
-| connector | Bloco de roteamento de fluxo. Não gera passo de execução. |
+| connector | Bloco de roteamento de fluxo. Gera um passo didático no teste de mesa. |
 | subroutine | Bloco de chamada de uma função visual definida pelo usuário em seu próprio diagrama. |
 | variant | Propriedade do bloco `startEnd` que indica início (`'start'`) ou término (`'end'`). |
 | Fluxo | Conexão entre blocos. |
@@ -69,7 +69,7 @@ Desenvolver uma plataforma integrada para construção, interpretação e simula
 | Memória | Estrutura que armazena todas as variáveis. |
 | Snapshot | Registro completo da memória em determinado instante. |
 | Teste de Mesa | Simulação passo a passo do algoritmo. |
-| Passo | Execução individual de um bloco (blocos `memory` e `connector` não geram passos). |
+| Passo | Registro didático de cada bloco visitado e de cada ramo selecionado em uma decisão. |
 | Explicação | Descrição textual da ação realizada em um passo. |
 | Conversão | Transformação do diagrama para código-fonte. |
 
@@ -146,7 +146,7 @@ O **Sistema para Simulação de Teste de Mesa em Diagrama de Blocos** é o compo
 O sistema opera em ciclos de execução controlados pelo usuário. A cada ciclo, o motor de execução:
 
 1. Identifica o bloco atual a ser processado com base no fluxo do diagrama;
-2. Se o bloco for `connector` ou `memory`, o motor **não gera passo** — apenas avança para o próximo bloco;
+2. Registra no teste de mesa cada bloco visitado, inclusive `connector` e `memory`, e o ramo selecionado em decisões;
 3. Interpreta o tipo de bloco e sua operação específica;
 4. Executa a operação, atualizando o estado da memória;
 5. Registra um snapshot completo do estado após a execução;
@@ -279,7 +279,7 @@ Blocos de decisão devem possuir exatamente dois caminhos de saída, identificad
 
 ### RN07
 
-Cada passo executado gera um snapshot da memória. Blocos `memory` e `connector` **não geram passos nem snapshots**.
+Cada bloco visitado e cada ramo selecionado em uma decisão gera um snapshot imutável. Os passos de `memory` e `connector` preservam a memória sem alterar seus valores.
 
 ### RN08
 

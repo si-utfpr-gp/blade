@@ -79,6 +79,48 @@ function inputProcessOutputEngine() {
   ))
 }
 
+function sumUntilZeroDidacticEngine() {
+  return new ExecutionEngine(g(
+    [
+      { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+      { id: "memory", type: "memory", position: { x: 0, y: 80 }, data: { rows: [{ type: "inteiro", variables: "n, soma" }] } },
+      { id: "initialize", type: "process", position: { x: 0, y: 160 }, data: { label: "soma = 0" } },
+      { id: "input", type: "input", position: { x: 0, y: 240 }, data: { label: "n" } },
+      { id: "connector", type: "connector", position: { x: 0, y: 320 }, data: { label: "Retornar à decisão" } },
+      { id: "decision", type: "decision", position: { x: 0, y: 400 }, data: { label: "n != 0" } },
+      { id: "sum", type: "process", position: { x: 220, y: 480 }, data: { label: "soma = soma + n" } },
+      { id: "output", type: "output", position: { x: 0, y: 560 }, data: { label: "'Soma: ' + soma" } },
+      { id: "end", type: "startEnd", position: { x: 0, y: 640 }, data: { variant: "end" } },
+    ],
+    [
+      { id: "e1", source: "start", target: "memory" },
+      { id: "e2", source: "memory", target: "initialize" },
+      { id: "e3", source: "initialize", target: "input" },
+      { id: "e4", source: "input", target: "connector" },
+      { id: "e5", source: "connector", target: "decision" },
+      { id: "e6", source: "decision", target: "sum", sourceHandle: "yes" },
+      { id: "e7", source: "sum", target: "input" },
+      { id: "e8", source: "decision", target: "output", sourceHandle: "no" },
+      { id: "e9", source: "output", target: "end" },
+    ],
+  ))
+}
+
+function submitNextInput(engine: ExecutionEngine, value: string) {
+  while (true) {
+    const step = engine.step()
+    if (!step) return null
+    if (step.waitingForInput) return engine.step(value)
+  }
+}
+
+function stepUntil(engine: ExecutionEngine, predicate: (step: NonNullable<ReturnType<ExecutionEngine["step"]>>) => boolean) {
+  while (true) {
+    const step = engine.step()
+    if (!step || predicate(step)) return step
+  }
+}
+
 describe("ExecutionEngine", () => {
   it("start() retorna passo inicial", () => {
     const e = new ExecutionEngine(g(
@@ -91,7 +133,7 @@ describe("ExecutionEngine", () => {
     expect(s?.log).toBe("Iniciando o algoritmo.")
   })
 
-  it("step() avança pulando memory", () => {
+  it("step() registra a declaração de variáveis", () => {
     const e = new ExecutionEngine(g(
       [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
        { id:"n2",type:"memory",position:{x:0,y:80},data:{rows:[{type:"inteiro",variables:"x"}]} },
@@ -101,17 +143,85 @@ describe("ExecutionEngine", () => {
     ))
     e.start()
     const s2 = e.step()
-    expect(s2?.nodeType).toBe("process")
-    expect(s2?.variables.find(v=>v.name==="x")?.value).toBe("10")
+    expect(s2?.nodeType).toBe("memory")
+    expect(s2?.variables.find(v=>v.name==="x")?.value).toBeNull()
     const s3 = e.step()
-    expect(s3?.nodeType).toBe("startEnd")
+    expect(s3?.nodeType).toBe("process")
+    expect(s3?.variables.find(v=>v.name==="x")?.value).toBe("10")
+    const s4 = e.step()
+    expect(s4?.nodeType).toBe("startEnd")
     expect(e.getCurrentState().finished).toBe(true)
+  })
+
+  it("registra a trilha didática completa ao somar até zero", () => {
+    const e = sumUntilZeroDidacticEngine()
+    const inputs = ["2", "7", "14", "0"]
+
+    e.start()
+    while (!e.getCurrentState().finished) {
+      const step = e.step()
+      if (step?.waitingForInput) e.step(inputs.shift())
+    }
+
+    expect(e.getSteps().map((step) => step.nodeType)).toEqual([
+      "startEnd",
+      "memory",
+      "process",
+      "input",
+      "connector",
+      "decision",
+      "branch",
+      "process",
+      "input",
+      "connector",
+      "decision",
+      "branch",
+      "process",
+      "input",
+      "connector",
+      "decision",
+      "branch",
+      "process",
+      "input",
+      "connector",
+      "decision",
+      "branch",
+      "output",
+      "startEnd",
+    ])
+    expect(e.getSteps().filter((step) => step.nodeType === "branch").map((step) => step.log)).toEqual([
+      "Caso Verdadeiro.",
+      "Caso Verdadeiro.",
+      "Caso Verdadeiro.",
+      "Caso Falso.",
+    ])
+    expect(e.getCurrentOutputs()).toEqual(["Soma: 23"])
+  })
+
+  it("restaura o caso da decisão ao voltar para seu passo no histórico", () => {
+    const e = sumUntilZeroDidacticEngine()
+
+    e.start()
+    e.step()
+    e.step()
+    e.step()
+    e.step("2")
+    e.step()
+    const decision = e.step()
+    expect(decision?.nodeType).toBe("decision")
+
+    const decisionIndex = e.currentStepIndex
+    e.step()
+    expect(e.goToStep(decisionIndex)).toBe(true)
+    expect(e.step()).toMatchObject({ nodeType: "branch", log: "Caso Verdadeiro." })
+    expect(e.step()?.nodeId).toBe("sum")
   })
 
   it("executes a visual subroutine with parameter, local memory, and return assignment", () => {
     const e = subroutineDobroEngine()
 
     e.start()
+    e.step()
     e.step()
     const call = e.step()
     expect(call?.nodeType).toBe("subroutine")
@@ -120,6 +230,7 @@ describe("ExecutionEngine", () => {
     const inner = e.step()
     expect(inner?.nodeId).toBe("r-start")
     expect(inner?.log).toBe("Iniciando sub-rotina dobro.")
+    e.step()
     e.step()
     const innerEnd = e.step()
     expect(innerEnd?.log).toBe("Sub-rotina dobro finalizada.")
@@ -247,8 +358,10 @@ describe("ExecutionEngine", () => {
     const e = new ExecutionEngine(graph)
     e.start()
     e.step()
+    e.step()
     const ds = e.step()
     expect(ds?.log).toContain("V")
+    expect(e.step()?.nodeType).toBe("branch")
     expect(e.step()?.nodeType).toBe("startEnd")
   })
 
@@ -269,6 +382,7 @@ describe("ExecutionEngine", () => {
     e.start()
     e.step()
     e.step()
+    e.step()
     const innerStartIndex = e.currentStepIndex + 1
     e.step()
     e.step()
@@ -278,12 +392,14 @@ describe("ExecutionEngine", () => {
     expect(state.callStack?.map((frame) => frame.routineName)).toEqual(["Principal", "dobro"])
     expect(state.currentNodeId).toBe("r-memory")
     expect(Array.from(state.variables.keys())).not.toContain("retorno")
+    e.step()
     expect(e.step()?.nodeId).toBe("r-process")
   })
 
   it("restores memory, outputs, and the next node for a selected snapshot", () => {
     const e = inputProcessOutputEngine()
     e.start()
+    e.step()
     e.step("25")
     e.step()
     e.step()
@@ -291,20 +407,23 @@ describe("ExecutionEngine", () => {
     expect(e.goToStep(0)).toBe(true)
     expect(e.getCurrentState().variables.has("x")).toBe(false)
     expect(e.getCurrentOutputs()).toEqual([])
+    expect(e.step()?.nodeType).toBe("memory")
     expect(e.step()).toMatchObject({ waitingForInput: true, inputVariable: "x" })
   })
 
   it("replaces later steps after a new input instead of adding duplicates", () => {
     const e = inputProcessOutputEngine()
     e.start()
+    e.step()
     e.step("25")
     e.step()
     e.goToStep(0)
+    e.step()
     e.step("10")
 
-    expect(e.getSteps()).toHaveLength(2)
-    expect(e.getSteps()[1].variables.find((v) => v.name === "x")?.value).toBe("10")
-    expect(e.currentStepIndex).toBe(1)
+    expect(e.getSteps()).toHaveLength(3)
+    expect(e.getSteps()[2].variables.find((v) => v.name === "x")?.value).toBe("10")
+    expect(e.currentStepIndex).toBe(2)
   })
 
   it("detecta erro de variável não inicializada", () => {
@@ -316,6 +435,7 @@ describe("ExecutionEngine", () => {
       [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"},{ id:"e3",source:"n3",target:"n4"}]
     ))
     e.start()
+    e.step()
     expect(() => e.step()).toThrow()
     expect(e.getCurrentState().error).not.toBeNull()
   })
@@ -354,6 +474,7 @@ describe("ExecutionEngine", () => {
       [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"},{ id:"e3",source:"n3",target:"n4"}]
     ))
     e.start()
+    e.step()
     const w1 = e.step()
     expect(w1?.waitingForInput).toBe(true)
     expect(w1?.inputEntered).toBe(false)
@@ -392,6 +513,7 @@ describe("ExecutionEngine", () => {
       [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"},{ id:"e3",source:"n3",target:"n4"}]
     ))
     e.start()
+    e.step()
     const s = e.step()
     expect(s?.inputType).toBe("real")
   })
@@ -447,8 +569,7 @@ describe("ExecutionEngine", () => {
     )
     const e = new ExecutionEngine(graph)
     e.start()
-    e.step()
-    e.step("5")
+    submitNextInput(e, "5")
     let guard = 0
     while (e.step() !== null && guard++ < 100) { /* itera até terminar */ }
     const outputSteps = e.getCurrentState().steps.filter(st => st.nodeType === "output")
@@ -484,22 +605,13 @@ describe("ExecutionEngine", () => {
     )
     const e = new ExecutionEngine(graph)
     e.start()
-    e.step()      // entrada n (aguardando)
-    e.step("3")   // n = 3
-    e.step()      // soma = 0; i = 0
-    e.step()      // decision i < 3 -> sim
-    e.step("10")  // nota = 10
-    e.step()      // notas[0] = 10
-    e.step()      // decision -> sim
-    e.step("20")  // nota = 20
-    e.step()
-    e.step()
-    e.step("30")
-    e.step()
-    e.step()      // decision i < 3 -> nao
-    const mediaStep = e.step() // media = soma / n
+    submitNextInput(e, "3")
+    submitNextInput(e, "10")
+    submitNextInput(e, "20")
+    submitNextInput(e, "30")
+    const mediaStep = stepUntil(e, (step) => step.nodeId === "n8")
     expect(mediaStep?.nodeType).toBe("process")
-    const out = e.step()
+    const out = stepUntil(e, (step) => step.nodeType === "output")
     expect(out?.output).toBe("Média: 20")
   })
 
@@ -584,6 +696,7 @@ describe("ExecutionEngine", () => {
     ))
 
     e.start()
+    e.step()
     const process = e.step()
     expect(process?.variables.find((variable) => variable.name === "total")?.value).toBe("30")
     expect(e.step()?.output).toBe("30")

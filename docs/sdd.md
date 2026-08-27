@@ -447,13 +447,13 @@ Tipos de blocos interpretados:
 | Node `type` | Tipo | `variant` | Gera passo? | Operação |
 |--------------|------|-----------|-------------|----------|
 | `startEnd` | Início | `'start'` | Sim | Marca o ponto de partida |
-| `memory` | Memória | — | **Não** | Declara variáveis com tipo e nome (não gera snapshot) |
+| `memory` | Memória | — | **Sim** | Declara variáveis com tipo e nome e registra um passo didático |
 | `input` | Entrada | — | Sim | Solicita valor ao usuário e armazena em variável |
 | `process` | Processo | — | Sim | Executa expressão de atribuição (pode conter múltiplos statements separados por `;`) |
 | `decision` | Decisão | — | Sim | Avalia condição booleana; saídas pelos handles `'yes'` (VERDADEIRO) e `'no'` (FALSO) |
 | `output` | Saída | — | Sim | Exibe valor ou mensagem |
 | `subroutine` | Sub-rotina | — | Sim | Executa chamada de sub-rotina/função |
-| `connector` | Conector | — | **Não** | Roteia fluxo (1 entrada, 1 saída; não gera snapshot) |
+| `connector` | Conector | — | **Sim** | Roteia fluxo (1 entrada, 1 saída) e registra um passo didático |
 | `startEnd` | Término | `'end'` | Sim | Finaliza a execução |
 
 ### Gerenciador de Memória
