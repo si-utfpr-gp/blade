@@ -89,6 +89,7 @@ function sumUntilZeroDidacticEngine() {
       { id: "sum", type: "process", position: { x: 0, y: 320 }, data: { label: "soma = soma + n" } },
       { id: "decision", type: "decision", position: { x: 0, y: 400 }, data: { label: "n != 0" } },
       { id: "loop-connector", type: "connector", position: { x: 220, y: 480 }, data: { label: "Ler próximo número" } },
+      { id: "exit-connector", type: "connector", position: { x: -220, y: 480 }, data: { label: "Exibir soma" } },
       { id: "output", type: "output", position: { x: 0, y: 560 }, data: { label: "'Soma: ' + soma" } },
       { id: "end", type: "startEnd", position: { x: 0, y: 640 }, data: { variant: "end" } },
     ],
@@ -100,8 +101,9 @@ function sumUntilZeroDidacticEngine() {
       { id: "e5", source: "sum", target: "decision" },
       { id: "e6", source: "decision", target: "loop-connector", sourceHandle: "yes" },
       { id: "e7", source: "loop-connector", target: "input" },
-      { id: "e8", source: "decision", target: "output", sourceHandle: "no" },
-      { id: "e9", source: "output", target: "end" },
+      { id: "e8", source: "decision", target: "exit-connector", sourceHandle: "no" },
+      { id: "e9", source: "exit-connector", target: "output" },
+      { id: "e10", source: "output", target: "end" },
     ],
   ))
 }
@@ -186,6 +188,7 @@ describe("ExecutionEngine", () => {
       "process",
       "decision",
       "branch",
+      "connector",
       "output",
       "startEnd",
     ])

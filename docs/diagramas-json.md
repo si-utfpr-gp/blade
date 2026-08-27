@@ -236,8 +236,9 @@ Soma números fornecidos até que o valor informado seja `0` (o `0` não altera 
     { "id": "n5", "type": "process", "data": { "label": "soma = soma + num" } },
     { "id": "n6", "type": "decision", "data": { "label": "num != 0" } },
     { "id": "n7", "type": "connector", "data": { "label": "Ler próximo número" } },
-    { "id": "n8", "type": "output", "data": { "label": "'A soma é: ' + soma" } },
-    { "id": "n9", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n8", "type": "connector", "data": { "label": "Exibir soma" } },
+    { "id": "n9", "type": "output", "data": { "label": "'A soma é: ' + soma" } },
+    { "id": "n10", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
@@ -248,13 +249,15 @@ Soma números fornecidos até que o valor informado seja `0` (o `0` não altera 
     { "id": "e6", "source": "n6", "target": "n7", "sourceHandle": "yes" },
     { "id": "e7", "source": "n7", "target": "n4" },
     { "id": "e8", "source": "n6", "target": "n8", "sourceHandle": "no" },
-    { "id": "e9", "source": "n8", "target": "n9" }
+    { "id": "e9", "source": "n8", "target": "n9" },
+    { "id": "e10", "source": "n9", "target": "n10" }
   ]
 }
 ```
 
 Com as entradas `2`, `7`, `14`, `0`, os passos principais são: conector `3`, entrada `4`,
-processo `5`, condição `6`, caso `6.1`, conector `7` e entrada `8`.
+processo `5`, condição `6`, caso `6.1`, conector `7` e entrada `8`. No fim, o caso falso
+`18.1` segue pelo conector `19`, pela saída `20` e encerra no passo `21`.
 
 ---
 
