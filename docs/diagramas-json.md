@@ -27,6 +27,7 @@ motor de execução ignoram esse campo.
       "data": { "label": "Início", "variant": "start" } },
     { "id": "n2", "type": "memory", "data": { "rows": [
         { "type": "inteiro", "variables": "n, i" },
+        { "type": "inteiro", "variables": "contador", "initialValue": "0" },
         { "type": "real", "variables": "notas[5], soma" } ] } },
     { "id": "n3", "type": "input", "data": { "label": "n" } },
     { "id": "n4", "type": "process","data": { "label": "soma = 0; i = 0" } },
@@ -50,6 +51,10 @@ motor de execução ignoram esse campo.
   ]
 }
 ```
+
+Em um bloco `memory`, `initialValue` é opcional. Quando informado, o motor inicializa cada variável
+daquela linha na própria declaração; use linhas separadas quando as variáveis precisarem de valores
+iniciais diferentes.
 
 **Tipos de bloco:** `startEnd` (com `variant: "start"|"end"`), `memory`, `input`, `process`,
 `output`, `decision`, `subroutine`, `connector`.

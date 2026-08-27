@@ -21,7 +21,14 @@ function getAllVarNames(steps: IExecutionStep[], upTo: number): string[] {
 }
 
 function wasChanged(step: IExecutionStep, varName: string): boolean {
-  return step.changes.some((c) => c.includes(varName));
+  const arrayBaseName = varName.replace(/\[\d+\]$/, "");
+  const declaration = `Declarada: ${arrayBaseName}`;
+
+  return step.changes.some((change) =>
+    change === declaration ||
+    change.startsWith(`${declaration}[`) ||
+    change.startsWith(`${varName} =`),
+  );
 }
 
 function formatValue(v: IVariable | undefined): string {
@@ -31,6 +38,7 @@ function formatValue(v: IVariable | undefined): string {
 }
 
 export function traceCellDisplay(step: IExecutionStep, varName: string): string | null {
+  if (!wasChanged(step, varName)) return null;
   const variable = step.variables.find((sv) => sv.name === varName);
   return variable ? formatValue(variable) : null;
 }
@@ -108,7 +116,7 @@ export default function SimulatorTrace() {
             <TooltipContent side="left" className="max-w-65">
               <p className="text-xs">
                 Cada linha mostra o estado das variáveis após a instrução executada.
-                Células vazias indicam que a variável não pertence ao escopo daquele passo.
+                Células vazias indicam que a variável não foi alterada naquele passo.
                 <em> null</em> significa &quot;declarada, mas sem valor&quot;.
               </p>
             </TooltipContent>

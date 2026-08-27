@@ -83,23 +83,23 @@ function sumUntilZeroDidacticEngine() {
   return new ExecutionEngine(g(
     [
       { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
-      { id: "memory", type: "memory", position: { x: 0, y: 80 }, data: { rows: [{ type: "inteiro", variables: "n, soma" }] } },
-      { id: "initialize", type: "process", position: { x: 0, y: 160 }, data: { label: "soma = 0" } },
+      { id: "memory", type: "memory", position: { x: 0, y: 80 }, data: { rows: [{ type: "inteiro", variables: "n" }, { type: "inteiro", variables: "soma", initialValue: "0" }] } },
+      { id: "entry-connector", type: "connector", position: { x: 0, y: 160 }, data: { label: "Iniciar leitura" } },
       { id: "input", type: "input", position: { x: 0, y: 240 }, data: { label: "n" } },
-      { id: "connector", type: "connector", position: { x: 0, y: 320 }, data: { label: "Retornar à decisão" } },
+      { id: "sum", type: "process", position: { x: 0, y: 320 }, data: { label: "soma = soma + n" } },
       { id: "decision", type: "decision", position: { x: 0, y: 400 }, data: { label: "n != 0" } },
-      { id: "sum", type: "process", position: { x: 220, y: 480 }, data: { label: "soma = soma + n" } },
+      { id: "loop-connector", type: "connector", position: { x: 220, y: 480 }, data: { label: "Ler próximo número" } },
       { id: "output", type: "output", position: { x: 0, y: 560 }, data: { label: "'Soma: ' + soma" } },
       { id: "end", type: "startEnd", position: { x: 0, y: 640 }, data: { variant: "end" } },
     ],
     [
       { id: "e1", source: "start", target: "memory" },
-      { id: "e2", source: "memory", target: "initialize" },
-      { id: "e3", source: "initialize", target: "input" },
-      { id: "e4", source: "input", target: "connector" },
-      { id: "e5", source: "connector", target: "decision" },
-      { id: "e6", source: "decision", target: "sum", sourceHandle: "yes" },
-      { id: "e7", source: "sum", target: "input" },
+      { id: "e2", source: "memory", target: "entry-connector" },
+      { id: "e3", source: "entry-connector", target: "input" },
+      { id: "e4", source: "input", target: "sum" },
+      { id: "e5", source: "sum", target: "decision" },
+      { id: "e6", source: "decision", target: "loop-connector", sourceHandle: "yes" },
+      { id: "e7", source: "loop-connector", target: "input" },
       { id: "e8", source: "decision", target: "output", sourceHandle: "no" },
       { id: "e9", source: "output", target: "end" },
     ],
@@ -166,24 +166,24 @@ describe("ExecutionEngine", () => {
     expect(e.getSteps().map((step) => step.nodeType)).toEqual([
       "startEnd",
       "memory",
-      "process",
-      "input",
       "connector",
+      "input",
+      "process",
       "decision",
       "branch",
-      "process",
-      "input",
       "connector",
+      "input",
+      "process",
       "decision",
       "branch",
-      "process",
-      "input",
       "connector",
+      "input",
+      "process",
       "decision",
       "branch",
-      "process",
-      "input",
       "connector",
+      "input",
+      "process",
       "decision",
       "branch",
       "output",
@@ -196,6 +196,10 @@ describe("ExecutionEngine", () => {
       "Caso Falso.",
     ])
     expect(e.getCurrentOutputs()).toEqual(["Soma: 23"])
+    expect(e.getSteps()[1].variables).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: "n", value: null }),
+      expect.objectContaining({ name: "soma", value: "0" }),
+    ]))
   })
 
   it("restaura o caso da decisão ao voltar para seu passo no histórico", () => {
@@ -214,7 +218,7 @@ describe("ExecutionEngine", () => {
     e.step()
     expect(e.goToStep(decisionIndex)).toBe(true)
     expect(e.step()).toMatchObject({ nodeType: "branch", log: "Caso Verdadeiro." })
-    expect(e.step()?.nodeId).toBe("sum")
+    expect(e.step()?.nodeId).toBe("loop-connector")
   })
 
   it("executes a visual subroutine with parameter, local memory, and return assignment", () => {

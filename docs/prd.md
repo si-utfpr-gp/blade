@@ -190,7 +190,7 @@ A memória do sistema é uma estrutura que armazena todas as variáveis criadas 
 Características da memória:
 
 - **Declaração explícita**: as variáveis são declaradas no bloco `memory` com nome e tipo (`inteiro`, `real`, `caractere`, `logico`);
-- **Inicialização tardia**: variáveis só recebem valor após sua primeira atribuição (bloco `input` ou `process`);
+- **Inicialização opcional na declaração**: uma linha de `memory` pode informar `initialValue`; sem ele, a variável recebe valor somente por `input` ou `process`;
 - **Tipagem declarativa com execução dinâmica**: o tipo declarado no bloco `memory` serve como documentação e validação, mas o valor é tratado dinamicamente durante a execução;
 - **Suporte a vetores**: variáveis indexadas são declaradas como `nome[tamanho]` (ex: `notas[5]`);
 - **Imutabilidade de snapshots**: uma vez registrado, um snapshot não pode ser alterado;
@@ -287,7 +287,7 @@ A memória deve representar fielmente o estado do algoritmo.
 
 ### RN09
 
-Variáveis somente podem ser utilizadas após sua declaração no bloco `memory` e inicialização via `input` ou `process`.
+Variáveis somente podem ser utilizadas após sua declaração no bloco `memory` e inicialização via `initialValue`, `input` ou `process`.
 
 ### RN10
 

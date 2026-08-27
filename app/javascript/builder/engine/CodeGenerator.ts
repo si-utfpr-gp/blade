@@ -220,9 +220,12 @@ export class CodeGenerator {
             ? `${ind}let ${name}: ${tsType}[] = new Array(${size});`
             : `${ind}let ${name} = new Array(${size});`)
         } else {
+          const initialValue = row.initialValue === undefined
+            ? ""
+            : ` = ${this.translateExpression(row.initialValue)}`
           lines.push(lang === "ts"
-            ? `${ind}let ${raw}: ${this.typeToTS(row.type)};`
-            : `${ind}let ${raw};`)
+            ? `${ind}let ${raw}: ${this.typeToTS(row.type)}${initialValue};`
+            : `${ind}let ${raw}${initialValue};`)
         }
       }
     }

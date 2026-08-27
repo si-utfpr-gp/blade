@@ -231,14 +231,13 @@ export class ExecutionEngine {
             }
 
             case "memory": {
-                this.processMemory(node)
-                const names = frame.memory.snapshot().map((variable) => variable.name)
+                const changes = this.processMemory(node)
                 return {
                     ...base(),
                     variables: frame.memory.snapshot(),
                     log: "Definição das variáveis.",
                     explanation: "As variáveis do algoritmo foram declaradas.",
-                    changes: names.map((name) => `Declarada: ${name}`),
+                    changes,
                     nextHint: "Avançar.",
                 }
             }
@@ -372,15 +371,23 @@ export class ExecutionEngine {
         }
     }
 
-    private processMemory(node: IParserNode): void {
+    private processMemory(node: IParserNode): string[] {
         const frame = this.requireActiveFrame()
+        const changes: string[] = []
         node.rows?.forEach(row => {
             row.variables
                 .split(",")
                 .map(variable => variable.trim())
                 .filter(Boolean)
-                .forEach(variable => frame.memory.declare(variable, row.type))
+                .forEach(variable => {
+                    frame.memory.declare(variable, row.type)
+                    changes.push(`Declarada: ${variable}`)
+                    if (row.initialValue !== undefined) {
+                        changes.push(...frame.expr.assign(`${variable} = ${row.initialValue}`, node.id))
+                    }
+                })
         })
+        return changes
     }
 
     private next(node: IParserNode): string | null {

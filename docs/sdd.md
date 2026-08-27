@@ -296,6 +296,7 @@ interface Node {
     rows?: Array<{        // Apenas para type = "memory"
       type: string        // "inteiro" | "real" | "caractere" | "logico"
       variables: string   // "num1, num2, soma" ou "notas[5], i"
+      initialValue?: string // expressão opcional para inicializar as variáveis da linha
     }>
   }
 }
@@ -447,7 +448,7 @@ Tipos de blocos interpretados:
 | Node `type` | Tipo | `variant` | Gera passo? | Operação |
 |--------------|------|-----------|-------------|----------|
 | `startEnd` | Início | `'start'` | Sim | Marca o ponto de partida |
-| `memory` | Memória | — | **Sim** | Declara variáveis com tipo e nome e registra um passo didático |
+| `memory` | Memória | — | **Sim** | Declara variáveis, pode inicializá-las por `initialValue` e registra um passo didático |
 | `input` | Entrada | — | Sim | Solicita valor ao usuário e armazena em variável |
 | `process` | Processo | — | Sim | Executa expressão de atribuição (pode conter múltiplos statements separados por `;`) |
 | `decision` | Decisão | — | Sim | Avalia condição booleana; saídas pelos handles `'yes'` (VERDADEIRO) e `'no'` (FALSO) |
@@ -458,7 +459,7 @@ Tipos de blocos interpretados:
 
 ### Gerenciador de Memória
 
-Mantém o estado atual de todas as variáveis do algoritmo durante a execução. As variáveis são **declaradas** no bloco `memory` (com tipo e nome) e **inicializadas** posteriormente via blocos `input` ou `process`.
+Mantém o estado atual de todas as variáveis do algoritmo durante a execução. As variáveis são **declaradas** no bloco `memory` (com tipo e nome) e podem ser **inicializadas** no próprio bloco com `initialValue`, ou posteriormente via blocos `input` ou `process`.
 
 Variáveis indexadas (vetores) são declaradas como `nome[tamanho]` (ex: `notas[5]`) e acessadas via índice (ex: `notas[i]`).
 
@@ -483,7 +484,7 @@ Estrutura:
 
 Operações:
 - **Declarar variável**: registra variável a partir do bloco `memory` (nome, tipo, e se é vetor);
-- **Inicializar variável**: atribui valor pela primeira vez (via `input` ou `process`);
+- **Inicializar variável**: atribui valor pela primeira vez (via `initialValue`, `input` ou `process`);
 - **Atualizar variável**: modifica o valor de uma variável existente;
 - **Consultar variável**: retorna o valor corrente de uma variável;
 - **Verificar inicialização**: valida se a variável foi inicializada antes do uso.

@@ -17,7 +17,7 @@ export function parse(nodes: Node[], edges: Edge[], options?: ParseOptions): IPa
             type: node.type ?? "",
             variant: data?.variant as "start" | "end" | undefined,
             label: data?.label as string | undefined,
-            rows: data?.rows as Array<{ type: string; variables: string }> | undefined,
+            rows: data?.rows as Array<{ type: string; variables: string; initialValue?: string }> | undefined,
         }
         nodeMap.set(node.id, parserNode);
 

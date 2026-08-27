@@ -16,7 +16,7 @@ function renderTrace() {
 }
 
 describe("traceCellDisplay", () => {
-  it("shows unchanged variable values when the step has that variable", () => {
+  it("hides variable values when the step does not change them", () => {
     const value = traceCellDisplay({
       nodeId: "r4",
       nodeLabel: "i <= valor",
@@ -32,7 +32,43 @@ describe("traceCellDisplay", () => {
       nextHint: "",
     }, "retorno")
 
-    expect(value).toBe("1")
+    expect(value).toBeNull()
+  })
+
+  it("shows a variable value when the step changes it", () => {
+    const value = traceCellDisplay({
+      nodeId: "n5",
+      nodeLabel: "soma = soma + n",
+      nodeType: "process",
+      variables: [
+        { name: "n", value: "2", type: "inteiro", scope: "global" },
+        { name: "soma", value: "2", type: "inteiro", scope: "global" },
+      ],
+      log: "soma = soma + n",
+      explanation: "",
+      changes: ["soma = 2"],
+      nextHint: "",
+    }, "soma")
+
+    expect(value).toBe("2")
+  })
+
+  it("does not confuse a variable name with part of another change", () => {
+    const value = traceCellDisplay({
+      nodeId: "n5",
+      nodeLabel: "soma = soma + a",
+      nodeType: "process",
+      variables: [
+        { name: "a", value: "2", type: "inteiro", scope: "global" },
+        { name: "soma", value: "2", type: "inteiro", scope: "global" },
+      ],
+      log: "soma = soma + a",
+      explanation: "",
+      changes: ["soma = 2"],
+      nextHint: "",
+    }, "a")
+
+    expect(value).toBeNull()
   })
 
   it("returns null when the variable is not in that step scope", () => {
