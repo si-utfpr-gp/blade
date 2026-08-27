@@ -5,7 +5,7 @@ export interface IParserNode {
     type: string;
     variant?: "start" | "end"
     label?: string
-    rows?: Array<{ type: string; variables: string}>
+    rows?: Array<{ type: string; variables: string; initialValue?: string }>
 }
 
 export interface IParserEdge {

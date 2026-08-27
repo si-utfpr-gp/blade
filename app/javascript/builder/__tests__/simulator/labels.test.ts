@@ -26,6 +26,10 @@ describe("nodeTypeLabel", () => {
     expect(nodeTypeLabel("decision")).toBe("Decisão")
   })
 
+  it("returns 'Caso' for branch", () => {
+    expect(nodeTypeLabel("branch")).toBe("Caso")
+  })
+
   it("returns 'Conector' for connector", () => {
     expect(nodeTypeLabel("connector")).toBe("Conector")
   })

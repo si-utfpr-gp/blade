@@ -59,12 +59,19 @@ export interface IPendingInputCheckpoint {
   index: number
 }
 
+export interface IPendingDecisionCheckpoint {
+  nodeId: string
+  nodeLabel: string
+  handle: "yes" | "no"
+}
+
 export interface IExecutionFrameCheckpoint {
   routineName: string
   graphName: string
   memory: IMemoryCheckpoint
   nextNodeId: string | null
   pendingInput: IPendingInputCheckpoint | null
+  pendingDecision: IPendingDecisionCheckpoint | null
   returnTarget?: string
   returnToNode?: string | null
   returnVariable?: string
@@ -75,6 +82,7 @@ export interface IExecutionCheckpoint {
   outputs: string[]
   nextNodeId: string | null
   pendingInput: IPendingInputCheckpoint | null
+  pendingDecision: IPendingDecisionCheckpoint | null
   finished: boolean
   frames?: IExecutionFrameCheckpoint[]
 }

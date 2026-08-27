@@ -117,6 +117,12 @@ export class CodeGenerator {
     const node = this.graph.nodes.get(nodeId)
     if (!node) return
 
+    const doWhile = this.findDoWhileLoop(nodeId, emitted)
+    if (doWhile) {
+      this.emitDoWhile(doWhile, lines, indent, lang, emitted, stopAt)
+      return
+    }
+
     if (node.type === "connector") {
       this.emitPath(this.graph.getNextNode(nodeId), lines, indent, lang, emitted, stopAt)
       return
@@ -176,6 +182,61 @@ export class CodeGenerator {
     this.emitPath(merge, lines, indent, lang, emitted, stopAt)
   }
 
+  private findDoWhileLoop(
+    startNodeId: string,
+    emitted: Set<string>,
+  ): { body: IParserNode[]; decision: IParserNode; exitNodeId: string } | null {
+    const body: IParserNode[] = []
+    const visited = new Set<string>()
+    let currentId: string | null = startNodeId
+
+    while (currentId && !visited.has(currentId)) {
+      visited.add(currentId)
+      const current = this.graph.nodes.get(currentId)
+      if (!current) return null
+
+      if (current.type === "connector") {
+        currentId = this.graph.getNextNode(current.id)
+        continue
+      }
+
+      if (current.type === "decision") {
+        if (emitted.has(current.id)) return null
+        const yesNext = this.graph.getNextNode(current.id, "yes")
+        const noNext = this.graph.getNextNode(current.id, "no")
+        if (body.length === 0 || !yesNext || !noNext || !this.pathReaches(yesNext, startNodeId)) {
+          return null
+        }
+        return { body, decision: current, exitNodeId: noNext }
+      }
+
+      if (emitted.has(currentId) || current.type === "startEnd") return null
+      body.push(current)
+      currentId = this.graph.getNextNode(current.id)
+    }
+
+    return null
+  }
+
+  private emitDoWhile(
+    loop: { body: IParserNode[]; decision: IParserNode; exitNodeId: string },
+    lines: string[],
+    indent: number,
+    lang: Lang,
+    emitted: Set<string>,
+    stopAt?: string | null,
+  ): void {
+    const ind = this.indent(indent)
+    lines.push(`${ind}do {`)
+    for (const node of loop.body) {
+      emitted.add(node.id)
+      lines.push(...this.translate(node, lang, indent + 1))
+    }
+    emitted.add(loop.decision.id)
+    lines.push(`${ind}} while (${this.translateExpression(loop.decision.label ?? "false")});`)
+    this.emitPath(loop.exitNodeId, lines, indent, lang, emitted, stopAt)
+  }
+
   private translate(node: IParserNode, lang: Lang, indent: number): string[] {
     switch (node.type) {
       case "startEnd":
@@ -220,9 +281,12 @@ export class CodeGenerator {
             ? `${ind}let ${name}: ${tsType}[] = new Array(${size});`
             : `${ind}let ${name} = new Array(${size});`)
         } else {
+          const initialValue = row.initialValue === undefined
+            ? ""
+            : ` = ${this.translateExpression(row.initialValue)}`
           lines.push(lang === "ts"
-            ? `${ind}let ${raw}: ${this.typeToTS(row.type)};`
-            : `${ind}let ${raw};`)
+            ? `${ind}let ${raw}: ${this.typeToTS(row.type)}${initialValue};`
+            : `${ind}let ${raw}${initialValue};`)
         }
       }
     }

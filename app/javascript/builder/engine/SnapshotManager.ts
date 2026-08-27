@@ -26,6 +26,7 @@ function cloneCheckpoint(checkpoint: IExecutionCheckpoint): IExecutionCheckpoint
         pendingInput: checkpoint.pendingInput
             ? { ...checkpoint.pendingInput, names: [...checkpoint.pendingInput.names] }
             : null,
+        pendingDecision: checkpoint.pendingDecision ? { ...checkpoint.pendingDecision } : null,
         frames: checkpoint.frames?.map((frame) => ({
             ...frame,
             memory: {
@@ -37,6 +38,7 @@ function cloneCheckpoint(checkpoint: IExecutionCheckpoint): IExecutionCheckpoint
             pendingInput: frame.pendingInput
                 ? { ...frame.pendingInput, names: [...frame.pendingInput.names] }
                 : null,
+            pendingDecision: frame.pendingDecision ? { ...frame.pendingDecision } : null,
         })),
     };
 }

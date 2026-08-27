@@ -27,6 +27,7 @@ motor de execução ignoram esse campo.
       "data": { "label": "Início", "variant": "start" } },
     { "id": "n2", "type": "memory", "data": { "rows": [
         { "type": "inteiro", "variables": "n, i" },
+        { "type": "inteiro", "variables": "contador", "initialValue": "0" },
         { "type": "real", "variables": "notas[5], soma" } ] } },
     { "id": "n3", "type": "input", "data": { "label": "n" } },
     { "id": "n4", "type": "process","data": { "label": "soma = 0; i = 0" } },
@@ -50,6 +51,10 @@ motor de execução ignoram esse campo.
   ]
 }
 ```
+
+Em um bloco `memory`, `initialValue` é opcional. Quando informado, o motor inicializa cada variável
+daquela linha na própria declaração; use linhas separadas quando as variáveis precisarem de valores
+iniciais diferentes.
 
 **Tipos de bloco:** `startEnd` (com `variant: "start"|"end"`), `memory`, `input`, `process`,
 `output`, `decision`, `subroutine`, `connector`.
@@ -222,13 +227,18 @@ Soma números fornecidos até que o valor informado seja `0` (o `0` não altera 
 {
   "nodes": [
     { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
-    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "num, soma" } ] } },
-    { "id": "n3", "type": "process", "data": { "label": "soma = 0" } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [
+      { "type": "inteiro", "variables": "num" },
+      { "type": "inteiro", "variables": "soma", "initialValue": "0" }
+    ] } },
+    { "id": "n3", "type": "connector", "data": { "label": "Iniciar leitura" } },
     { "id": "n4", "type": "input", "data": { "label": "num" } },
     { "id": "n5", "type": "process", "data": { "label": "soma = soma + num" } },
     { "id": "n6", "type": "decision", "data": { "label": "num != 0" } },
-    { "id": "n7", "type": "output", "data": { "label": "'A soma é: ' + soma" } },
-    { "id": "n8", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n7", "type": "connector", "data": { "label": "Ler próximo número" } },
+    { "id": "n8", "type": "connector", "data": { "label": "Exibir soma" } },
+    { "id": "n9", "type": "output", "data": { "label": "'A soma é: ' + soma" } },
+    { "id": "n10", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
@@ -236,11 +246,27 @@ Soma números fornecidos até que o valor informado seja `0` (o `0` não altera 
     { "id": "e3", "source": "n3", "target": "n4" },
     { "id": "e4", "source": "n4", "target": "n5" },
     { "id": "e5", "source": "n5", "target": "n6" },
-    { "id": "e6", "source": "n6", "target": "n4", "sourceHandle": "yes" },
-    { "id": "e7", "source": "n6", "target": "n7", "sourceHandle": "no" },
-    { "id": "e8", "source": "n7", "target": "n8" }
+    { "id": "e6", "source": "n6", "target": "n7", "sourceHandle": "yes" },
+    { "id": "e7", "source": "n7", "target": "n4" },
+    { "id": "e8", "source": "n6", "target": "n8", "sourceHandle": "no" },
+    { "id": "e9", "source": "n8", "target": "n9" },
+    { "id": "e10", "source": "n9", "target": "n10" }
   ]
 }
+```
+
+Com as entradas `2`, `7`, `14`, `0`, os passos principais são: conector `3`, entrada `4`,
+processo `5`, condição `6`, caso `6.1`, conector `7` e entrada `8`. No fim, o caso falso
+`18.1` segue pelo conector `19`, pela saída `20` e encerra no passo `21`.
+
+O gerador converte esse ciclo para um `do...while`, preservando a leitura e a soma dentro do
+laço e a saída somente após o valor `0`:
+
+```js
+do {
+  num = Number.parseInt((prompt("Valor para num:") ?? ""), 10);
+  soma = soma + num;
+} while (num !== 0);
 ```
 
 ---
@@ -410,7 +436,7 @@ Exemplo completo de sub-rotina visual. O algoritmo principal lê `n`, chama `res
 # Checklist de validação
 
 - [ ] O JSON carrega sem erro de sintaxe (botão **Carregar** retorna uma mensagem de diagrama carregado).
-- [ ] O teste de mesa mostra um passo por bloco executado (blocos `memory` e `connector` não geram passo).
+- [ ] O teste de mesa mostra cada bloco visitado, inclusive `memory` e `connector`, e o caso selecionado após cada decisão.
 - [ ] As variáveis aparecem preenchidas no passo em que são alteradas.
 - [ ] A explicação descreve a operação de cada passo.
 - [ ] O código gerado é semanticamente equivalente ao diagrama.

@@ -1,4 +1,4 @@
-import type { ICallStackFrame, IExecutionCheckpoint, IExecutionFrameCheckpoint, IExecutionStep, IPendingInputCheckpoint } from "../interfaces/execution";
+import type { ICallStackFrame, IExecutionCheckpoint, IExecutionFrameCheckpoint, IExecutionStep, IPendingDecisionCheckpoint, IPendingInputCheckpoint } from "../interfaces/execution";
 import type { IParserData, IParserNode } from "../parser/types";
 import { ExprEvaluator } from "./ExprEvaluator";
 import { MemoryManager } from "./MemoryManager";
@@ -14,6 +14,7 @@ interface ExecutionFrame {
     expr: ExprEvaluator
     current: string | null
     pendingInput: IPendingInputCheckpoint | null
+    pendingDecision: IPendingDecisionCheckpoint | null
     returnTarget?: string
     returnToNode?: string | null
     returnVariable?: string
@@ -28,9 +29,8 @@ interface SubroutineCall {
 /**
  * Stateful interpreter for a parsed diagram.
  *
- * It walks the graph one executable block at a time, skips declarative/routing
- * blocks (`memory` and `connector`), updates memory, stores snapshots, and
- * pauses when an `input` block needs a value from the UI.
+ * It walks the graph one visual block at a time, recording declarations,
+ * connectors, decisions, and the selected decision branch in the desk check.
  */
 export class ExecutionEngine {
     private frames: ExecutionFrame[] = [];
@@ -62,7 +62,12 @@ export class ExecutionEngine {
             return null
         }
 
-        this.skipNonExecutableBlocks()
+        const decisionBranch = this.advancePendingDecision()
+        if (decisionBranch) {
+            this.snapshots.store(decisionBranch, this.checkpoint())
+            return decisionBranch
+        }
+
         const active = this.activeFrame()
         if (!active?.current) return null
 
@@ -147,7 +152,6 @@ export class ExecutionEngine {
     }
 
     private advance(): IExecutionStep | null {
-        this.skipNonExecutableBlocks()
         const frame = this.activeFrame()
         if (!frame?.current) return null
 
@@ -226,7 +230,17 @@ export class ExecutionEngine {
                 return { ...base(), ...text };
             }
 
-            case "memory": return null;
+            case "memory": {
+                const changes = this.processMemory(node)
+                return {
+                    ...base(),
+                    variables: frame.memory.snapshot(),
+                    log: "Definição das variáveis.",
+                    explanation: "As variáveis do algoritmo foram declaradas.",
+                    changes,
+                    nextHint: "Avançar.",
+                }
+            }
 
             case "input": {
                 const varNames = (node.label ?? "").split(",").map(s => s.trim()).filter(Boolean)
@@ -322,10 +336,24 @@ export class ExecutionEngine {
                     nodeLabel: cond,
                     conditionResult: ok,
                 });
+                frame.pendingDecision = {
+                    nodeId: node.id,
+                    nodeLabel: cond,
+                    handle: ok ? "yes" : "no",
+                }
+                this.shouldAdvanceCurrent = false
                 return { ...base(), ...text };
             }
 
-            case "connector": return null;
+            case "connector": {
+                return {
+                    ...base(),
+                    log: "Conector.",
+                    explanation: "O fluxo segue pelo conector até o próximo bloco.",
+                    changes: [],
+                    nextHint: "Avançar.",
+                }
+            }
 
             case "subroutine": {
                 const sub = node.label ?? "sub-rotina";
@@ -343,42 +371,50 @@ export class ExecutionEngine {
         }
     }
 
-    private skipNonExecutableBlocks(): void {
-        while (this.activeFrame()?.current) {
-            const frame = this.requireActiveFrame()
-            const node = frame.graph.nodes.get(frame.current as string)
-            if (!node) {
-                this._err = `Bloco '${frame.current}' não encontrado`
-                return
-            }
-            if (node.type === "memory") {
-                this.processMemory(node)
-                frame.current = frame.graph.getNextNode(frame.current as string)
-                continue
-            }
-            if (node.type === "connector") {
-                frame.current = frame.graph.getNextNode(frame.current as string)
-                continue
-            }
-            return
-        }
-    }
-
-    private processMemory(node: IParserNode): void {
+    private processMemory(node: IParserNode): string[] {
         const frame = this.requireActiveFrame()
+        const changes: string[] = []
         node.rows?.forEach(row => {
             row.variables
                 .split(",")
                 .map(variable => variable.trim())
                 .filter(Boolean)
-                .forEach(variable => frame.memory.declare(variable, row.type))
+                .forEach(variable => {
+                    frame.memory.declare(variable, row.type)
+                    changes.push(`Declarada: ${variable}`)
+                    if (row.initialValue !== undefined) {
+                        changes.push(...frame.expr.assign(`${variable} = ${row.initialValue}`, node.id))
+                    }
+                })
         })
+        return changes
     }
 
     private next(node: IParserNode): string | null {
         const frame = this.requireActiveFrame()
         if (node.type === "decision") return frame.graph.getNextNode(node.id, frame.expr.condition(node.label ?? "", node.id) ? "yes" : "no")
         return frame.graph.getNextNode(node.id)
+    }
+
+    private advancePendingDecision(): IExecutionStep | null {
+        const frame = this.activeFrame()
+        const pending = frame?.pendingDecision
+        if (!frame || !pending) return null
+
+        frame.pendingDecision = null
+        frame.current = frame.graph.getNextNode(pending.nodeId, pending.handle)
+        const isTrue = pending.handle === "yes"
+        return {
+            nodeId: pending.nodeId,
+            nodeLabel: pending.nodeLabel,
+            nodeType: "branch",
+            variables: frame.memory.snapshot(),
+            log: `Caso ${isTrue ? "Verdadeiro" : "Falso"}.`,
+            explanation: `O fluxo segue pelo caso ${isTrue ? "verdadeiro" : "falso"}.`,
+            changes: [`Ramo: ${isTrue ? "VERDADEIRO" : "FALSO"}`],
+            nextHint: "Avançar.",
+            callStack: this.callStack(),
+        }
     }
 
     private moveAfter(node: IParserNode): void {
@@ -417,6 +453,7 @@ export class ExecutionEngine {
             expr: localExpr,
             current: routine.graph.startNodeId,
             pendingInput: null,
+            pendingDecision: null,
             returnTarget: call.returnTarget,
             returnToNode: caller.graph.getNextNode(node.id),
             returnVariable: routine.returnVariable,
@@ -506,6 +543,7 @@ export class ExecutionEngine {
             expr: new ExprEvaluator(memory),
             current,
             pendingInput: null,
+            pendingDecision: null,
         }
     }
 
@@ -516,6 +554,7 @@ export class ExecutionEngine {
         frame.pendingInput = checkpoint.pendingInput
             ? { ...checkpoint.pendingInput, names: [...checkpoint.pendingInput.names] }
             : null
+        frame.pendingDecision = checkpoint.pendingDecision ? { ...checkpoint.pendingDecision } : null
         frame.returnTarget = checkpoint.returnTarget
         frame.returnToNode = checkpoint.returnToNode
         frame.returnVariable = checkpoint.returnVariable
@@ -546,6 +585,9 @@ export class ExecutionEngine {
             pendingInput: this.activeFrame()?.pendingInput
                 ? { ...this.activeFrame()!.pendingInput!, names: [...this.activeFrame()!.pendingInput!.names] }
                 : null,
+            pendingDecision: this.activeFrame()?.pendingDecision
+                ? { ...this.activeFrame()!.pendingDecision! }
+                : null,
             finished: this._done,
             frames: this.frames.map((frame) => ({
                 routineName: frame.routineName,
@@ -555,6 +597,7 @@ export class ExecutionEngine {
                 pendingInput: frame.pendingInput
                     ? { ...frame.pendingInput, names: [...frame.pendingInput.names] }
                     : null,
+                pendingDecision: frame.pendingDecision ? { ...frame.pendingDecision } : null,
                 returnTarget: frame.returnTarget,
                 returnToNode: frame.returnToNode,
                 returnVariable: frame.returnVariable,

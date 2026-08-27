@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { useSimulator } from "./SimulatorContext";
 import { nodeTypeLabel } from "./labels";
+import { displayStepNumber, mainStepCount } from "./tracePresentation";
 import type { IExecutionStep } from "../../interfaces";
 
 export default function SimulatorExplain() {
@@ -28,7 +29,7 @@ export default function SimulatorExplain() {
     <div className="p-3 space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-          Passo {currentStepIndex + 1} de {steps.length}
+          Passo {displayStepNumber(steps, currentStepIndex)} de {mainStepCount(steps)}
         </span>
         <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
           {nodeTypeLabel(currentStep.nodeType)}

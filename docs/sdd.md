@@ -296,6 +296,7 @@ interface Node {
     rows?: Array<{        // Apenas para type = "memory"
       type: string        // "inteiro" | "real" | "caractere" | "logico"
       variables: string   // "num1, num2, soma" ou "notas[5], i"
+      initialValue?: string // expressão opcional para inicializar as variáveis da linha
     }>
   }
 }
@@ -435,7 +436,7 @@ Responsável por determinar qual bloco deve ser executado a cada passo. Ele perc
 Funcionalidades:
 - Navegação sequencial entre blocos;
 - Avaliação de expressões condicionais para desvios (handles `'yes'`/`'no'`);
-- Detecção de ciclos no grafo para implementação de laços (while/for) via `decision` + arestas de retorno + `connector`;
+- Detecção de ciclos no grafo para implementação de laços `while`, do padrão visual equivalente a `for`, e de `do...while` via `decision` + arestas de retorno + `connector`;
 - Detecção de término de execução.
 
 ### Interpretador de Blocos
@@ -447,18 +448,18 @@ Tipos de blocos interpretados:
 | Node `type` | Tipo | `variant` | Gera passo? | Operação |
 |--------------|------|-----------|-------------|----------|
 | `startEnd` | Início | `'start'` | Sim | Marca o ponto de partida |
-| `memory` | Memória | — | **Não** | Declara variáveis com tipo e nome (não gera snapshot) |
+| `memory` | Memória | — | **Sim** | Declara variáveis, pode inicializá-las por `initialValue` e registra um passo didático |
 | `input` | Entrada | — | Sim | Solicita valor ao usuário e armazena em variável |
 | `process` | Processo | — | Sim | Executa expressão de atribuição (pode conter múltiplos statements separados por `;`) |
 | `decision` | Decisão | — | Sim | Avalia condição booleana; saídas pelos handles `'yes'` (VERDADEIRO) e `'no'` (FALSO) |
 | `output` | Saída | — | Sim | Exibe valor ou mensagem |
 | `subroutine` | Sub-rotina | — | Sim | Executa chamada de sub-rotina/função |
-| `connector` | Conector | — | **Não** | Roteia fluxo (1 entrada, 1 saída; não gera snapshot) |
+| `connector` | Conector | — | **Sim** | Roteia fluxo (1 entrada, 1 saída) e registra um passo didático |
 | `startEnd` | Término | `'end'` | Sim | Finaliza a execução |
 
 ### Gerenciador de Memória
 
-Mantém o estado atual de todas as variáveis do algoritmo durante a execução. As variáveis são **declaradas** no bloco `memory` (com tipo e nome) e **inicializadas** posteriormente via blocos `input` ou `process`.
+Mantém o estado atual de todas as variáveis do algoritmo durante a execução. As variáveis são **declaradas** no bloco `memory` (com tipo e nome) e podem ser **inicializadas** no próprio bloco com `initialValue`, ou posteriormente via blocos `input` ou `process`.
 
 Variáveis indexadas (vetores) são declaradas como `nome[tamanho]` (ex: `notas[5]`) e acessadas via índice (ex: `notas[i]`).
 
@@ -483,7 +484,7 @@ Estrutura:
 
 Operações:
 - **Declarar variável**: registra variável a partir do bloco `memory` (nome, tipo, e se é vetor);
-- **Inicializar variável**: atribui valor pela primeira vez (via `input` ou `process`);
+- **Inicializar variável**: atribui valor pela primeira vez (via `initialValue`, `input` ou `process`);
 - **Atualizar variável**: modifica o valor de uma variável existente;
 - **Consultar variável**: retorna o valor corrente de uma variável;
 - **Verificar inicialização**: valida se a variável foi inicializada antes do uso.
@@ -573,14 +574,14 @@ graph LR
 
 ## 10.4. Teste de Mesa (Desk Check Table)
 
-O teste de mesa é a representação tabular da execução do algoritmo, construída automaticamente a partir da sequência de snapshots registrados.
+O teste de mesa é a representação tabular da execução do algoritmo, construída automaticamente a partir da sequência de snapshots registrados. Um ramo selecionado em `decision` é registrado como evento sintético `branch` e exibido como subpasso `N.1`; ele preserva a navegação por snapshots, mas não aumenta a numeração nem o total de passos principais.
 
 Cada linha do teste de mesa registra:
 
-- **Passo**: número sequencial da execução;
+- **Passo**: número sequencial principal da execução; um `branch` é apresentado como subpasso `N.1`;
 - **Bloco**: identificador e tipo do bloco executado;
 - **Operação**: descrição textual da operação realizada pelo bloco;
-- **Variáveis**: valores de **todas** as variáveis após a execução do passo (cada variável em sua coluna);
+- **Variáveis**: valores das variáveis declaradas ou alteradas no passo (cada variável em sua coluna); células vazias representam ausência de alteração;
 - **Saída**: resultado produzido (para blocos de saída de dados);
 
 Exemplo de teste de mesa gerado:
@@ -663,6 +664,8 @@ Exemplos:
 | `subroutine` | Sub-rotina | `resultado = fatorial(n);` |
 | `connector` | Conector | *(nada — apenas roteamento de fluxo)* |
 | `startEnd (end)` | Término | `// Fim do algoritmo` (comentário) |
+
+O gerador percorre conectores sem emiti-los. Ele converte uma decisão cujo ramo retorna à própria decisão em `while`; quando o ramo verdadeiro retorna a blocos anteriores à decisão, converte o ciclo em `do...while`. O padrão visual de contador (`inicialização → decisão → corpo → incremento → conector → decisão`) é semanticamente convertido para `while`, pois o contrato visual não possui um nó `for` próprio.
 
 O objetivo é facilitar a transição entre programação visual e programação textual.
 
