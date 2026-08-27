@@ -35,6 +35,21 @@ export function traceCellDisplay(step: IExecutionStep, varName: string): string 
   return variable ? formatValue(variable) : null;
 }
 
+export function displayStepNumber(
+  steps: Array<Pick<IExecutionStep, "nodeType">>,
+  index: number,
+): string {
+  const mainStep = steps
+    .slice(0, index + 1)
+    .filter((step) => step.nodeType !== "branch").length;
+
+  return steps[index]?.nodeType === "branch" ? `${mainStep}.1` : String(mainStep);
+}
+
+function mainStepCount(steps: IExecutionStep[]): number {
+  return steps.filter((step) => step.nodeType !== "branch").length;
+}
+
 export default function SimulatorTrace() {
   const { state, goToStep } = useSimulator();
   const {
@@ -63,6 +78,7 @@ export default function SimulatorTrace() {
 
   const visibleVarNames = getAllVarNames(steps, currentStepIndex);
   const currentVars = currentStep?.variables || [];
+  const currentStepNumber = currentStep ? displayStepNumber(steps, currentStepIndex) : "—";
 
   if (!isStarted) {
     return (
@@ -81,7 +97,7 @@ export default function SimulatorTrace() {
       <div className="p-2 space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-            Histórico — Passo {currentStepIndex + 1}/{steps.length}
+            Histórico — Passo {currentStepNumber}/{mainStepCount(steps)}
           </span>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -135,7 +151,7 @@ export default function SimulatorTrace() {
                     <td
                       className={`py-1 px-2 font-mono text-center border-r border-border sticky left-0 z-10 ${isCurrent ? "bg-primary/10 font-bold text-primary" : "bg-card text-muted-foreground"}`}
                     >
-                      {i + 1}
+                          {displayStepNumber(steps, i)}
                     </td>
                     <td className="py-1 px-2 border-r border-border max-w-35">
                       <div className="flex items-center gap-1">
