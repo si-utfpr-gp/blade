@@ -106,7 +106,7 @@ describe("displayStepNumber", () => {
 })
 
 describe("traceInstruction", () => {
-  it("identifies decision rows as conditions while preserving the result", () => {
+  it("identifies decision rows as conditions without repeating the result", () => {
     expect(traceInstruction({
       nodeId: "n6",
       nodeLabel: "num != 0",
@@ -116,7 +116,7 @@ describe("traceInstruction", () => {
       explanation: "",
       changes: [],
       nextHint: "",
-    })).toBe("Condição (num != 0) → V")
+    })).toBe("Condição (num != 0)")
   })
 })
 

@@ -58,10 +58,8 @@ export function traceInstruction(step: IExecutionStep): string {
   const log = step.log.replace(/\.$/, "");
   if (step.nodeType !== "decision") return log;
 
-  const [condition, result] = log.split(" → ");
-  return result === undefined
-    ? `Condição (${condition})`
-    : `Condição (${condition}) → ${result}`;
+  const [condition] = log.split(" → ");
+  return `Condição (${condition})`;
 }
 
 function mainStepCount(steps: IExecutionStep[]): number {
