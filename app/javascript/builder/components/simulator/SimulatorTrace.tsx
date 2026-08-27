@@ -56,6 +56,13 @@ export function displayStepNumber(
 
 export function traceInstruction(step: IExecutionStep): string {
   const log = step.log.replace(/\.$/, "");
+  if (step.nodeType === "process") {
+    const selfAddition = log.match(/^([A-Za-z_]\w*(?:\[[^\]]+\])?)\s*=\s*\1\s*\+\s*([^;]+)$/);
+    const expression = selfAddition
+      ? `${selfAddition[1]} += ${selfAddition[2].trim()}`
+      : log;
+    return `Processo (${expression})`;
+  }
   if (step.nodeType !== "decision") return log;
 
   const [condition] = log.split(" → ");

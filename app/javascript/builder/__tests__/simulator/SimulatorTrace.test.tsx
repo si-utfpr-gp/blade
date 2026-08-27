@@ -118,6 +118,19 @@ describe("traceInstruction", () => {
       nextHint: "",
     })).toBe("Condição (num != 0)")
   })
+
+  it("identifies self-addition processes with compound assignment", () => {
+    expect(traceInstruction({
+      nodeId: "n5",
+      nodeLabel: "soma = soma + num",
+      nodeType: "process",
+      variables: [],
+      log: "soma = soma + num",
+      explanation: "",
+      changes: [],
+      nextHint: "",
+    })).toBe("Processo (soma += num)")
+  })
 })
 
 describe("SimulatorTrace", () => {
