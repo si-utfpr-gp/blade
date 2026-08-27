@@ -56,6 +56,7 @@ export function displayStepNumber(
 
 export function traceInstruction(step: IExecutionStep): string {
   const log = step.log.replace(/\.$/, "");
+  if (step.nodeType === "input") return "Entrada";
   if (step.nodeType === "process") {
     const selfAddition = log.match(/^([A-Za-z_]\w*(?:\[[^\]]+\])?)\s*=\s*\1\s*\+\s*([^;]+)$/);
     const expression = selfAddition

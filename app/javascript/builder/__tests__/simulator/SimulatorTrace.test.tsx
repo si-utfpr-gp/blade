@@ -131,6 +131,19 @@ describe("traceInstruction", () => {
       nextHint: "",
     })).toBe("Processo (soma += num)")
   })
+
+  it("uses the generic input label because its value is shown in the table", () => {
+    expect(traceInstruction({
+      nodeId: "n4",
+      nodeLabel: "num",
+      nodeType: "input",
+      variables: [],
+      log: "Lendo num.",
+      explanation: "",
+      changes: [],
+      nextHint: "",
+    })).toBe("Entrada")
+  })
 })
 
 describe("SimulatorTrace", () => {
