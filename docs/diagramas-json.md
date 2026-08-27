@@ -259,6 +259,16 @@ Com as entradas `2`, `7`, `14`, `0`, os passos principais são: conector `3`, en
 processo `5`, condição `6`, caso `6.1`, conector `7` e entrada `8`. No fim, o caso falso
 `18.1` segue pelo conector `19`, pela saída `20` e encerra no passo `21`.
 
+O gerador converte esse ciclo para um `do...while`, preservando a leitura e a soma dentro do
+laço e a saída somente após o valor `0`:
+
+```js
+do {
+  num = Number.parseInt((prompt("Valor para num:") ?? ""), 10);
+  soma = soma + num;
+} while (num !== 0);
+```
+
 ---
 
 # 6. Validação de Nota — SE COMPOSTA (condição composta)

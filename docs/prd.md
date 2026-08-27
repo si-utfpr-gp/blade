@@ -216,15 +216,17 @@ Quando o usuário escolhe executar um novo **Próximo passo** a partir de um sna
 
 ## Geração do Teste de Mesa
 
-O teste de mesa é construído automaticamente a partir da sequência de snapshots registrados. Ele é apresentado como uma tabela onde cada linha representa um passo da execução.
+O teste de mesa é construído automaticamente a partir da sequência de snapshots registrados. Ele é apresentado como uma tabela onde cada linha representa um passo principal da execução. O ramo escolhido por uma decisão aparece imediatamente abaixo da decisão como subpasso (`N.1`), sem aumentar a contagem de passos principais.
 
 A tabela do teste de mesa exibe:
 
 - Número do passo;
 - Bloco executado (tipo e identificador);
 - Operação realizada (descrição textual);
-- Valores de todas as variáveis após a execução;
+- Valores das variáveis declaradas ou alteradas naquele passo; células vazias indicam que a variável não mudou;
 - Resultado ou saída produzida (se aplicável).
+
+Os rótulos didáticos identificam o tipo de bloco: `Entrada`, `Processo (...)`, `Condição (...)`, `Conector`, `Caso Verdadeiro` ou `Caso Falso`. A condição não repete o resultado, pois este é informado pelo subpasso de caso seguinte.
 
 ## Interação com o Usuário
 
@@ -291,11 +293,11 @@ Variáveis somente podem ser utilizadas após sua declaração no bloco `memory`
 
 ### RN10
 
-O teste de mesa deve refletir exatamente a execução realizada.
+O teste de mesa deve refletir exatamente a execução realizada. Casos de decisão são exibidos como subpassos (`N.1`) e não entram no total de passos principais exibido pela interface.
 
 ### RN11
 
-O código gerado deve ser semanticamente equivalente ao algoritmo representado no diagrama.
+O código gerado deve ser semanticamente equivalente ao algoritmo representado no diagrama. O gerador deve reconhecer laços de decisão anterior (`while`) e ciclos cujo teste ocorre após o corpo (`do...while`), preservando a rota de saída do diagrama.
 
 ### RN12
 

@@ -436,7 +436,7 @@ Responsável por determinar qual bloco deve ser executado a cada passo. Ele perc
 Funcionalidades:
 - Navegação sequencial entre blocos;
 - Avaliação de expressões condicionais para desvios (handles `'yes'`/`'no'`);
-- Detecção de ciclos no grafo para implementação de laços (while/for) via `decision` + arestas de retorno + `connector`;
+- Detecção de ciclos no grafo para implementação de laços `while`, do padrão visual equivalente a `for`, e de `do...while` via `decision` + arestas de retorno + `connector`;
 - Detecção de término de execução.
 
 ### Interpretador de Blocos
@@ -574,14 +574,14 @@ graph LR
 
 ## 10.4. Teste de Mesa (Desk Check Table)
 
-O teste de mesa é a representação tabular da execução do algoritmo, construída automaticamente a partir da sequência de snapshots registrados.
+O teste de mesa é a representação tabular da execução do algoritmo, construída automaticamente a partir da sequência de snapshots registrados. Um ramo selecionado em `decision` é registrado como evento sintético `branch` e exibido como subpasso `N.1`; ele preserva a navegação por snapshots, mas não aumenta a numeração nem o total de passos principais.
 
 Cada linha do teste de mesa registra:
 
-- **Passo**: número sequencial da execução;
+- **Passo**: número sequencial principal da execução; um `branch` é apresentado como subpasso `N.1`;
 - **Bloco**: identificador e tipo do bloco executado;
 - **Operação**: descrição textual da operação realizada pelo bloco;
-- **Variáveis**: valores de **todas** as variáveis após a execução do passo (cada variável em sua coluna);
+- **Variáveis**: valores das variáveis declaradas ou alteradas no passo (cada variável em sua coluna); células vazias representam ausência de alteração;
 - **Saída**: resultado produzido (para blocos de saída de dados);
 
 Exemplo de teste de mesa gerado:
@@ -664,6 +664,8 @@ Exemplos:
 | `subroutine` | Sub-rotina | `resultado = fatorial(n);` |
 | `connector` | Conector | *(nada — apenas roteamento de fluxo)* |
 | `startEnd (end)` | Término | `// Fim do algoritmo` (comentário) |
+
+O gerador percorre conectores sem emiti-los. Ele converte uma decisão cujo ramo retorna à própria decisão em `while`; quando o ramo verdadeiro retorna a blocos anteriores à decisão, converte o ciclo em `do...while`. O padrão visual de contador (`inicialização → decisão → corpo → incremento → conector → decisão`) é semanticamente convertido para `while`, pois o contrato visual não possui um nó `for` próprio.
 
 O objetivo é facilitar a transição entre programação visual e programação textual.
 
