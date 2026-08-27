@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest"
 import { render, screen, fireEvent } from "@testing-library/react"
 import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
 import { TooltipProvider } from "../../components/ui/tooltip"
-import SimulatorTrace, { traceCellDisplay, traceInstruction } from "../../components/simulator/SimulatorTrace"
+import SimulatorTrace, { finishedSummaryClassName, traceCellDisplay, traceInstruction } from "../../components/simulator/SimulatorTrace"
 import { displayStepNumber, mainStepCount } from "../../components/simulator/tracePresentation"
 import SimulatorControl from "../../components/simulator/SimulatorControl"
 
@@ -148,6 +148,12 @@ describe("traceInstruction", () => {
       changes: [],
       nextHint: "",
     })).toBe("Entrada")
+  })
+})
+
+describe("finishedSummaryClassName", () => {
+  it("uses the success color for the completed algorithm summary", () => {
+    expect(finishedSummaryClassName()).toContain("text-secondary")
   })
 })
 

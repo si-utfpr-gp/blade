@@ -60,6 +60,10 @@ export function traceInstruction(step: IExecutionStep): string {
   return `Condição (${condition})`;
 }
 
+export function finishedSummaryClassName(): string {
+  return "text-[10px] text-secondary mt-1";
+}
+
 export default function SimulatorTrace() {
   const { state, goToStep } = useSimulator();
   const {
@@ -325,8 +329,8 @@ export default function SimulatorTrace() {
             <p className="flex items-center justify-center gap-1.5 text-xs text-secondary font-semibold">
               <CheckCircle2 className="w-4 h-4" /> Algoritmo executado com sucesso!
             </p>
-            <p className="text-[10px] text-muted-foreground mt-1">
-              Total de passos: {steps.length}
+            <p className={finishedSummaryClassName()}>
+              Total de passos: {mainStepCount(steps)}
               {outputs.length > 0 && ` · Saídas: ${outputs.length}`}
             </p>
           </div>
