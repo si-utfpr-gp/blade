@@ -54,6 +54,16 @@ export function displayStepNumber(
   return steps[index]?.nodeType === "branch" ? `${mainStep}.1` : String(mainStep);
 }
 
+export function traceInstruction(step: IExecutionStep): string {
+  const log = step.log.replace(/\.$/, "");
+  if (step.nodeType !== "decision") return log;
+
+  const [condition, result] = log.split(" → ");
+  return result === undefined
+    ? `Condição (${condition})`
+    : `Condição (${condition}) → ${result}`;
+}
+
 function mainStepCount(steps: IExecutionStep[]): number {
   return steps.filter((step) => step.nodeType !== "branch").length;
 }
@@ -166,7 +176,7 @@ export default function SimulatorTrace() {
                         <span
                           className={`truncate ${isCurrent ? "font-semibold text-foreground" : "text-muted-foreground"}`}
                         >
-                          {step.log.replace(/\.$/, "")}
+                          {traceInstruction(step)}
                         </span>
                         <Tooltip>
                           <TooltipTrigger asChild>
