@@ -6,6 +6,46 @@ import type { IExecutionStep } from "../../interfaces/execution"
 
 function g(nodes: Node[], edges: Edge[]) { return parse(nodes, edges) }
 
+function subroutineDobroGraph() {
+  return parse(
+    [
+      { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+      { id: "memory", type: "memory", position: { x: 0, y: 80 }, data: { rows: [{ type: "inteiro", variables: "n, resultado" }] } },
+      { id: "set-n", type: "process", position: { x: 0, y: 160 }, data: { label: "n = 7" } },
+      { id: "call", type: "subroutine", position: { x: 0, y: 240 }, data: { label: "resultado = dobro(n)" } },
+      { id: "end", type: "startEnd", position: { x: 0, y: 320 }, data: { variant: "end" } },
+    ],
+    [
+      { id: "e1", source: "start", target: "memory" },
+      { id: "e2", source: "memory", target: "set-n" },
+      { id: "e3", source: "set-n", target: "call" },
+      { id: "e4", source: "call", target: "end" },
+    ],
+    {
+      subroutines: [
+        {
+          id: "routine-dobro",
+          name: "dobro",
+          parameters: ["valor"],
+          returnVariable: "retorno",
+          nodes: [
+            { id: "r-start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+            { id: "r-memory", type: "memory", position: { x: 0, y: 80 }, data: { rows: [{ type: "inteiro", variables: "retorno" }] } },
+            { id: "r-process", type: "process", position: { x: 0, y: 160 }, data: { label: "retorno = valor * 2" } },
+            { id: "r-end", type: "startEnd", position: { x: 0, y: 240 }, data: { variant: "end" } },
+          ],
+          edges: [
+            { id: "re1", source: "r-start", target: "r-memory" },
+            { id: "re2", source: "r-memory", target: "r-process" },
+            { id: "re3", source: "r-process", target: "r-end" },
+          ],
+        },
+      ],
+    },
+  )
+}
+
+
 describe("CodeGenerator", () => {
   it("generate() converte memory — variáveis simples", () => {
     const gen = new CodeGenerator(g(
@@ -108,6 +148,17 @@ describe("CodeGenerator", () => {
     ))
     const code = gen.generate()
     expect(code).toContain("fatorial(n);")
+  })
+
+  it("generates function declarations for visual subroutines", () => {
+    const gen = new CodeGenerator(subroutineDobroGraph())
+    const code = gen.generate({ lang: "ts" })
+
+    expect(code).toContain("function dobro(valor: number): number {")
+    expect(code).toContain("let retorno: number;")
+    expect(code).toContain("retorno = valor * 2;")
+    expect(code).toContain("return retorno;")
+    expect(code).toContain("resultado = dobro(n);")
   })
 
   it("generate() converte decision — if com yes apenas", () => {

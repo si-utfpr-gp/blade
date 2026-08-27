@@ -32,6 +32,42 @@ function renderApp() {
   )
 }
 
+
+const subroutineJson = {
+  nodes: [
+    { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+    { id: "memory", type: "memory", position: { x: 0, y: 80 }, data: { rows: [{ type: "inteiro", variables: "n, resultado" }] } },
+    { id: "set-n", type: "process", position: { x: 0, y: 160 }, data: { label: "n = 7" } },
+    { id: "call", type: "subroutine", position: { x: 0, y: 240 }, data: { label: "resultado = dobro(n)" } },
+    { id: "end", type: "startEnd", position: { x: 0, y: 320 }, data: { variant: "end" } },
+  ],
+  edges: [
+    { id: "e1", source: "start", target: "memory" },
+    { id: "e2", source: "memory", target: "set-n" },
+    { id: "e3", source: "set-n", target: "call" },
+    { id: "e4", source: "call", target: "end" },
+  ],
+  subroutines: [
+    {
+      id: "routine-dobro",
+      name: "dobro",
+      parameters: ["valor"],
+      returnVariable: "retorno",
+      nodes: [
+        { id: "r-start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+        { id: "r-memory", type: "memory", position: { x: 0, y: 80 }, data: { rows: [{ type: "inteiro", variables: "retorno" }] } },
+        { id: "r-process", type: "process", position: { x: 0, y: 160 }, data: { label: "retorno = valor * 2" } },
+        { id: "r-end", type: "startEnd", position: { x: 0, y: 240 }, data: { variant: "end" } },
+      ],
+      edges: [
+        { id: "re1", source: "r-start", target: "r-memory" },
+        { id: "re2", source: "r-memory", target: "r-process" },
+        { id: "re3", source: "r-process", target: "r-end" },
+      ],
+    },
+  ],
+}
+
 describe("JsonHarness", () => {
   it("renders textarea and action buttons", () => {
     renderHarness()
@@ -64,6 +100,19 @@ describe("JsonHarness", () => {
     const code = screen.getByText("JavaScript").closest("div")?.parentElement?.querySelector("code")
     expect(code?.textContent).toContain("let num1;")
     expect(code?.textContent).toContain('console.log("A soma');
+  })
+
+  it("loads visual subroutine definitions from JSON", () => {
+    renderApp()
+    fireEvent.change(screen.getByLabelText(/json do diagrama/i), {
+      target: { value: JSON.stringify(subroutineJson) },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /carregar/i }))
+    fireEvent.click(screen.getByText("Código"))
+
+    const code = screen.getByText("JavaScript").closest("div")?.parentElement?.querySelector("code")
+    expect(code?.textContent).toContain("function dobro(valor)")
+    expect(code?.textContent).toContain("resultado = dobro(n);")
   })
 
   it("shows error for invalid JSON", () => {

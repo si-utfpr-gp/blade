@@ -1,4 +1,4 @@
-import type { IParserData, IParserNode } from "../parser/types"
+import type { IParserData, IParserNode, IParserRoutineDefinition } from "../parser/types"
 import type { IExecutionStep } from "../interfaces/execution"
 
 type Lang = "js" | "ts"
@@ -22,6 +22,7 @@ export class CodeGenerator {
   generate(options?: { lang?: Lang }): string {
     const lang = options?.lang ?? "js"
     const lines: string[] = []
+    this.emitSubroutines(lines, lang)
     this.emitPath(this.graph.startNodeId, lines, 0, lang, new Set())
     return this.compact(lines).join("\n")
   }
@@ -48,6 +49,54 @@ export class CodeGenerator {
     }
 
     return this.compact(lines).join("\n")
+  }
+
+  private emitSubroutines(lines: string[], lang: Lang): void {
+    if (!this.graph.subroutines?.size) return
+
+    for (const [, routine] of this.graph.subroutines) {
+      lines.push(...this.translateSubroutineDefinition(routine, lang))
+      lines.push("")
+    }
+  }
+
+  private translateSubroutineDefinition(routine: IParserRoutineDefinition, lang: Lang): string[] {
+    const returnType = this.returnTypeFor(routine)
+    const params = routine.parameters.map((parameter) => lang === "ts" ? `${parameter}: number` : parameter).join(", ")
+    const signature = lang === "ts"
+      ? `function ${routine.name}(${params}): ${returnType} {`
+      : `function ${routine.name}(${params}) {`
+    const bodyGenerator = new CodeGenerator(routine.graph)
+    const body: string[] = []
+
+    bodyGenerator.emitPath(routine.graph.startNodeId, body, 1, lang, new Set())
+
+    const lines = [signature]
+    lines.push(...body.filter((line) => {
+      const trimmed = line.trim()
+      return trimmed !== "// Início do algoritmo" && trimmed !== "// Fim do algoritmo"
+    }))
+    if (routine.returnVariable) lines.push(`  return ${routine.returnVariable};`)
+    lines.push("}")
+    return lines
+  }
+
+  private returnTypeFor(routine: IParserRoutineDefinition): string {
+    if (!routine.returnVariable) return "void"
+    const type = this.declaredTypeInGraph(routine.graph, routine.returnVariable)
+    return this.typeToTS(type ?? "inteiro")
+  }
+
+  private declaredTypeInGraph(graph: IParserData, variable: string): string | null {
+    for (const [, node] of graph.nodes) {
+      if (node.type !== "memory") continue
+      for (const row of node.rows ?? []) {
+        for (const raw of row.variables.split(",").map(s => s.trim()).filter(Boolean)) {
+          if (this.baseVarName(raw) === variable) return row.type
+        }
+      }
+    }
+    return null
   }
 
   /** Walks the graph from one node until the end or a known merge/loop point. */

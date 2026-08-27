@@ -30,6 +30,11 @@ function formatValue(v: IVariable | undefined): string {
   return v.value;
 }
 
+export function traceCellDisplay(step: IExecutionStep, varName: string): string | null {
+  const variable = step.variables.find((sv) => sv.name === varName);
+  return variable ? formatValue(variable) : null;
+}
+
 export default function SimulatorTrace() {
   const { state, goToStep } = useSimulator();
   const {
@@ -86,9 +91,8 @@ export default function SimulatorTrace() {
             </TooltipTrigger>
             <TooltipContent side="left" className="max-w-65">
               <p className="text-xs">
-                Cada linha mostra uma instrução executada. Apenas as variáveis
-                <strong> alteradas naquele passo</strong> aparecem preenchidas.
-                Células vazias significam &quot;valor inalterado&quot;.
+                Cada linha mostra o estado das variáveis após a instrução executada.
+                Células vazias indicam que a variável não pertence ao escopo daquele passo.
                 <em> null</em> significa &quot;declarada, mas sem valor&quot;.
               </p>
             </TooltipContent>
@@ -174,15 +178,15 @@ export default function SimulatorTrace() {
                       const v = step.variables.find((sv) => sv.name === name);
                       const justDeclared = v && !prevDeclared.has(name);
                       const changed = wasChanged(step, name);
-                      const showValue = changed || justDeclared;
+                      const display = traceCellDisplay(step, name);
 
                       return (
                         <td
                           key={name}
-                          className={`py-1 px-2 text-center font-mono border-r border-border last:border-r-0 transition-all ${changed && isCurrent ? "bg-accent/15 ring-1 ring-inset ring-accent/40 font-bold text-accent-foreground" : changed ? "bg-secondary/10 font-semibold text-foreground" : justDeclared ? "text-muted-foreground italic" : "text-transparent"}`}
+                          className={`py-1 px-2 text-center font-mono border-r border-border last:border-r-0 transition-all ${changed && isCurrent ? "bg-accent/15 ring-1 ring-inset ring-accent/40 font-bold text-accent-foreground" : changed ? "bg-secondary/10 font-semibold text-foreground" : justDeclared ? "text-muted-foreground italic" : display !== null ? "text-foreground" : "text-transparent"}`}
                         >
-                          {showValue && v ? (
-                            <span>{formatValue(v)}</span>
+                          {display !== null ? (
+                            <span>{display}</span>
                           ) : (
                             <span>·</span>
                           )}

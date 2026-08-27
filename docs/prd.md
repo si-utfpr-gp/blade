@@ -181,7 +181,7 @@ Nesse caso, o motor deve localizar a sub-rotina `fatorial`, avaliar o argumento 
 
 Esse fluxo também deve aparecer no teste de mesa e nas explicações, identificando a chamada, os passos internos da função e o retorno. A navegação por snapshots deve restaurar a execução completa, inclusive a rotina ativa, a memória local e o ponto de retorno de cada chamada.
 
-> **Status atual:** o bloco `subroutine` existente apenas registra a chamada e gera código textual. A execução de sub-rotinas visuais é requisito planejado e ainda não está implementada.
+> **Status atual:** o módulo de execução interpreta chamadas `subroutine`, avalia argumentos, cria memória local, controla pilha de chamadas, restaura snapshots com frames de sub-rotina e gera funções JavaScript/TypeScript. A criação visual dos canvases e a exportação pelo construtor ainda pertencem ao módulo de construção.
 
 ## Gerenciamento de Memória
 

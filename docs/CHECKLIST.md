@@ -1,7 +1,7 @@
 # Checklist - Blade
 
 **Versao:** 2.0.0
-**Atualizado em:** 2026-08-21 (navegação por snapshots e planejamento de sub-rotinas visuais)
+**Atualizado em:** 2026-08-25 (execução de sub-rotinas visuais e exemplos JSON atualizados)
 
 ---
 
@@ -60,8 +60,8 @@
 
 | # | Tarefa | Status |
 |---|--------|--------|
-| 1 | Executar sub-rotinas visuais: interpretar chamada, parâmetros, memória local, retorno, pilha de chamadas, snapshots e geração de código JS/TS | ⬜ Pendente |
-| 2 | Testar chamada simples, parâmetros, retorno, erro de contrato e navegação por snapshots durante uma sub-rotina | ⬜ Pendente |
+| 1 | Executar sub-rotinas visuais: interpretar chamada, parâmetros, memória local, retorno, pilha de chamadas, snapshots e geração de código JS/TS | ✅ Feito |
+| 2 | Testar chamada simples, parâmetros, retorno, erro de contrato e navegação por snapshots durante uma sub-rotina | ✅ Feito |
 
 ---
 

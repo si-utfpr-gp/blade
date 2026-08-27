@@ -12,7 +12,7 @@ motor de execução ignoram esse campo.
 
 1. Abra a página do builder (harness no canvas + simulador à direita).
 2. Copie um dos JSONs abaixo e cole na textarea do harness.
-3. Clique em **Carregar**. Se tudo ok, aparece *"Motor carregado. Use o simulador ao lado."*.
+3. Clique em **Carregar**. Se tudo ok, aparece *"Diagrama carregado. Código JS/TS gerado. Use o simulador ao lado para executar."*.
 4. No simulador, clique **Iniciar Execução** e avance com **Próximo**.
 5. Quando um bloco `input` aparecer, o diálogo solicita o(s) valor(es). Digite e confirme.
 6. Veja na aba **Trace** o teste de mesa (passos + variáveis), na **Explain** a explicação e na
@@ -32,17 +32,29 @@ motor de execução ignoram esse campo.
     { "id": "n4", "type": "process","data": { "label": "soma = 0; i = 0" } },
     { "id": "n5", "type": "decision","data": { "label": "i < n" } },
     { "id": "n6", "type": "output", "data": { "label": "'Média: ' + media" } },
-    { "id": "n7", "type": "subroutine", "data": { "label": "fatorial(n)" } }
+    { "id": "n7", "type": "subroutine", "data": { "label": "resultado = dobro(n)" } }
   ],
   "edges": [ // conexões
     { "id": "e1", "source": "n1", "target": "n2" },
     { "id": "e2", "source": "n5", "target": "n6", "sourceHandle": "yes" } // decisão: "yes"/"no"
+  ],
+  "subroutines": [ // opcional: funções visuais chamadas por blocos subroutine
+    {
+      "id": "routine-dobro",
+      "name": "dobro",
+      "parameters": ["valor"],
+      "returnVariable": "retorno",
+      "nodes": [ /* diagrama interno da rotina */ ],
+      "edges": [ /* conexões internas da rotina */ ]
+    }
   ]
 }
 ```
 
 **Tipos de bloco:** `startEnd` (com `variant: "start"|"end"`), `memory`, `input`, `process`,
 `output`, `decision`, `subroutine`, `connector`.
+
+**Sub-rotinas:** o campo opcional `subroutines` define diagramas internos chamados por blocos `subroutine`. Cada item deve conter `id`, `name`, `parameters`, `returnVariable`, `nodes` e `edges`. A chamada no bloco usa o formato `resultado = nome(argumento)`, e `nome` precisa existir em `subroutines[].name`. O resumo acima é ilustrativo; para copiar e executar, use o exemplo completo de sub-rotina na seção 9.
 
 **Campos de layout:** `position`, `width`, `height`, `selected` e outros metadados do React Flow são
 opcionais para execução. Eles podem aparecer no JSON exportado pelo construtor, mas não devem ser
@@ -342,29 +354,53 @@ Armazena as notas em um vetor `notas[5]` e calcula a média. Usa atribuição in
 
 ---
 
-# 9. Sub-rotina — CHAMADA (demonstração)
+# 9. Sub-rotina Visual — FATORIAL COM RETORNO
 
-Exemplo mínimo de bloco `subroutine`. O motor registra o passo da chamada (explicação) e gera o
-código (`fatorial(n);`), mas **não calcula o retorno da função** — isso é uma limitação atual do
-Módulo de Execução. Útil para validar como o bloco aparece no trace/explain/code.
+Exemplo completo de sub-rotina visual. O algoritmo principal lê `n`, chama `resultado = fatorial(n)` e recebe o retorno calculado no diagrama interno `fatorial`. As variáveis `retorno` e `i` pertencem à memória local da sub-rotina e não aparecem na memória global do algoritmo principal.
 
 **Entradas:** `n` (inteiro, ex.: `5`).
-**Saída esperada:** um passo com a explicação de chamada de sub-rotina; nenhum valor retornado.
+**Saída esperada:** `Fatorial: 120`.
 
 ```json
 {
   "nodes": [
     { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
-    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "n" } ] } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "n, resultado" } ] } },
     { "id": "n3", "type": "input", "data": { "label": "n" } },
-    { "id": "n4", "type": "subroutine", "data": { "label": "fatorial(n)" } },
-    { "id": "n5", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n4", "type": "subroutine", "data": { "label": "resultado = fatorial(n)" } },
+    { "id": "n5", "type": "output", "data": { "label": "'Fatorial: ' + resultado" } },
+    { "id": "n6", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
     { "id": "e2", "source": "n2", "target": "n3" },
     { "id": "e3", "source": "n3", "target": "n4" },
-    { "id": "e4", "source": "n4", "target": "n5" }
+    { "id": "e4", "source": "n4", "target": "n5" },
+    { "id": "e5", "source": "n5", "target": "n6" }
+  ],
+  "subroutines": [
+    {
+      "id": "routine-fatorial",
+      "name": "fatorial",
+      "parameters": ["valor"],
+      "returnVariable": "retorno",
+      "nodes": [
+        { "id": "r1", "type": "startEnd", "data": { "label": "Início fatorial", "variant": "start" } },
+        { "id": "r2", "type": "memory", "data": { "label": "Memória local", "rows": [ { "type": "inteiro", "variables": "retorno, i" } ] } },
+        { "id": "r3", "type": "process", "data": { "label": "retorno = 1; i = 1" } },
+        { "id": "r4", "type": "decision", "data": { "label": "i <= valor" } },
+        { "id": "r5", "type": "process", "data": { "label": "retorno = retorno * i; i = i + 1" } },
+        { "id": "r6", "type": "startEnd", "data": { "label": "Fim fatorial", "variant": "end" } }
+      ],
+      "edges": [
+        { "id": "re1", "source": "r1", "target": "r2" },
+        { "id": "re2", "source": "r2", "target": "r3" },
+        { "id": "re3", "source": "r3", "target": "r4" },
+        { "id": "re4", "source": "r4", "target": "r5", "sourceHandle": "yes" },
+        { "id": "re5", "source": "r5", "target": "r4" },
+        { "id": "re6", "source": "r4", "target": "r6", "sourceHandle": "no" }
+      ]
+    }
   ]
 }
 ```
@@ -373,7 +409,7 @@ Módulo de Execução. Útil para validar como o bloco aparece no trace/explain/
 
 # Checklist de validação
 
-- [ ] O JSON carrega sem erro de sintaxe (botão **Carregar** retorna *"Motor carregado"*).
+- [ ] O JSON carrega sem erro de sintaxe (botão **Carregar** retorna uma mensagem de diagrama carregado).
 - [ ] O teste de mesa mostra um passo por bloco executado (blocos `memory` e `connector` não geram passo).
 - [ ] As variáveis aparecem preenchidas no passo em que são alteradas.
 - [ ] A explicação descreve a operação de cada passo.
