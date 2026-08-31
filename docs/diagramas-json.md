@@ -433,6 +433,36 @@ Exemplo completo de sub-rotina visual. O algoritmo principal lê `n`, chama `res
 
 ---
 
+# 10. Média de Duas Notas — SEQUENCIAL
+
+Lê duas notas reais, calcula a média aritmética e exibe o resultado em um fluxo linear de seis passos.
+
+**Entradas:** `notaUm` e `notaDois` (reais).
+**Saída esperada:** a média das duas notas (ex.: `notaUm=8` e `notaDois=6` → `7`).
+No teste de mesa, as leituras do único bloco de entrada aparecem como passos `3` e `3.1`; o processo permanece no passo `4`.
+
+```json
+{
+  "nodes": [
+    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "real", "variables": "notaUm, notaDois, media" } ] } },
+    { "id": "n3", "type": "input", "data": { "label": "notaUm, notaDois" } },
+    { "id": "n4", "type": "process", "data": { "label": "media = (notaUm + notaDois) / 2" } },
+    { "id": "n5", "type": "output", "data": { "label": "media" } },
+    { "id": "n6", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n1", "target": "n2" },
+    { "id": "e2", "source": "n2", "target": "n3" },
+    { "id": "e3", "source": "n3", "target": "n4" },
+    { "id": "e4", "source": "n4", "target": "n5" },
+    { "id": "e5", "source": "n5", "target": "n6" }
+  ]
+}
+```
+
+---
+
 # Checklist de validação
 
 - [ ] O JSON carrega sem erro de sintaxe (botão **Carregar** retorna uma mensagem de diagrama carregado).

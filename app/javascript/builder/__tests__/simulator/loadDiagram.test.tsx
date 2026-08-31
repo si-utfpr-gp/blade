@@ -126,7 +126,7 @@ describe("input multi-valor (teste de mesa real)", () => {
 
     submitValue("20")
     expect(screen.queryByText("Entrada de Dados")).not.toBeInTheDocument()
-    expect(screen.getByText(/Histórico — Passo 4/)).toBeInTheDocument()
+    expect(screen.getByText(/Histórico — Passo 3\.1/)).toBeInTheDocument()
   })
 
   it("navega pelo histórico sem executar e substitui o futuro ao informar novo valor", () => {
@@ -138,13 +138,13 @@ describe("input multi-valor (teste de mesa real)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Próximo passo" }))
     submitValue("10")
     submitValue("20")
-    expect(screen.getByText("Histórico — Passo 4/4")).toBeInTheDocument()
+    expect(screen.getByText("Histórico — Passo 3.1/3")).toBeInTheDocument()
 
     fireEvent.click(screen.getByTitle("Passo anterior"))
-    expect(screen.getByText("Histórico — Passo 3/4")).toBeInTheDocument()
+    expect(screen.getByText("Histórico — Passo 3/3")).toBeInTheDocument()
 
     fireEvent.click(screen.getByTitle("Próximo no histórico"))
-    expect(screen.getByText("Histórico — Passo 4/4")).toBeInTheDocument()
+    expect(screen.getByText("Histórico — Passo 3.1/3")).toBeInTheDocument()
     expect(screen.queryByText("Entrada de Dados")).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByTitle("Passo anterior"))
@@ -152,7 +152,7 @@ describe("input multi-valor (teste de mesa real)", () => {
     expect(screen.getByText(/Valor para 'num2':/)).toBeInTheDocument()
     submitValue("30")
 
-    expect(screen.getByText("Histórico — Passo 4/4")).toBeInTheDocument()
+    expect(screen.getByText("Histórico — Passo 3.1/3")).toBeInTheDocument()
     expect(screen.getAllByText("30")).toHaveLength(2)
     expect(screen.queryByText("20")).not.toBeInTheDocument()
   })

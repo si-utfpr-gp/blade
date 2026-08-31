@@ -90,12 +90,12 @@ describe("traceCellDisplay", () => {
 
 describe("displayStepNumber", () => {
   const steps = [
-    { nodeType: "startEnd" },
-    { nodeType: "decision" },
-    { nodeType: "branch" },
-    { nodeType: "process" },
-    { nodeType: "decision" },
-    { nodeType: "branch" },
+    { nodeId: "n1", nodeType: "startEnd" },
+    { nodeId: "n2", nodeType: "decision" },
+    { nodeId: "n2", nodeType: "branch" },
+    { nodeId: "n3", nodeType: "process" },
+    { nodeId: "n4", nodeType: "decision" },
+    { nodeId: "n4", nodeType: "branch" },
   ]
 
   it("numbers decision cases as substeps without advancing the main step", () => {
@@ -107,6 +107,21 @@ describe("displayStepNumber", () => {
 
   it("counts decision cases as substeps", () => {
     expect(mainStepCount(steps)).toBe(4)
+  })
+
+  it("numbers additional values from the same input block as substeps", () => {
+    const inputSteps = [
+      { nodeId: "n1", nodeType: "startEnd" },
+      { nodeId: "n2", nodeType: "memory" },
+      { nodeId: "n3", nodeType: "input" },
+      { nodeId: "n3", nodeType: "input" },
+      { nodeId: "n4", nodeType: "process" },
+    ]
+
+    expect(displayStepNumber(inputSteps, 2)).toBe("3")
+    expect(displayStepNumber(inputSteps, 3)).toBe("3.1")
+    expect(displayStepNumber(inputSteps, 4)).toBe("4")
+    expect(mainStepCount(inputSteps)).toBe(4)
   })
 })
 

@@ -574,11 +574,11 @@ graph LR
 
 ## 10.4. Teste de Mesa (Desk Check Table)
 
-O teste de mesa é a representação tabular da execução do algoritmo, construída automaticamente a partir da sequência de snapshots registrados. Um ramo selecionado em `decision` é registrado como evento sintético `branch` e exibido como subpasso `N.1`; ele preserva a navegação por snapshots, mas não aumenta a numeração nem o total de passos principais.
+O teste de mesa é a representação tabular da execução do algoritmo, construída automaticamente a partir da sequência de snapshots registrados. Um ramo selecionado em `decision` é registrado como evento sintético `branch` e exibido como subpasso `N.1`. Em um bloco `input` com múltiplas variáveis, a primeira leitura usa o número principal do bloco e as leituras seguintes são exibidas como `N.1`, `N.2` e assim por diante. Esses subpassos preservam a navegação por snapshots, mas não aumentam a numeração nem o total de passos principais.
 
 Cada linha do teste de mesa registra:
 
-- **Passo**: número sequencial principal da execução; um `branch` é apresentado como subpasso `N.1`;
+- **Passo**: número sequencial principal da execução; um `branch` ou uma leitura adicional do mesmo bloco `input` é apresentado como subpasso `N.1`, `N.2` etc.;
 - **Bloco**: identificador e tipo do bloco executado;
 - **Operação**: descrição textual da operação realizada pelo bloco;
 - **Variáveis**: valores das variáveis declaradas ou alteradas no passo (cada variável em sua coluna); células vazias representam ausência de alteração;
