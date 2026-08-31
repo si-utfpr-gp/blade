@@ -275,12 +275,12 @@ O construtor visual pode trabalhar com formato compatível com `@xyflow/react` (
 |----------|-----------|-------------|-----------|
 | `startEnd` | `'start'` | Sim | Início do algoritmo |
 | `startEnd` | `'end'` | Sim | Término do algoritmo |
-| `memory` | — | **Não** | Declaração de variáveis (tipo + nome) |
+| `memory` | — | Sim | Declaração de variáveis (tipo + nome) |
 | `input` | — | Sim | Entrada de dados do usuário |
 | `output` | — | Sim | Exibição de dados |
 | `process` | — | Sim | Atribuição / processamento |
 | `decision` | — | Sim | Desvio condicional (handles `'yes'`/`'no'`) |
-| `connector` | — | **Não** | Roteamento de fluxo (1 entrada, 1 saída) |
+| `connector` | — | Sim | Roteamento de fluxo (1 entrada, 1 saída) |
 | `subroutine` | — | Sim | Chamada de sub-rotina |
 
 **Formato dos nós:**
