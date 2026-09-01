@@ -657,7 +657,7 @@ Exemplos:
 |--------------|--------|---------------|
 | `startEnd (start)` | Início | `// Início do algoritmo` (comentário) |
 | `memory` | Memória | `let num1, num2, soma;` (declaração `let`, ou `let notas = new Array(5);` para vetores) |
-| `input` | Entrada | `num1 = parseInt(prompt(""));` (ou `parseFloat` conforme tipo) |
+| `input` | Entrada | `textoDigitado = prompt("Valor para num1:") ?? "";` e depois `num1 = Number.parseInt(textoDigitado, 10);` |
 | `process` | Processo | `soma = num1 + num2;` (atribuição direta) |
 | `decision` | Decisão | `if (condição) { } else { }` |
 | `output` | Saída | `console.log("A soma é: " + soma);` |

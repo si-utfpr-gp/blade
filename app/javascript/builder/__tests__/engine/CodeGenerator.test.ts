@@ -94,7 +94,7 @@ describe("CodeGenerator", () => {
     expect(code).toContain("let nome;")
   })
 
-  it("generate() converte input sem memory como texto", () => {
+  it("generate() quebra input sem memory em leitura e atribuição de texto", () => {
     const gen = new CodeGenerator(g(
       [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
        { id:"n2",type:"input",position:{x:0,y:100},data:{label:"num1"} },
@@ -102,10 +102,12 @@ describe("CodeGenerator", () => {
       [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"}]
     ))
     const code = gen.generate({ lang: "js" })
-    expect(code).toContain('num1 = (prompt("Valor para num1:") ?? "");')
+    expect(code).toContain("let textoDigitado;")
+    expect(code).toContain('textoDigitado = prompt("Valor para num1:") ?? "";')
+    expect(code).toContain("num1 = textoDigitado;")
   })
 
-  it("generate() converte input inteiro declarado com Number.parseInt", () => {
+  it("generate() quebra input inteiro declarado em leitura e conversão", () => {
     const gen = new CodeGenerator(g(
       [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
        { id:"n2",type:"memory",position:{x:0,y:80},data:{rows:[{type:"inteiro",variables:"num1"}]} },
@@ -114,7 +116,9 @@ describe("CodeGenerator", () => {
       [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"},{ id:"e3",source:"n3",target:"n4"}]
     ))
     const code = gen.generate({ lang: "js" })
-    expect(code).toContain('num1 = Number.parseInt((prompt("Valor para num1:") ?? ""), 10);')
+    expect(code).toContain("let textoDigitado;")
+    expect(code).toContain('textoDigitado = prompt("Valor para num1:") ?? "";')
+    expect(code).toContain("num1 = Number.parseInt(textoDigitado, 10);")
   })
 
   it("generate() converte output — console.log", () => {
@@ -296,7 +300,9 @@ describe("CodeGenerator", () => {
     ))
     const code = gen.generate({ lang: "ts" })
     expect(code).toContain('let num: number;')
-    expect(code).toContain('num = Number.parseInt((prompt("Valor para num:") ?? ""), 10);')
+    expect(code).toContain('let textoDigitado: string;')
+    expect(code).toContain('textoDigitado = prompt("Valor para num:") ?? "";')
+    expect(code).toContain('num = Number.parseInt(textoDigitado, 10);')
   })
 
   it("generateFromSteps() converte steps em código", () => {
@@ -350,8 +356,11 @@ describe("CodeGenerator", () => {
     expect(code).toContain("let num1;")
     expect(code).toContain("let num2;")
     expect(code).toContain("let soma;")
-    expect(code).toContain('num1 = Number.parseInt((prompt("Valor para num1:") ?? ""), 10);')
-    expect(code).toContain('num2 = Number.parseInt((prompt("Valor para num2:") ?? ""), 10);')
+    expect(code).toContain("let textoDigitado;")
+    expect(code).toContain('textoDigitado = prompt("Valor para num1:") ?? "";')
+    expect(code).toContain("num1 = Number.parseInt(textoDigitado, 10);")
+    expect(code).toContain('textoDigitado = prompt("Valor para num2:") ?? "";')
+    expect(code).toContain("num2 = Number.parseInt(textoDigitado, 10);")
     expect(code).toContain("soma = num1 + num2;")
     expect(code).toContain('console.log("A soma é: " + soma);')
     expect(code).toContain("// Fim do algoritmo")
@@ -459,7 +468,8 @@ describe("CodeGenerator", () => {
     const tsCode = gen.generate({ lang: "ts" })
 
     expect(code).toContain("do {")
-    expect(code).toContain('  num = Number.parseInt((prompt("Valor para num:") ?? ""), 10);')
+    expect(code).toContain('  textoDigitado = prompt("Valor para num:") ?? "";')
+    expect(code).toContain("  num = Number.parseInt(textoDigitado, 10);")
     expect(code).toContain("  soma = soma + num;")
     expect(code).toContain("} while (num !== 0);")
     expect(code).not.toContain("fluxo retorna")
@@ -478,8 +488,10 @@ describe("CodeGenerator", () => {
       [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"},{ id:"e3",source:"n3",target:"n4"}]
     ))
     const code = gen.generate()
-    expect(code).toContain('nota = Number.parseFloat((prompt("Valor para nota:") ?? ""));')
-    expect(code).toContain('ok = ["verdadeiro", "v", "true", "1"].includes((prompt("Valor para ok:") ?? "").trim().toLowerCase());')
+    expect(code).toContain('textoDigitado = prompt("Valor para nota:") ?? "";')
+    expect(code).toContain("nota = Number.parseFloat(textoDigitado);")
+    expect(code).toContain('textoDigitado = prompt("Valor para ok:") ?? "";')
+    expect(code).toContain('ok = ["verdadeiro", "v", "true", "1"].includes(textoDigitado.trim().toLowerCase());')
   })
 
 })

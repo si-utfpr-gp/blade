@@ -14,6 +14,7 @@ type Lang = "js" | "ts"
  */
 export class CodeGenerator {
   private varTypes = new Map<string, string>()
+  private inputBufferDeclared = false
 
   constructor(private graph: IParserData) {
     this.collectDeclaredTypes()
@@ -23,6 +24,7 @@ export class CodeGenerator {
     const lang = options?.lang ?? "js"
     const lines: string[] = []
     this.emitSubroutines(lines, lang)
+    this.inputBufferDeclared = false
     this.emitPath(this.graph.startNodeId, lines, 0, lang, new Set())
     return this.compact(lines).join("\n")
   }
@@ -41,6 +43,8 @@ export class CodeGenerator {
         }
       }
     }
+
+    this.inputBufferDeclared = false
 
     for (const step of steps) {
       const node = this.graph.nodes.get(step.nodeId)
@@ -297,12 +301,20 @@ export class CodeGenerator {
   private translateInput(node: IParserNode, _lang: Lang, indent: number): string[] {
     const ind = this.indent(indent)
     const vars = (node.label ?? "").split(",").map(s => s.trim()).filter(Boolean)
+    const lines: string[] = []
 
-    return vars.map(variable => {
-      const rawInput = `(prompt("Valor para ${variable}:") ?? "")`
+    if (!this.inputBufferDeclared) {
+      this.emitInputBufferDeclaration(lines, _lang, indent)
+      this.inputBufferDeclared = true
+    }
+
+    for (const variable of vars) {
       const type = this.varTypes.get(this.baseVarName(variable)) ?? "caractere"
-      return `${ind}${variable} = ${this.parseInputValue(rawInput, type)};`
-    })
+      lines.push(ind + "textoDigitado = prompt(\"Valor para " + variable + ":\") ?? \"\";")
+      lines.push(ind + variable + " = " + this.parseInputValue("textoDigitado", type) + ";")
+    }
+
+    return lines
   }
 
   private translateProcess(node: IParserNode, indent: number): string[] {
@@ -381,6 +393,13 @@ export class CodeGenerator {
       default:
         return rawName
     }
+  }
+
+  private emitInputBufferDeclaration(lines: string[], lang: Lang, indent: number): void {
+    const ind = this.indent(indent)
+    lines.push(lang === "ts"
+      ? `${ind}let textoDigitado: string;`
+      : `${ind}let textoDigitado;`)
   }
 
   private collectDeclaredTypes(): void {
