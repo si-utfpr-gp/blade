@@ -1,30 +1,14 @@
 import { useState } from "react"
 import type { Node, Edge } from "@xyflow/react"
 import type { IRawSubroutineDefinition } from "../../parser/types"
+import { DIAGRAM_EXAMPLE_CATEGORIES, DIAGRAM_EXAMPLES, type IDiagramExample } from "../../interfaces/diagramExamples"
 import { useSimulator } from "../simulator/SimulatorContext"
-
-const EXAMPLE_JSON = {
-  nodes: [
-    { id: "n1", type: "startEnd", position: { x: 250, y: 0 }, data: { label: "Início", variant: "start" } },
-    { id: "n2", type: "memory", position: { x: 220, y: 80 }, data: { label: "Memória", rows: [{ type: "inteiro", variables: "num1, num2, soma" }] } },
-    { id: "n3", type: "input", position: { x: 240, y: 200 }, data: { label: "num1, num2" } },
-    { id: "n4", type: "process", position: { x: 230, y: 310 }, data: { label: "soma = num1 + num2" } },
-    { id: "n5", type: "output", position: { x: 240, y: 420 }, data: { label: '"A soma é: " + soma' } },
-    { id: "n6", type: "startEnd", position: { x: 250, y: 530 }, data: { label: "Fim", variant: "end" } },
-  ],
-  edges: [
-    { id: "e1", source: "n1", target: "n2" },
-    { id: "e2", source: "n2", target: "n3" },
-    { id: "e3", source: "n3", target: "n4" },
-    { id: "e4", source: "n4", target: "n5" },
-    { id: "e5", source: "n5", target: "n6" },
-  ],
-}
 
 export default function JsonHarness() {
   const { loadDiagram } = useSimulator()
   const [json, setJson] = useState("")
   const [status, setStatus] = useState<{ ok: boolean; message: string } | null>(null)
+  const [isExampleMenuOpen, setIsExampleMenuOpen] = useState(false)
 
   const handleLoad = () => {
     let parsed: unknown
@@ -52,9 +36,10 @@ export default function JsonHarness() {
     setStatus(null)
   }
 
-  const handleExample = () => {
-    setJson(JSON.stringify(EXAMPLE_JSON, null, 2))
+  const handleSelectExample = (example: IDiagramExample) => {
+    setJson(JSON.stringify(example.diagram, null, 2))
     setStatus(null)
+    setIsExampleMenuOpen(false)
   }
 
   return (
@@ -86,12 +71,51 @@ export default function JsonHarness() {
         >
           Carregar
         </button>
-        <button
-          onClick={handleExample}
-          className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
-        >
-          Exemplo
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setIsExampleMenuOpen((isOpen) => !isOpen)}
+            aria-expanded={isExampleMenuOpen}
+            aria-controls="diagram-examples"
+            className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+          >
+            Exemplo
+          </button>
+
+          {isExampleMenuOpen && (
+            <ul
+              id="diagram-examples"
+              aria-label="Exercícios disponíveis"
+              className="absolute bottom-full left-0 z-10 mb-2 max-h-80 w-80 overflow-y-auto rounded-lg border border-border bg-card p-1 shadow-lg"
+            >
+              {DIAGRAM_EXAMPLE_CATEGORIES.map((category) => {
+                const examples = DIAGRAM_EXAMPLES.filter((example) => example.category === category)
+                if (examples.length === 0) return null
+
+                return (
+                  <li key={category} className="py-1">
+                    <h3 className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {category}
+                    </h3>
+                    <ul>
+                      {examples.map((example) => (
+                        <li key={example.id}>
+                          <button
+                            aria-label={example.title}
+                            onClick={() => handleSelectExample(example)}
+                            className="w-full rounded-md px-2 py-1.5 text-left text-xs text-foreground hover:bg-muted"
+                          >
+                            <span className="block font-medium">{example.title}</span>
+                            <span className="block text-[11px] text-muted-foreground">{example.description}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </div>
         <button
           onClick={handleClear}
           className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"

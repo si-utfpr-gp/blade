@@ -4,6 +4,7 @@ import { SimulatorProvider, useSimulator } from "../../components/simulator/Simu
 import JsonHarness from "../../components/constructor/JsonHarness"
 import SimulatorTabs from "../../components/simulator/SimulatorTabs"
 import SimulatorCode from "../../components/simulator/SimulatorCode"
+import { DIAGRAM_EXAMPLES } from "../../interfaces/diagramExamples"
 
 function renderHarness() {
   return render(
@@ -77,17 +78,51 @@ describe("JsonHarness", () => {
     expect(screen.getByRole("button", { name: /exemplo/i })).toBeInTheDocument()
   })
 
-  it("preenches textarea with example JSON on Exemplo", () => {
+  it("abre a lista com todos os exercícios ao clicar em Exemplo", () => {
     renderHarness()
     fireEvent.click(screen.getByRole("button", { name: /exemplo/i }))
+    const exercisesList = screen.getByRole("list", { name: /exercícios disponíveis/i })
+    expect(exercisesList).toBeInTheDocument()
+    expect(exercisesList).toHaveClass("bottom-full", "mb-2")
+    DIAGRAM_EXAMPLES.forEach((example) => {
+      expect(screen.getByRole("button", { name: example.title })).toBeInTheDocument()
+    })
+  })
+
+  it("preenche o textarea com o exercício selecionado", () => {
+    renderHarness()
+    fireEvent.click(screen.getByRole("button", { name: /exemplo/i }))
+    fireEvent.click(screen.getByRole("button", { name: /sub-rotina visual/i }))
+
     const textarea = screen.getByLabelText(/json do diagrama/i) as HTMLTextAreaElement
-    expect(textarea.value).toContain('"nodes"')
-    expect(textarea.value).toContain("startEnd")
+    expect(textarea.value).toContain('"subroutines"')
+    expect(textarea.value).toContain('"name": "fatorial"')
+    expect(screen.queryByRole("list", { name: /exercícios disponíveis/i })).not.toBeInTheDocument()
+  })
+
+  it.each(DIAGRAM_EXAMPLES)("carrega o exercício $title", (example) => {
+    renderHarness()
+    fireEvent.click(screen.getByRole("button", { name: /exemplo/i }))
+    fireEvent.click(screen.getByRole("button", { name: example.title }))
+    fireEvent.click(screen.getByRole("button", { name: /carregar/i }))
+    expect(screen.getByText(/código js\/ts gerado/i)).toBeInTheDocument()
+  })
+
+  it("gera a sub-rotina após carregar o exercício selecionado", () => {
+    renderApp()
+    fireEvent.click(screen.getByRole("button", { name: /exemplo/i }))
+    fireEvent.click(screen.getByRole("button", { name: /sub-rotina visual/i }))
+    fireEvent.click(screen.getByRole("button", { name: /carregar/i }))
+    fireEvent.click(screen.getByText("Código"))
+
+    const code = screen.getByText("JavaScript").closest("div")?.parentElement?.querySelector("code")
+    expect(code?.textContent).toContain("function fatorial(valor)")
   })
 
   it("loads valid JSON and shows success status", () => {
     renderHarness()
     fireEvent.click(screen.getByRole("button", { name: /exemplo/i }))
+    fireEvent.click(screen.getByRole("button", { name: /soma de dois valores/i }))
     fireEvent.click(screen.getByRole("button", { name: /carregar/i }))
     expect(screen.getByText(/código js\/ts gerado/i)).toBeInTheDocument()
   })
@@ -95,11 +130,12 @@ describe("JsonHarness", () => {
   it("gera JS/TS na aba Código após carregar o exemplo (soma)", () => {
     renderApp()
     fireEvent.click(screen.getByRole("button", { name: /exemplo/i }))
+    fireEvent.click(screen.getByRole("button", { name: /soma de dois valores/i }))
     fireEvent.click(screen.getByRole("button", { name: /carregar/i }))
     fireEvent.click(screen.getByText("Código"))
     const code = screen.getByText("JavaScript").closest("div")?.parentElement?.querySelector("code")
     expect(code?.textContent).toContain("let num1;")
-    expect(code?.textContent).toContain('console.log("A soma');
+    expect(code?.textContent).toContain("console.log('A soma");
   })
 
   it("loads visual subroutine definitions from JSON", () => {
@@ -133,6 +169,7 @@ describe("JsonHarness", () => {
   it("clears textarea and status on Limpar", () => {
     renderHarness()
     fireEvent.click(screen.getByRole("button", { name: /exemplo/i }))
+    fireEvent.click(screen.getByRole("button", { name: /soma de dois valores/i }))
     fireEvent.click(screen.getByRole("button", { name: /limpar/i }))
     const textarea = screen.getByLabelText(/json do diagrama/i) as HTMLTextAreaElement
     expect(textarea.value).toBe("")
