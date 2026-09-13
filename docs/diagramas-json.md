@@ -264,7 +264,8 @@ laço e a saída somente após o valor `0`:
 
 ```js
 do {
-  num = Number.parseInt((prompt("Valor para num:") ?? ""), 10);
+  num = Number(prompt("Digite o valor de num:"));
+
   soma = soma + num;
 } while (num !== 0);
 ```
