@@ -14,7 +14,6 @@ type Lang = "js" | "ts"
  */
 export class CodeGenerator {
   private varTypes = new Map<string, string>()
-  private inputBufferDeclared = false
 
   constructor(private graph: IParserData) {
     this.collectDeclaredTypes()
@@ -24,7 +23,6 @@ export class CodeGenerator {
     const lang = options?.lang ?? "js"
     const lines: string[] = []
     this.emitSubroutines(lines, lang)
-    this.inputBufferDeclared = false
     this.emitPath(this.graph.startNodeId, lines, 0, lang, new Set())
     return this.compact(lines).join("\n")
   }
@@ -44,12 +42,11 @@ export class CodeGenerator {
       }
     }
 
-    this.inputBufferDeclared = false
-
     for (const step of steps) {
       const node = this.graph.nodes.get(step.nodeId)
       if (!node || emittedMemory.has(node.id)) continue
       lines.push(...this.translate(node, lang, 0))
+      lines.push("")
     }
 
     return this.compact(lines).join("\n")
@@ -140,6 +137,7 @@ export class CodeGenerator {
 
     emitted.add(nodeId)
     lines.push(...this.translate(node, lang, indent))
+    lines.push("")
     this.emitPath(this.graph.getNextNode(nodeId), lines, indent, lang, emitted, stopAt)
   }
 
@@ -235,6 +233,7 @@ export class CodeGenerator {
     for (const node of loop.body) {
       emitted.add(node.id)
       lines.push(...this.translate(node, lang, indent + 1))
+      lines.push("")
     }
     emitted.add(loop.decision.id)
     lines.push(`${ind}} while (${this.translateExpression(loop.decision.label ?? "false")});`)
@@ -303,15 +302,10 @@ export class CodeGenerator {
     const vars = (node.label ?? "").split(",").map(s => s.trim()).filter(Boolean)
     const lines: string[] = []
 
-    if (!this.inputBufferDeclared) {
-      this.emitInputBufferDeclaration(lines, _lang, indent)
-      this.inputBufferDeclared = true
-    }
-
     for (const variable of vars) {
       const type = this.varTypes.get(this.baseVarName(variable)) ?? "caractere"
-      lines.push(ind + "textoDigitado = prompt(\"Valor para " + variable + ":\") ?? \"\";")
-      lines.push(ind + variable + " = " + this.parseInputValue("textoDigitado", type) + ";")
+      const prompt = `prompt("Digite o valor de ${variable}:")`
+      lines.push(`${ind}${variable} = ${this.parseInputValue(prompt, type, variable)};`)
     }
 
     return lines
@@ -381,25 +375,17 @@ export class CodeGenerator {
     return out.trim()
   }
 
-  private parseInputValue(rawName: string, type: string): string {
+  private parseInputValue(prompt: string, type: string, variable: string): string {
     switch (type) {
       case "inteiro":
-        return `Number.parseInt(${rawName}, 10)`
       case "real":
-        return `Number.parseFloat(${rawName})`
+        return `Number(${prompt})`
       case "logico":
-        return `["verdadeiro", "v", "true", "1"].includes(${rawName}.trim().toLowerCase())`
+        return `confirm("O valor de ${variable} é verdadeiro?")`
       case "caractere":
       default:
-        return rawName
+        return `${prompt} ?? ""`
     }
-  }
-
-  private emitInputBufferDeclaration(lines: string[], lang: Lang, indent: number): void {
-    const ind = this.indent(indent)
-    lines.push(lang === "ts"
-      ? `${ind}let textoDigitado: string;`
-      : `${ind}let textoDigitado;`)
   }
 
   private collectDeclaredTypes(): void {
@@ -528,6 +514,14 @@ export class CodeGenerator {
   }
 
   private compact(lines: string[]): string[] {
-    return lines.filter(line => line.trim().length > 0)
+    const compacted: string[] = []
+
+    for (const line of lines) {
+      if (line.trim().length === 0 && compacted.at(-1)?.trim().length === 0) continue
+      compacted.push(line)
+    }
+
+    while (compacted.at(-1)?.trim().length === 0) compacted.pop()
+    return compacted
   }
 }

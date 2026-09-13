@@ -264,9 +264,8 @@ laço e a saída somente após o valor `0`:
 
 ```js
 do {
-  let textoDigitado;
-  textoDigitado = prompt("Valor para num:") ?? "";
-  num = Number.parseInt(textoDigitado, 10);
+  num = Number(prompt("Digite o valor de num:"));
+
   soma = soma + num;
 } while (num !== 0);
 ```
