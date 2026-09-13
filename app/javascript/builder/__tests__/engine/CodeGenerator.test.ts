@@ -94,7 +94,7 @@ describe("CodeGenerator", () => {
     expect(code).toContain("let nome;")
   })
 
-  it("generate() converte input sem memory como texto", () => {
+  it("generate() gera uma leitura de texto direta e segura", () => {
     const gen = new CodeGenerator(g(
       [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
        { id:"n2",type:"input",position:{x:0,y:100},data:{label:"num1"} },
@@ -102,10 +102,11 @@ describe("CodeGenerator", () => {
       [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"}]
     ))
     const code = gen.generate({ lang: "js" })
-    expect(code).toContain('num1 = (prompt("Valor para num1:") ?? "");')
+    expect(code).toContain('num1 = prompt("Digite o valor de num1:") ?? "";')
+    expect(code).not.toContain("textoDigitado")
   })
 
-  it("generate() converte input inteiro declarado com Number.parseInt", () => {
+  it("generate() gera uma leitura numérica direta e fácil de reconhecer", () => {
     const gen = new CodeGenerator(g(
       [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
        { id:"n2",type:"memory",position:{x:0,y:80},data:{rows:[{type:"inteiro",variables:"num1"}]} },
@@ -114,7 +115,8 @@ describe("CodeGenerator", () => {
       [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"},{ id:"e3",source:"n3",target:"n4"}]
     ))
     const code = gen.generate({ lang: "js" })
-    expect(code).toContain('num1 = Number.parseInt((prompt("Valor para num1:") ?? ""), 10);')
+    expect(code).toContain('num1 = Number(prompt("Digite o valor de num1:"));')
+    expect(code).not.toContain("textoDigitado")
   })
 
   it("generate() converte output — console.log", () => {
@@ -296,7 +298,8 @@ describe("CodeGenerator", () => {
     ))
     const code = gen.generate({ lang: "ts" })
     expect(code).toContain('let num: number;')
-    expect(code).toContain('num = Number.parseInt((prompt("Valor para num:") ?? ""), 10);')
+    expect(code).toContain('num = Number(prompt("Digite o valor de num:"));')
+    expect(code).not.toContain("textoDigitado")
   })
 
   it("generateFromSteps() converte steps em código", () => {
@@ -346,15 +349,20 @@ describe("CodeGenerator", () => {
        { id:"e5",source:"n5",target:"n6"}]
     ))
     const code = gen.generate()
-    expect(code).toContain("// Início do algoritmo")
-    expect(code).toContain("let num1;")
-    expect(code).toContain("let num2;")
-    expect(code).toContain("let soma;")
-    expect(code).toContain('num1 = Number.parseInt((prompt("Valor para num1:") ?? ""), 10);')
-    expect(code).toContain('num2 = Number.parseInt((prompt("Valor para num2:") ?? ""), 10);')
-    expect(code).toContain("soma = num1 + num2;")
-    expect(code).toContain('console.log("A soma é: " + soma);')
-    expect(code).toContain("// Fim do algoritmo")
+    expect(code).toBe(`// Início do algoritmo
+
+let num1;
+let num2;
+let soma;
+
+num1 = Number(prompt("Digite o valor de num1:"));
+num2 = Number(prompt("Digite o valor de num2:"));
+
+soma = num1 + num2;
+
+console.log("A soma é: " + soma);
+
+// Fim do algoritmo`)
   })
 
   it("generate({ lang: 'ts' }) array com tipo", () => {
@@ -459,7 +467,7 @@ describe("CodeGenerator", () => {
     const tsCode = gen.generate({ lang: "ts" })
 
     expect(code).toContain("do {")
-    expect(code).toContain('  num = Number.parseInt((prompt("Valor para num:") ?? ""), 10);')
+    expect(code).toContain('  num = Number(prompt("Digite o valor de num:"));')
     expect(code).toContain("  soma = soma + num;")
     expect(code).toContain("} while (num !== 0);")
     expect(code).not.toContain("fluxo retorna")
@@ -469,7 +477,7 @@ describe("CodeGenerator", () => {
     expect(tsCode).toContain("} while (num !== 0);")
   })
 
-  it("generate() usa parseFloat e boolean para tipos real/logico", () => {
+  it("generate() usa entradas legíveis para números reais e valores lógicos", () => {
     const gen = new CodeGenerator(g(
       [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
        { id:"n2",type:"memory",position:{x:0,y:80},data:{rows:[{type:"real",variables:"nota"},{type:"logico",variables:"ok"}]} },
@@ -478,8 +486,9 @@ describe("CodeGenerator", () => {
       [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"},{ id:"e3",source:"n3",target:"n4"}]
     ))
     const code = gen.generate()
-    expect(code).toContain('nota = Number.parseFloat((prompt("Valor para nota:") ?? ""));')
-    expect(code).toContain('ok = ["verdadeiro", "v", "true", "1"].includes((prompt("Valor para ok:") ?? "").trim().toLowerCase());')
+    expect(code).toContain('nota = Number(prompt("Digite o valor de nota:"));')
+    expect(code).toContain('ok = confirm("O valor de ok é verdadeiro?");')
+    expect(code).not.toContain("textoDigitado")
   })
 
 })

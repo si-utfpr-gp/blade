@@ -63,19 +63,21 @@ cria branch  →  desenvolve  →  PR para develop  →  code review + testes  �
 {tipo}({escopo}): {descricao}
 ```
 
+O título e o corpo do commit devem ser escritos em inglês.
+
 ### Exemplos
 
 ```
-feat(parser): adiciona suporte a expressões aritméticas
-fix(executor): corrige avaliação de condição em bloco decisão
-docs(prd): atualiza versões da stack tecnológica
-test(memoria): adiciona testes para gerenciador de snapshots
+feat(parser): add support for arithmetic expressions
+fix(executor): correct decision block condition evaluation
+docs(prd): update technology stack versions
+test(memory): add snapshot manager tests
 ```
 
 ### Boas Práticas
 
 - Commits **atômicos**: cada commit representa uma única mudança lógica.
-- Use o **imperativo** no título ("adiciona", "corrige", "remove").
+- Use o **imperativo em inglês** no título (`add`, `fix`, `update`, `remove`).
 - Corpo do commit (opcional) pode explicar o **porquê** da mudança.
 
 ## Pull Requests
