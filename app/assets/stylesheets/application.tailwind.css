@@ -1,8 +1,7 @@
-@import "tailwindcss";
-@import "@xyflow/react/dist/style.css";
-
+@import '@xyflow/react/dist/style.css' layer(base);
+@import 'tailwindcss';
 @theme {
-  --color-background: hsl(0 0% 100%);
+  --color-background: hsl(30 40% 100%);
   --color-foreground: hsl(222.2 84% 4.9%);
   --color-card: hsl(0 0% 100%);
   --color-card-foreground: hsl(222.2 84% 4.9%);
@@ -22,4 +21,116 @@
   --color-input: hsl(214.3 31.8% 91.4%);
   --color-ring: hsl(221.2 83.2% 53.3%);
   --radius: 0.5rem;
+}
+
+@layer base {
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 220 25% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 25% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 25% 12%;
+
+    --primary: 210 90% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 170 55% 45%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 15% 93%;
+    --muted-foreground: 220 10% 46%;
+
+    --accent: 35 95% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 18% 87%;
+    --input: 210 18% 87%;
+    --ring: 210 90% 50%;
+
+    --radius: 0.75rem;
+
+    /* Custom tokens */
+    --node-start: 170 55% 45%;
+    --node-process: 210 90% 50%;
+    --node-io: 35 95% 55%; /* deprecated, kept for compat */
+    --node-decision: 280 60% 55%;
+    --node-memory: 30 90% 55%;
+    --node-end: 0 72% 55%;
+    --node-input: 35 95% 55%;
+    --node-output: 200 70% 50%;
+    --node-connector: 260 50% 55%;
+    --node-subroutine: 220 45% 45%;
+    --node-error: 0 72% 55%;
+
+    --canvas-bg: 210 20% 96%;
+    --canvas-grid: 210 15% 88%;
+    --sidebar-bg: 0 0% 100%;
+
+    --font-body: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 25% 12%;
+    --sidebar-primary: 210 90% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 15% 93%;
+    --sidebar-accent-foreground: 220 25% 12%;
+    --sidebar-border: 210 18% 87%;
+    --sidebar-ring: 210 90% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+  }
+}
+
+@layer components {
+  .node-base {
+    @apply flex items-center justify-center text-sm font-medium transition-all duration-200;
+    font-family: var(--font-body);
+    min-width: 140px;
+    min-height: 50px;
+  }
+  .node-label-input {
+    @apply bg-transparent text-center border-none outline-none w-full;
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  .react-flow__node-input,
+  .react-flow__node-output {
+    --xy-node-border-default: none;
+    --xy-node-background-color-default: transparent;
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    width: auto !important;
+  }
+
+  .react-flow__node-input.selected .node-base,
+  .react-flow__node-output.selected .node-base {
+    box-shadow: none;
+  }
+
+  /* Execution highlight animation */
+  @keyframes node-pulse {
+    0%, 100% { box-shadow: 0 0 0 3px hsl(var(--secondary)), 0 0 8px hsl(var(--secondary) / 0.3); }
+    50% { box-shadow: 0 0 0 5px hsl(var(--secondary)), 0 0 16px hsl(var(--secondary) / 0.5); }
+  }
+  .react-flow__node.selected .node-base {
+    box-shadow: 0 0 0 2px hsl(var(--ring) / 0.3);
+  }
 }
