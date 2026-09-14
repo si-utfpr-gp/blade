@@ -1,11 +1,9 @@
-import { memo, useState, useCallback } from "react"
-import { Handle, Position, NodeProps } from "@xyflow/react"
-
-interface ConnectorData {
-  label: string
-  hasError?: boolean
-  onLabelChange?: (id: string, label: string) => void
-}
+import { memo, useMemo } from "react"
+import { Handle, Position, type NodeProps } from "@xyflow/react"
+import { useConstructor, type AlgorithmNode } from "../ConstructorProvider"
+import { useEditableLabel } from "./useEditableLabel"
+import EditableLabel from "./EditableLabel"
+import { getConnectorRole, CONNECTOR_ROLE_LABEL } from "./connectorRole"
 
 const handleStyle = {
   background: "hsl(var(--node-connector))",
@@ -14,21 +12,19 @@ const handleStyle = {
 }
 
 const ConnectorNode = memo(
-  ({ id, data, selected }: NodeProps & { data: ConnectorData }) => {
-    const [editing, setEditing] = useState(false)
-    const [label, setLabel] = useState(data.label ?? "")
+  ({ id, data, selected }: NodeProps<AlgorithmNode>) => {
+    const { edges } = useConstructor()
+    const { editing, label, setLabel, startEditing, commit, onKeyDown } =
+      useEditableLabel(id, data.label ?? "")
 
-    const handleDoubleClick = useCallback(() => setEditing(true), [])
-    const handleBlur = useCallback(() => {
-      setEditing(false)
-      data.onLabelChange?.(id, label)
-    }, [id, label, data])
+    const role = useMemo(() => getConnectorRole(id, edges), [id, edges])
 
-    const borderColor = data.hasError
-      ? "hsl(var(--node-error))"
-      : selected
-        ? "hsl(var(--ring))"
-        : "hsl(var(--node-connector) / 0.4)"
+    const borderColor =
+      data.hasError || role === "invalid"
+        ? "hsl(var(--node-error))"
+        : selected
+          ? "hsl(var(--ring))"
+          : "hsl(var(--node-connector) / 0.4)"
 
     return (
       <div
@@ -46,52 +42,45 @@ const ConnectorNode = memo(
           boxShadow: selected
             ? "0 0 0 2px hsl(var(--ring) / 0.3)"
             : "0 2px 8px rgba(0,0,0,0.08)",
+          position: "relative",
         }}
-        onDoubleClick={handleDoubleClick}
+        onDoubleClick={startEditing}
+        title={CONNECTOR_ROLE_LABEL[role]}
       >
-        {/* Top — target + source */}
         <Handle
           type="target"
           id="top-in"
           position={Position.Top}
           style={handleStyle}
         />
-        {/* Bottom — target + source */}
-        <Handle
-          type="target"
-          id="bottom-in"
-          position={Position.Bottom}
-          style={handleStyle}
-        />
-        {/* Left — target + source */}
         <Handle
           type="target"
           id="left-in"
           position={Position.Left}
           style={handleStyle}
         />
-        {/* Right — target + source */}
         <Handle
           type="target"
           id="right-in"
           position={Position.Right}
           style={handleStyle}
         />
+        <Handle
+          type="source"
+          id="bottom-out"
+          position={Position.Bottom}
+          style={handleStyle}
+        />
 
-        {editing ? (
-          <input
-            className="node-label-input"
-            style={{ maxWidth: "30px", fontSize: "0.65rem" }}
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            onBlur={handleBlur}
-            onKeyDown={(e) => e.key === "Enter" && handleBlur()}
-            placeholder=""
-            autoFocus
-          />
-        ) : label ? (
-          <span className="text-[10px] font-bold">{label}</span>
-        ) : null}
+        <EditableLabel
+          editing={editing}
+          value={label}
+          onChange={setLabel}
+          onBlur={commit}
+          onKeyDown={onKeyDown}
+          inputStyle={{ maxWidth: "30px", fontSize: "0.65rem" }}
+          displayClassName="text-[10px] font-bold"
+        />
       </div>
     )
   },
