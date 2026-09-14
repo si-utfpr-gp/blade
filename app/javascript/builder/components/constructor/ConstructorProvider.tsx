@@ -21,6 +21,8 @@ import {
 import { ReactFlowProvider } from "@xyflow/react"
 
 import type { BlockType } from "../blocks/blockDefinitions"
+import { getBlockCapabilities } from "../blocks/blockCapabilities"
+import { wouldConnectorRoleBeValid } from "./nodes/connectorRole"
 
 export interface BlockNodeData extends Record<string, unknown> {
   blockType: BlockType
@@ -76,17 +78,49 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
 
   const onConnect = useCallback(
     (connection: Connection) => {
+      const sourceNode = nodes.find((n) => n.id === connection.source)
+      const targetNode = nodes.find((n) => n.id === connection.target)
+      if (!sourceNode || !targetNode) return
+
+      // 1. o bloco de origem precisa permitir esse handle de saída
+      const sourceCapabilities = getBlockCapabilities(sourceNode.data)
+      const handleAllowed = sourceCapabilities.outgoingHandles.some(
+        (h) => h.id === (connection.sourceHandle ?? undefined),
+      )
+      if (!handleAllowed) return
+
+      // 2. o bloco de destino precisa aceitar entrada (ex: bloco "Início" nunca aceita)
+      const targetCapabilities = getBlockCapabilities(targetNode.data)
+      if (!targetCapabilities.allowsIncoming) return
+
+      // 3. regra universal: um handle nomeado só aceita 1 conexão (Tabela 3 do TCC1 — fluxo linear)
+      const targetHandleTaken = edges.some(
+        (e) =>
+          e.target === connection.target &&
+          e.targetHandle === connection.targetHandle,
+      )
+      if (targetHandleTaken) return
+
+      // 4. regra especial do connector: a combinação resultante precisa formar um papel válido
+      if (
+        targetNode.data.blockType === "connector" &&
+        connection.targetHandle
+      ) {
+        if (
+          !wouldConnectorRoleBeValid(
+            targetNode.id,
+            edges,
+            connection.targetHandle,
+          )
+        )
+          return
+      }
+
       setEdges((currentEdges) =>
-        addEdge(
-          {
-            ...connection,
-            type: "smoothstep",
-          },
-          currentEdges,
-        ),
+        addEdge({ ...connection, type: "smoothstep" }, currentEdges),
       )
     },
-    [setEdges],
+    [nodes, edges, setEdges],
   )
 
   const addNode = useCallback(
