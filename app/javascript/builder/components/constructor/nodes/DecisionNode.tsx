@@ -1,22 +1,13 @@
-import { memo, useState, useCallback } from "react"
-import { Handle, Position, NodeProps } from "@xyflow/react"
-
-interface DecisionData {
-  label: string
-  hasError?: boolean
-  onLabelChange?: (id: string, label: string) => void
-}
+import { memo } from "react"
+import { Handle, Position, type NodeProps } from "@xyflow/react"
+import type { AlgorithmNode } from "../ConstructorProvider"
+import { useEditableLabel } from "./useEditableLabel"
+import EditableLabel from "./EditableLabel"
 
 const DecisionNode = memo(
-  ({ id, data, selected }: NodeProps & { data: DecisionData }) => {
-    const [editing, setEditing] = useState(false)
-    const [label, setLabel] = useState(data.label)
-
-    const handleDoubleClick = useCallback(() => setEditing(true), [])
-    const handleBlur = useCallback(() => {
-      setEditing(false)
-      data.onLabelChange?.(id, label)
-    }, [id, label, data])
+  ({ id, data, selected }: NodeProps<AlgorithmNode>) => {
+    const { editing, label, setLabel, startEditing, commit, onKeyDown } =
+      useEditableLabel(id, data.label)
 
     const borderColor = data.hasError
       ? "hsl(var(--node-error))"
@@ -27,7 +18,7 @@ const DecisionNode = memo(
     return (
       <div
         style={{ position: "relative", width: "140px", height: "100px" }}
-        onDoubleClick={handleDoubleClick}
+        onDoubleClick={startEditing}
       >
         <svg
           width="140"
@@ -41,7 +32,6 @@ const DecisionNode = memo(
             stroke={borderColor}
             strokeWidth="2.5"
           />
-          <polygon points="70,4 76,7 76,7 70,4" fill="none" />
         </svg>
         <div
           className="node-base"
@@ -58,32 +48,24 @@ const DecisionNode = memo(
             position={Position.Top}
             style={{ background: "hsl(var(--node-decision))", top: "-4px" }}
           />
-          {editing ? (
-            <input
-              className="node-label-input"
-              style={{ maxWidth: "80px" }}
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              onBlur={handleBlur}
-              onKeyDown={(e) => e.key === "Enter" && handleBlur()}
-              autoFocus
-            />
-          ) : (
-            <span
-              className="text-xs font-medium text-center leading-tight"
-              style={{ maxWidth: "80px" }}
-            >
-              {label}
-            </span>
-          )}
-          {/* Sim - Right */}
+
+          <EditableLabel
+            editing={editing}
+            value={label}
+            onChange={setLabel}
+            onBlur={commit}
+            onKeyDown={onKeyDown}
+            inputStyle={{ maxWidth: "80px" }}
+            displayClassName="text-xs font-medium text-center leading-tight"
+            displayStyle={{ maxWidth: "80px" }}
+          />
+
           <Handle
             type="source"
             position={Position.Right}
             id="yes"
             style={{ background: "hsl(var(--node-start))", right: "-4px" }}
           />
-          {/* Não - Left */}
           <Handle
             type="source"
             position={Position.Left}

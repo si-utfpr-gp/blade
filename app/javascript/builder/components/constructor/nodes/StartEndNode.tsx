@@ -1,28 +1,17 @@
-import { memo, useState, useCallback } from "react"
-import { Handle, Position, NodeProps } from "@xyflow/react"
-
-interface StartEndData {
-  label: string
-  variant: "start" | "end"
-  hasError?: boolean
-  onLabelChange?: (id: string, label: string) => void
-}
+import { memo } from "react"
+import { Handle, Position, type NodeProps } from "@xyflow/react"
+import type { AlgorithmNode } from "../ConstructorProvider"
+import { useEditableLabel } from "./useEditableLabel"
+import EditableLabel from "./EditableLabel"
 
 const StartEndNode = memo(
-  ({ id, data, selected }: NodeProps & { data: StartEndData }) => {
-    const [editing, setEditing] = useState(false)
-    const [label, setLabel] = useState(data.label)
-    const isStart = data.variant === "start"
-    const hasError = data.hasError
-
-    const handleDoubleClick = useCallback(() => setEditing(true), [])
-    const handleBlur = useCallback(() => {
-      setEditing(false)
-      data.onLabelChange?.(id, label)
-    }, [id, label, data])
+  ({ id, data, selected }: NodeProps<AlgorithmNode>) => {
+    const { editing, label, setLabel, startEditing, commit, onKeyDown } =
+      useEditableLabel(id, data.label)
+    const isStart = data.variant !== "end"
 
     const bgColor = isStart ? "hsl(var(--node-start))" : "hsl(var(--node-end))"
-    const borderColor = hasError
+    const borderColor = data.hasError
       ? "hsl(var(--node-error))"
       : selected
         ? "hsl(var(--ring))"
@@ -41,7 +30,7 @@ const StartEndNode = memo(
             ? "0 0 0 2px hsl(var(--ring) / 0.3)"
             : "0 2px 8px rgba(0,0,0,0.1)",
         }}
-        onDoubleClick={handleDoubleClick}
+        onDoubleClick={startEditing}
       >
         {!isStart && (
           <Handle
@@ -50,19 +39,17 @@ const StartEndNode = memo(
             style={{ background: "hsl(var(--foreground))" }}
           />
         )}
-        {editing ? (
-          <input
-            className="node-label-input"
-            style={{ color: "white" }}
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            onBlur={handleBlur}
-            onKeyDown={(e) => e.key === "Enter" && handleBlur()}
-            autoFocus
-          />
-        ) : (
-          <span className="text-sm font-semibold">{label}</span>
-        )}
+
+        <EditableLabel
+          editing={editing}
+          value={label}
+          onChange={setLabel}
+          onBlur={commit}
+          onKeyDown={onKeyDown}
+          inputStyle={{ color: "white" }}
+          displayClassName="text-sm font-semibold"
+        />
+
         {isStart && (
           <Handle
             type="source"

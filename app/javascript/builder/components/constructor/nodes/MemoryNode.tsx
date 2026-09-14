@@ -1,24 +1,22 @@
 import { memo, useCallback } from "react"
 import { Handle, Position, type NodeProps } from "@xyflow/react"
 import { Plus, Trash2 } from "lucide-react"
-import { useConstructor, type AlgorithmNode } from "../ConstructorProvider"
-
-interface MemoryRow {
-  type: string
-  variables: string
-}
+import {
+  useConstructor,
+  type AlgorithmNode,
+  type MemoryRow,
+} from "../ConstructorProvider"
 
 const DATA_TYPES = ["inteiro", "real", "caractere", "booleano", "texto"]
 
 const MemoryNode = memo(({ id, data, selected }: NodeProps<AlgorithmNode>) => {
   const { updateNodeData } = useConstructor()
 
-  const rows: MemoryRow[] = (data.rows as MemoryRow[])?.length
-    ? (data.rows as MemoryRow[])
+  const rows: MemoryRow[] = data.rows?.length
+    ? data.rows
     : [{ type: "inteiro", variables: "" }]
 
-  const hasError = data.hasError as boolean | undefined
-  const borderColor = hasError
+  const borderColor = data.hasError
     ? "hsl(var(--node-error))"
     : selected
       ? "hsl(var(--ring))"
@@ -210,7 +208,7 @@ const MemoryNode = memo(({ id, data, selected }: NodeProps<AlgorithmNode>) => {
             fontWeight: 500,
             color: "hsl(var(--node-memory))",
             cursor: "pointer",
-            backgroundColor: "hsl(var(--node-memory) / 0.06)",
+            background: "hsl(var(--node-memory) / 0.06)",
             border: "1px dashed hsl(var(--node-memory) / 0.4)",
             borderRadius: "6px",
             padding: "4px 6px",

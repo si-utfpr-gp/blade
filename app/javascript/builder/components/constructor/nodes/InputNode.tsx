@@ -1,27 +1,18 @@
-import { memo, useState, useCallback, useEffect } from "react"
-import { Handle, Position, NodeProps } from "@xyflow/react"
+import { memo } from "react"
+import { Handle, Position, type NodeProps } from "@xyflow/react"
+import type { AlgorithmNode } from "../ConstructorProvider"
+import { useEditableLabel } from "./useEditableLabel"
+import EditableLabel from "./EditableLabel"
 
-interface InputData {
-  label: string
-  hasError?: boolean
-  onLabelChange?: (id: string, label: string) => void
-}
+const InputNode = memo(({ id, data, selected }: NodeProps<AlgorithmNode>) => {
+  const { editing, label, setLabel, startEditing, commit, onKeyDown } =
+    useEditableLabel(id, data.label)
 
-const InputNode = memo(({ id, data }: NodeProps & { data: InputData }) => {
-  const [editing, setEditing] = useState(false)
-  const [label, setLabel] = useState(data.label)
-
-  useEffect(() => {
-    setLabel(data.label)
-  }, [data.label])
-
-  const handleDoubleClick = useCallback(() => setEditing(true), [])
-  const handleBlur = useCallback(() => {
-    setEditing(false)
-    data.onLabelChange?.(id, label)
-  }, [id, label, data])
-
-  const borderColor = data.hasError ? "hsl(var(--node-error))" : "transparent"
+  const borderColor = data.hasError
+    ? "hsl(var(--node-error))"
+    : selected
+      ? "hsl(var(--ring))"
+      : "transparent"
 
   return (
     <div
@@ -36,7 +27,7 @@ const InputNode = memo(({ id, data }: NodeProps & { data: InputData }) => {
         minWidth: "160px",
         position: "relative",
       }}
-      onDoubleClick={handleDoubleClick}
+      onDoubleClick={startEditing}
     >
       <Handle
         type="target"
@@ -44,7 +35,6 @@ const InputNode = memo(({ id, data }: NodeProps & { data: InputData }) => {
         style={{ background: "hsl(var(--node-input))" }}
       />
 
-      {/* Arrow pointing into the node (left side) */}
       <svg
         width="20"
         height="16"
@@ -66,18 +56,15 @@ const InputNode = memo(({ id, data }: NodeProps & { data: InputData }) => {
         />
       </svg>
 
-      {editing ? (
-        <input
-          className="node-label-input"
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          onBlur={handleBlur}
-          onKeyDown={(e) => e.key === "Enter" && handleBlur()}
-          autoFocus
-        />
-      ) : (
-        <span className="text-sm font-medium">{label}</span>
-      )}
+      <EditableLabel
+        editing={editing}
+        value={label}
+        onChange={setLabel}
+        onBlur={commit}
+        onKeyDown={onKeyDown}
+        displayClassName="text-sm font-medium"
+      />
+
       <Handle
         type="source"
         position={Position.Bottom}

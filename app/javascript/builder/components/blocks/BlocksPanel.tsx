@@ -1,4 +1,4 @@
-import { BLOCK_DEFINITIONS } from "../blocks/blockDefinitions"
+import { BLOCK_DEFINITIONS, DRAG_DATA_KEY } from "../blocks/blockDefinitions"
 
 interface IBlocksPanelProps {
   errors: string[]
@@ -24,17 +24,12 @@ export default function BlocksPanel({ errors }: IBlocksPanelProps) {
               key={block.type}
               draggable
               onDragStart={(event) => {
-                event.dataTransfer.setData(
-                  "application/blade-block",
-                  block.type,
-                )
-
+                event.dataTransfer.setData(DRAG_DATA_KEY, block.type)
                 event.dataTransfer.effectAllowed = "move"
               }}
               className="cursor-grab rounded-lg border bg-white p-3 shadow-sm transition hover:border-blue-400 hover:shadow-md active:cursor-grabbing"
             >
               <div className="font-medium">{block.label}</div>
-
               <div className="text-xs text-gray-500">{block.description}</div>
             </div>
           ))}

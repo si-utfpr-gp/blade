@@ -1,22 +1,13 @@
-import { memo, useState, useCallback } from "react"
-import { Handle, Position, NodeProps } from "@xyflow/react"
-
-interface SubroutineData {
-  label: string
-  hasError?: boolean
-  onLabelChange?: (id: string, label: string) => void
-}
+import { memo } from "react"
+import { Handle, Position, type NodeProps } from "@xyflow/react"
+import type { AlgorithmNode } from "../ConstructorProvider"
+import { useEditableLabel } from "./useEditableLabel"
+import EditableLabel from "./EditableLabel"
 
 const SubroutineNode = memo(
-  ({ id, data, selected }: NodeProps & { data: SubroutineData }) => {
-    const [editing, setEditing] = useState(false)
-    const [label, setLabel] = useState(data.label)
-
-    const handleDoubleClick = useCallback(() => setEditing(true), [])
-    const handleBlur = useCallback(() => {
-      setEditing(false)
-      data.onLabelChange?.(id, label)
-    }, [id, label, data])
+  ({ id, data, selected }: NodeProps<AlgorithmNode>) => {
+    const { editing, label, setLabel, startEditing, commit, onKeyDown } =
+      useEditableLabel(id, data.label)
 
     const borderColor = data.hasError
       ? "hsl(var(--node-error))"
@@ -39,7 +30,7 @@ const SubroutineNode = memo(
           position: "relative",
           minWidth: "160px",
         }}
-        onDoubleClick={handleDoubleClick}
+        onDoubleClick={startEditing}
       >
         <Handle
           type="target"
@@ -47,7 +38,6 @@ const SubroutineNode = memo(
           style={{ background: "hsl(var(--node-subroutine))" }}
         />
 
-        {/* Inner double-border lines */}
         <div
           style={{
             position: "absolute",
@@ -69,18 +59,15 @@ const SubroutineNode = memo(
           }}
         />
 
-        {editing ? (
-          <input
-            className="node-label-input"
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            onBlur={handleBlur}
-            onKeyDown={(e) => e.key === "Enter" && handleBlur()}
-            autoFocus
-          />
-        ) : (
-          <span className="text-sm font-medium">{label}</span>
-        )}
+        <EditableLabel
+          editing={editing}
+          value={label}
+          onChange={setLabel}
+          onBlur={commit}
+          onKeyDown={onKeyDown}
+          displayClassName="text-sm font-medium"
+        />
+
         <Handle
           type="source"
           position={Position.Bottom}

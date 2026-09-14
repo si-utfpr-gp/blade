@@ -75,3 +75,9 @@ export function getBlockDefinition(type: BlockType): BlockDefinition {
 
   return definition
 }
+
+export const DRAG_DATA_KEY = "application/blade-block"
+
+export function isBlockType(value: string): value is BlockType {
+  return BLOCK_DEFINITIONS.some((block) => block.type === value)
+}

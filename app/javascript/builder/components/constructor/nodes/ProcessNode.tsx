@@ -35,6 +35,7 @@ const ProcessNode = memo(({ id, data, selected }: NodeProps<AlgorithmNode>) => {
         position={Position.Top}
         style={{ background: "hsl(var(--node-process))" }}
       />
+
       <EditableLabel
         editing={editing}
         value={label}
@@ -43,6 +44,7 @@ const ProcessNode = memo(({ id, data, selected }: NodeProps<AlgorithmNode>) => {
         onKeyDown={onKeyDown}
         displayClassName="text-sm font-medium"
       />
+
       <Handle
         type="source"
         position={Position.Bottom}

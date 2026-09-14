@@ -5,10 +5,11 @@ interface EditableLabelProps {
   value: string
   onChange: (value: string) => void
   onBlur: () => void
-  onKeyDown: (e: KeyboardEvent) => void
+  onKeyDown: (event: KeyboardEvent) => void
   inputStyle?: CSSProperties
   displayClassName?: string
   displayStyle?: CSSProperties
+  placeholder?: string
 }
 
 export default function EditableLabel({
@@ -20,6 +21,7 @@ export default function EditableLabel({
   inputStyle,
   displayClassName,
   displayStyle,
+  placeholder,
 }: EditableLabelProps) {
   if (editing) {
     return (
@@ -27,9 +29,10 @@ export default function EditableLabel({
         className="node-label-input"
         style={inputStyle}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(event) => onChange(event.target.value)}
         onBlur={onBlur}
         onKeyDown={onKeyDown}
+        placeholder={placeholder}
         autoFocus
       />
     )

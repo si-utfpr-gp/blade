@@ -1,5 +1,4 @@
 import { useState } from "react"
-import { ReactFlowProvider } from "@xyflow/react"
 
 import { Header, WorkspaceLayout } from "./components/layout"
 
@@ -17,22 +16,18 @@ export default function BuilderPage() {
   return (
     <SimulatorProvider>
       <ConstructorProvider>
-        <ReactFlowProvider>
-          <WorkspaceLayout
-            header={<Header title="Construa seu algoritmo" />}
-            sidebar={<BlocksPanel errors={[]} />}
-            canvas={<ConstructorCanvas />}
-            inspector={
-              <SimulatorPanel
-                collapsed={debuggerCollapsed}
-                onToggleCollapsed={() =>
-                  setDebuggerCollapsed((value) => !value)
-                }
-              />
-            }
-            inspectorCollapsed={debuggerCollapsed}
-          />
-        </ReactFlowProvider>
+        <WorkspaceLayout
+          header={<Header title="Construa seu algoritmo" />}
+          sidebar={<BlocksPanel errors={[]} />}
+          canvas={<ConstructorCanvas />}
+          inspector={
+            <SimulatorPanel
+              collapsed={debuggerCollapsed}
+              onToggleCollapsed={() => setDebuggerCollapsed((value) => !value)}
+            />
+          }
+          inspectorCollapsed={debuggerCollapsed}
+        />
       </ConstructorProvider>
     </SimulatorProvider>
   )

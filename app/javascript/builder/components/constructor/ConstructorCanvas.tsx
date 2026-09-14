@@ -7,6 +7,7 @@ import {
 } from "@xyflow/react"
 import { useConstructor } from "./ConstructorProvider"
 import { nodeTypes } from "./nodes"
+import { DRAG_DATA_KEY, isBlockType } from "../blocks/blockDefinitions"
 
 export default function ConstructorCanvas() {
   const {
@@ -24,16 +25,16 @@ export default function ConstructorCanvas() {
   const handleDrop = (event: React.DragEvent) => {
     event.preventDefault()
 
-    const type = event.dataTransfer.getData("application/blade-block")
+    const type = event.dataTransfer.getData(DRAG_DATA_KEY)
 
-    if (!type) return
+    if (!isBlockType(type)) return
 
     const position = screenToFlowPosition({
       x: event.clientX,
       y: event.clientY,
     })
 
-    addNode(type as Parameters<typeof addNode>[0], position)
+    addNode(type, position)
   }
 
   return (
@@ -58,9 +59,7 @@ export default function ConstructorCanvas() {
         fitView
       >
         <Background />
-
         <Controls />
-
         <MiniMap />
       </ReactFlow>
     </div>
