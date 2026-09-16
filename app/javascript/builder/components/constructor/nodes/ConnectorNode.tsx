@@ -6,8 +6,8 @@ import EditableLabel from "./EditableLabel"
 
 const handleStyle = {
   background: "hsl(var(--node-connector))",
-  width: 6,
-  height: 6,
+  width: 8,
+  height: 8,
 }
 
 const ConnectorNode = memo(
@@ -40,17 +40,10 @@ const ConnectorNode = memo(
         }}
         onDoubleClick={startEditing}
       >
-        {/* handles revisados no passo 6 (papel dinâmico: início/fim de laço, fechamento de decisão) */}
         <Handle
           type="target"
           id="top-in"
           position={Position.Top}
-          style={handleStyle}
-        />
-        <Handle
-          type="target"
-          id="bottom-in"
-          position={Position.Bottom}
           style={handleStyle}
         />
         <Handle
@@ -63,6 +56,12 @@ const ConnectorNode = memo(
           type="target"
           id="right-in"
           position={Position.Right}
+          style={handleStyle}
+        />
+        <Handle
+          type="source"
+          id="bottom-out"
+          position={Position.Bottom}
           style={handleStyle}
         />
 
