@@ -44,7 +44,7 @@ export default function ConstructorCanvas() {
 
   return (
     <div
-      className="h-full w-full"
+      className="relative h-full w-full"
       onDrop={handleDrop}
       onDragOver={(event) => {
         event.preventDefault()
@@ -72,7 +72,7 @@ export default function ConstructorCanvas() {
       </ReactFlow>
 
       {connectionError && (
-        <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2 rounded-md bg-destructive px-3 py-2 text-xs font-medium text-white shadow-lg">
+        <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2 rounded-md bg-red-600 px-3 py-2 text-xs font-medium text-white shadow-lg">
           {connectionError}
         </div>
       )}
