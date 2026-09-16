@@ -16,6 +16,11 @@ export default function ConstructorCanvas() {
     onNodesChange,
     onEdgesChange,
     onConnect,
+    onReconnect,
+    onReconnectStart,
+    onReconnectEnd,
+    isValidConnection,
+    connectionError,
     addNode,
     setSelectedNodeId,
   } = useConstructor()
@@ -52,9 +57,12 @@ export default function ConstructorCanvas() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onNodeClick={(_, node) => {
-          setSelectedNodeId(node.id)
-        }}
+        onReconnect={onReconnect}
+        onReconnectStart={onReconnectStart}
+        onReconnectEnd={onReconnectEnd}
+        isValidConnection={isValidConnection}
+        edgesReconnectable
+        onNodeClick={(_, node) => setSelectedNodeId(node.id)}
         nodeTypes={nodeTypes}
         fitView
       >
@@ -62,6 +70,12 @@ export default function ConstructorCanvas() {
         <Controls />
         <MiniMap />
       </ReactFlow>
+
+      {connectionError && (
+        <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2 rounded-md bg-destructive px-3 py-2 text-xs font-medium text-white shadow-lg">
+          {connectionError}
+        </div>
+      )}
     </div>
   )
 }

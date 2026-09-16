@@ -2,6 +2,7 @@ import {
   addEdge,
   useEdgesState,
   useNodesState,
+  reconnectEdge,
   type Connection,
   type Edge,
   type Node,
@@ -14,6 +15,7 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react"
@@ -21,6 +23,11 @@ import {
 import { ReactFlowProvider } from "@xyflow/react"
 
 import type { BlockType } from "../blocks/blockDefinitions"
+import {
+  validateConnection,
+  CONNECTION_REJECTION_MESSAGE,
+  type ConnectionRejection,
+} from "./connectionRules"
 
 export interface MemoryRow {
   type: string
@@ -49,6 +56,15 @@ interface ConstructorContextValue {
   onEdgesChange: OnEdgesChange
 
   onConnect: (connection: Connection) => void
+
+  onReconnect: (oldEdge: Edge, newConnection: Connection) => void
+
+  onReconnectStart: () => void
+
+  onReconnectEnd: (event: MouseEvent | TouchEvent, edge: Edge) => void
+
+  isValidConnection: (connection: Connection | Edge) => boolean
+  connectionError: string | null
 
   addNode: (type: BlockType, position: { x: number; y: number }) => void
 
@@ -81,19 +97,83 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
 
+  const [connectionError, setConnectionError] = useState<string | null>(null)
+  const edgeReconnectSuccessful = useRef(true)
+
+  const reportRejection = useCallback((reason: ConnectionRejection) => {
+    setConnectionError(CONNECTION_REJECTION_MESSAGE[reason])
+    window.setTimeout(() => setConnectionError(null), 3000)
+  }, [])
+
+  const onReconnectStart = useCallback(() => {
+    edgeReconnectSuccessful.current = false
+  }, [])
+
   const onConnect = useCallback(
     (connection: Connection) => {
+      const result = validateConnection({ connection, nodes, edges })
+
+      if (!result.valid) {
+        reportRejection(result.reason)
+        return
+      }
+
       setEdges((currentEdges) =>
-        addEdge(
-          {
-            ...connection,
-            type: "smoothstep",
-          },
-          currentEdges,
-        ),
+        addEdge({ ...connection, type: "smoothstep" }, currentEdges),
       )
     },
+    [nodes, edges, setEdges, reportRejection],
+  )
+
+  const onReconnect = useCallback(
+    (oldEdge: Edge, newConnection: Connection) => {
+      const result = validateConnection({
+        connection: newConnection,
+        nodes,
+        edges,
+        ignoreEdgeId: oldEdge.id,
+      })
+
+      if (!result.valid) {
+        reportRejection(result.reason)
+        return
+      }
+
+      edgeReconnectSuccessful.current = true
+      setEdges((currentEdges) =>
+        reconnectEdge(oldEdge, newConnection, currentEdges),
+      )
+    },
+    [nodes, edges, setEdges, reportRejection],
+  )
+
+  const onReconnectEnd = useCallback(
+    (_event: MouseEvent | TouchEvent, edge: Edge) => {
+      if (!edgeReconnectSuccessful.current) {
+        setEdges((currentEdges) => currentEdges.filter((e) => e.id !== edge.id))
+      }
+      edgeReconnectSuccessful.current = true
+    },
     [setEdges],
+  )
+
+  const isValidConnection = useCallback(
+    (connection: Connection | Edge) => {
+      const asConnection: Connection = {
+        source: connection.source,
+        target: connection.target,
+        sourceHandle: connection.sourceHandle ?? null,
+        targetHandle: connection.targetHandle ?? null,
+      }
+
+      return validateConnection({
+        connection: asConnection,
+        nodes,
+        edges,
+        ignoreEdgeId: "id" in connection ? connection.id : undefined,
+      }).valid
+    },
+    [nodes, edges],
   )
 
   const addNode = useCallback(
