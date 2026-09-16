@@ -123,7 +123,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
         addEdge(
           {
             ...connection,
-            type: "smoothstep",
+            type: "step",
             markerEnd: { type: MarkerType.ArrowClosed },
           },
           currentEdges,
