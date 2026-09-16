@@ -8,6 +8,7 @@ import {
   type Node,
   type OnEdgesChange,
   type OnNodesChange,
+  MarkerType,
 } from "@xyflow/react"
 
 import {
@@ -119,7 +120,14 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       }
 
       setEdges((currentEdges) =>
-        addEdge({ ...connection, type: "smoothstep" }, currentEdges),
+        addEdge(
+          {
+            ...connection,
+            type: "smoothstep",
+            markerEnd: { type: MarkerType.ArrowClosed },
+          },
+          currentEdges,
+        ),
       )
     },
     [nodes, edges, setEdges, reportRejection],
