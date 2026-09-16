@@ -24,15 +24,15 @@ export default function WorkspaceLayout({
       <div className="shrink-0">{header}</div>
 
       <div className="flex flex-1 min-h-0">
-        <aside className="w-[15%] min-w-[140px] max-w-[250px] border-r overflow-auto shrink-0 max-md:hidden">
+        <aside className="w-[15%] min-w-35 max-w-62.5 border-r overflow-auto shrink-0 max-md:hidden">
           {sidebar}
         </aside>
 
-        <div className="flex-1 min-w-0 min-h-0 relative">
-          {canvas}
-        </div>
+        <div className="flex-1 min-w-0 min-h-0 relative">{canvas}</div>
 
-        <aside className={`${inspectorClassName} border-l overflow-hidden shrink-0 transition-[width,min-width,max-width] duration-200`}>
+        <aside
+          className={`${inspectorClassName} border-l overflow-hidden shrink-0 transition-[width,min-width,max-width] duration-200`}
+        >
           {inspector}
         </aside>
       </div>
