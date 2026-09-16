@@ -1,10 +1,4 @@
-import {
-  Background,
-  Controls,
-  MiniMap,
-  ReactFlow,
-  useReactFlow,
-} from "@xyflow/react"
+import { Background, Controls, ReactFlow, useReactFlow } from "@xyflow/react"
 import { useConstructor } from "./ConstructorProvider"
 import { nodeTypes } from "./nodes"
 import { DRAG_DATA_KEY, isBlockType } from "../blocks/blockDefinitions"
@@ -68,7 +62,6 @@ export default function ConstructorCanvas() {
       >
         <Background />
         <Controls />
-        <MiniMap />
       </ReactFlow>
 
       {connectionError && (
