@@ -72,6 +72,8 @@ interface ConstructorContextValue {
   updateNodeData: (id: string, data: Partial<BlockNodeData>) => void
 
   removeNode: (id: string) => void
+
+  duplicateNode: (id: string) => void
 }
 
 const ConstructorContext = createContext<ConstructorContextValue | null>(null)
@@ -247,6 +249,33 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
     [setNodes, setEdges],
   )
 
+  const duplicateNode = useCallback(
+    (id: string) => {
+      const originalNode = nodes.find((node) => node.id === id)
+
+      if (!originalNode) return
+
+      const newId = `${originalNode.data.blockType}-${crypto.randomUUID()}`
+
+      const duplicatedNode: AlgorithmNode = {
+        ...originalNode,
+        id: newId,
+        position: {
+          x: originalNode.position.x + 40,
+          y: originalNode.position.y + 40,
+        },
+        selected: false,
+        data: {
+          ...originalNode.data,
+        },
+      }
+
+      setNodes((currentNodes) => [...currentNodes, duplicatedNode])
+      setSelectedNodeId(newId)
+    },
+    [nodes, setNodes],
+  )
+
   const value = useMemo(
     () => ({
       nodes,
@@ -264,6 +293,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       addNode,
       updateNodeData,
       removeNode,
+      duplicateNode,
     }),
     [
       nodes,
@@ -280,6 +310,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       addNode,
       updateNodeData,
       removeNode,
+      duplicateNode,
     ],
   )
 
@@ -307,7 +338,7 @@ function getDefaultLabel(type: BlockType, variant?: "start" | "end") {
     case "startEnd":
       return variant === "end" ? "Fim" : "Início"
     case "memory":
-      return "Declaração"
+      return "Memória"
     case "input":
       return "Entrada"
     case "output":
@@ -319,7 +350,7 @@ function getDefaultLabel(type: BlockType, variant?: "start" | "end") {
     case "subroutine":
       return "Subrotina"
     case "connector":
-      return ""
+      return "Conector"
     default:
       return "Bloco"
   }
