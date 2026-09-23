@@ -1,12 +1,21 @@
 import { Background, Controls, ReactFlow, useReactFlow } from "@xyflow/react"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import type { MouseEvent } from "react"
 import { useConstructor, type AlgorithmNode } from "./ConstructorProvider"
+import { useSimulator } from "../simulator/SimulatorContext"
+import { getHighlightedNodeId, isCanvasLocked } from "./canvasSync"
 import { nodeTypes } from "./nodes"
 import { DRAG_DATA_KEY, isBlockType } from "../blocks/blockDefinitions"
 import ContextMenu from "./ContextMenu"
+import { RunDiagramButton } from "./RunDiagramButton"
 
-export default function ConstructorCanvas() {
+interface IConstructorCanvasProps {
+  onDiagramLoaded?: () => void
+}
+
+export default function ConstructorCanvas({
+  onDiagramLoaded,
+}: IConstructorCanvasProps) {
   const {
     nodes,
     edges,
@@ -21,10 +30,38 @@ export default function ConstructorCanvas() {
     addNode,
     setSelectedNodeId,
     removeNode,
-    duplicateNode,
   } = useConstructor()
 
-  const { screenToFlowPosition } = useReactFlow()
+  const { screenToFlowPosition, getNode, setCenter } = useReactFlow()
+  const { state: simulatorState } = useSimulator()
+
+  const locked = isCanvasLocked(
+    simulatorState.isStarted,
+    simulatorState.isFinished,
+  )
+  const highlightedNodeId = getHighlightedNodeId(
+    simulatorState.steps,
+    simulatorState.currentStepIndex,
+  )
+
+  const displayNodes = useMemo<AlgorithmNode[]>(() => {
+    if (!highlightedNodeId) return nodes
+    return nodes.map((node) =>
+      node.id === highlightedNodeId ? { ...node, selected: true } : node,
+    )
+  }, [nodes, highlightedNodeId])
+
+  useEffect(() => {
+    if (!highlightedNodeId) return
+    const target = getNode(highlightedNodeId)
+    if (!target) return
+    const width = target.measured?.width ?? 0
+    const height = target.measured?.height ?? 0
+    setCenter(target.position.x + width / 2, target.position.y + height / 2, {
+      zoom: 2,
+      duration: 300,
+    })
+  }, [highlightedNodeId, getNode, setCenter])
 
   const [contextMenu, setContextMenu] = useState<{
     nodeId: string
@@ -34,6 +71,8 @@ export default function ConstructorCanvas() {
 
   const handleDrop = (event: React.DragEvent) => {
     event.preventDefault()
+
+    if (locked) return
 
     const type = event.dataTransfer.getData(DRAG_DATA_KEY)
 
@@ -49,6 +88,7 @@ export default function ConstructorCanvas() {
 
   const handleNodeContextMenu = useCallback(
     (event: MouseEvent, node: AlgorithmNode) => {
+      if (locked) return
       event.preventDefault()
 
       const canvas = event.currentTarget.getBoundingClientRect()
@@ -61,22 +101,15 @@ export default function ConstructorCanvas() {
         y: event.clientY - canvas.top / 2,
       })
     },
-    [setSelectedNodeId],
+    [setSelectedNodeId, locked],
   )
 
-  const handleDuplicate = useCallback(() => {
-    if (!contextMenu) return
-
-    duplicateNode(contextMenu.nodeId)
-    setContextMenu(null)
-  }, [contextMenu, duplicateNode])
-
   const handleDelete = useCallback(() => {
-    if (!contextMenu) return
+    if (!contextMenu || locked) return
 
     removeNode(contextMenu.nodeId)
     setContextMenu(null)
-  }, [contextMenu, removeNode])
+  }, [contextMenu, removeNode, locked])
 
   useEffect(() => {
     const handleClick = () => {
@@ -107,18 +140,31 @@ export default function ConstructorCanvas() {
         event.dataTransfer.dropEffect = "move"
       }}
     >
+      <div
+        data-testid="canvas-toolbar"
+        className="absolute right-3 top-3 z-10 rounded-lg border border-border bg-card/95 px-2 py-1.5 shadow-md backdrop-blur"
+      >
+        <RunDiagramButton onDiagramLoaded={onDiagramLoaded} />
+      </div>
+
       <ReactFlow
-        nodes={nodes}
+        nodes={displayNodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onReconnect={onReconnect}
+        onConnect={locked ? undefined : onConnect}
+        onReconnect={locked ? undefined : onReconnect}
         onReconnectStart={onReconnectStart}
         onReconnectEnd={onReconnectEnd}
         isValidConnection={isValidConnection}
-        edgesReconnectable
-        onNodeClick={(_, node) => setSelectedNodeId(node.id)}
+        edgesReconnectable={!locked}
+        nodesDraggable={!locked}
+        nodesConnectable={!locked}
+        elementsSelectable={!locked}
+        onNodeClick={(_, node) => {
+          if (locked) return
+          setSelectedNodeId(node.id)
+        }}
         onNodeContextMenu={handleNodeContextMenu}
         nodeTypes={nodeTypes}
         fitView
@@ -135,7 +181,6 @@ export default function ConstructorCanvas() {
             nodes.find((node) => node.id === contextMenu.nodeId)?.data.label ||
             ""
           }
-          onDuplicate={handleDuplicate}
           onDelete={handleDelete}
         />
       )}

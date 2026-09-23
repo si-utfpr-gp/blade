@@ -1,8 +1,11 @@
+import type { ReactNode } from "react"
+
 export interface IHeaderProps {
   title: string
+  actions?: ReactNode
 }
 
-export default function Header({ title }: IHeaderProps) {
+export default function Header({ title, actions }: IHeaderProps) {
   return (
     <header className="flex items-center justify-between h-12 px-4 border-b bg-white">
       <div className="flex items-center gap-2">
@@ -14,6 +17,7 @@ export default function Header({ title }: IHeaderProps) {
         <span className="text-gray-400 text-xs">·</span>
         <span className="text-xs text-gray-500">{title}</span>
       </div>
+      {actions && <div className="flex items-center gap-2">{actions}</div>}
     </header>
   )
 }
