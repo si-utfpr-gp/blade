@@ -9,15 +9,15 @@
 
 | # | Issue | Tarefa | Status |
 |---|-------|--------|--------|
-| 1 | — | Editor Visual (Canvas) com React Flow | ⬜ Pendente |
-| 2 | — | Paleta de Blocos para arrastar | ⬜ Pendente |
-| 3 | — | Inserir blocos no canvas | ⬜ Pendente |
-| 4 | — | Conectar blocos (arestas com handles) | ⬜ Pendente |
-| 5 | — | Editar propriedades dos blocos (label, variant, rows) | ⬜ Pendente |
-| 6 | — | Organizar diagrama (mover, selecionar, deletar) | ⬜ Pendente |
+| 1 | [#149](https://github.com/si-utfpr-gp/blade/issues/149) | Editor Visual (Canvas) com React Flow | ✅ Feito |
+| 2 | [#149](https://github.com/si-utfpr-gp/blade/issues/149) | Paleta de Blocos para arrastar | ✅ Feito |
+| 3 | [#149](https://github.com/si-utfpr-gp/blade/issues/149) | Inserir blocos no canvas | ✅ Feito |
+| 4 | [#149](https://github.com/si-utfpr-gp/blade/issues/149) | Conectar blocos (arestas com handles) | ✅ Feito |
+| 5 | [#149](https://github.com/si-utfpr-gp/blade/issues/149) | Editar propriedades dos blocos (label, variant, rows) | ✅ Feito |
+| 6 | [#149](https://github.com/si-utfpr-gp/blade/issues/149) | Organizar diagrama (mover, selecionar, deletar) | ✅ Feito |
 | 7 | — | Validação Estrutural (RN01–RN16) | ⬜ Pendente |
-| 8 | — | Exportar JSON `{ nodes, edges }` para o simulador | ⬜ Pendente |
-| 9 | — | Normalizar JSON do construtor removendo dados visuais antes da execução (`position`, dimensões, seleção) | ⬜ Pendente |
+| 8 | [#164](https://github.com/si-utfpr-gp/blade/issues/164) | Exportar diagrama do Constructor para o Simulator | 🟡 Em andamento |
+| 9 | [#165](https://github.com/si-utfpr-gp/blade/issues/165) | Normalizar JSON removendo metadados visuais | 🟡 Em andamento |
 
 ---
 
@@ -31,6 +31,18 @@
 | 4 | Criar o bloco visual `subroutine` para selecionar a função chamada, informar argumentos e variável de retorno | ⬜ Pendente |
 | 5 | Definir e implementar a representação visual do retorno da sub-rotina | ⬜ Pendente |
 | 6 | Exportar o contrato JSON com algoritmo principal e diagramas de sub-rotinas, sem metadados de layout | ⬜ Pendente |
+
+---
+
+## Integração Construtor → Simulador (Caminho Verdadeiro - Sem Validação)
+
+| # | Issue | Tarefa | Status |
+|---|-------|--------|--------|
+| 1 | [#164](https://github.com/si-utfpr-gp/blade/issues/164) | Exportar diagrama do Constructor para o Simulator | 🟡 Em andamento |
+| 2 | [#165](https://github.com/si-utfpr-gp/blade/issues/165) | Normalizar JSON removendo metadados visuais | 🟡 Em andamento |
+| 3 | [#166](https://github.com/si-utfpr-gp/blade/issues/166) | Highlight sincronizado com execução no Canvas | 🟡 Em andamento |
+| 4 | [#167](https://github.com/si-utfpr-gp/blade/issues/167) | Navegação histórica sincronizada | 🟡 Em andamento |
+| 5 | [#168](https://github.com/si-utfpr-gp/blade/issues/168) | Importar exemplos diretamente no Canvas | ⬜ Pendente |
 
 ---
 
