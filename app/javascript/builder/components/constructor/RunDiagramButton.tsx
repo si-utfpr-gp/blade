@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { useConstructor } from "./ConstructorProvider"
 import { useSimulator } from "../simulator/SimulatorContext"
 import { normalizeDiagram } from "./normalizeDiagram"
@@ -9,6 +10,7 @@ interface IRunDiagramButtonProps {
 export function RunDiagramButton({ onDiagramLoaded }: IRunDiagramButtonProps) {
   const { nodes, edges } = useConstructor()
   const { loadDiagram, reset } = useSimulator()
+  const [status, setStatus] = useState<{ ok: boolean; message: string } | null>(null)
 
   const handleRun = () => {
     reset()
@@ -18,10 +20,10 @@ export function RunDiagramButton({ onDiagramLoaded }: IRunDiagramButtonProps) {
     )
     const result = loadDiagram(normalizedNodes, normalizedEdges)
     if (result.ok) {
-      console.log({ ok: true, message: "Diagrama carregado no simulador." })
+      setStatus({ ok: true, message: "Diagrama carregado no simulador." })
       onDiagramLoaded?.()
     } else {
-      console.error({ ok: false, message: result.error })
+      setStatus({ ok: false, message: result.error })
     }
   }
 
@@ -34,6 +36,13 @@ export function RunDiagramButton({ onDiagramLoaded }: IRunDiagramButtonProps) {
       >
         Executar
       </button>
+      {status && (
+        <span
+          className={`text-xs font-medium ${status.ok ? "text-secondary" : "text-destructive"}`}
+        >
+          {status.message}
+        </span>
+      )}
     </div>
   )
 }
