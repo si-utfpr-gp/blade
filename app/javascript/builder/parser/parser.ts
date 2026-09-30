@@ -1,11 +1,10 @@
-import type { Node, Edge } from "@xyflow/react";
-import type { IParserNode, IParserEdge, IParserData, IParserRoutineDefinition, IRawSubroutineDefinition } from "./types";
+import type { IParserNode, IParserEdge, IParserData, IParserRoutineDefinition, IRawSubroutineDefinition, IParserInputNode, IParserInputEdge } from "./types";
 
 interface ParseOptions {
     subroutines?: IRawSubroutineDefinition[]
 }
 
-export function parse(nodes: Node[], edges: Edge[], options?: ParseOptions): IParserData {
+export function parse(nodes: IParserInputNode[], edges: IParserInputEdge[], options?: ParseOptions): IParserData {
     const nodeMap = new Map<string, IParserNode>();
     let startNodeId: string | null = null;
     let endNodeId: string | null = null;

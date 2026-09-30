@@ -11,7 +11,7 @@ import ConstructorCanvas from "./components/constructor/ConstructorCanvas"
 import { ConstructorProvider } from "./components/constructor/ConstructorProvider"
 
 export default function BuilderPage() {
-  const [debuggerCollapsed, setDebuggerCollapsed] = useState(false)
+  const [debuggerCollapsed, setDebuggerCollapsed] = useState(true)
 
   return (
     <SimulatorProvider>
@@ -19,7 +19,9 @@ export default function BuilderPage() {
         <WorkspaceLayout
           header={<Header title="Construa seu algoritmo" />}
           sidebar={<BlocksPanel errors={[]} />}
-          canvas={<ConstructorCanvas />}
+          canvas={
+            <ConstructorCanvas onDiagramLoaded={() => setDebuggerCollapsed(false)} />
+          }
           inspector={
             <SimulatorPanel
               collapsed={debuggerCollapsed}
