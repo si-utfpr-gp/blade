@@ -1,11 +1,21 @@
 import { Background, Controls, ReactFlow, useReactFlow } from "@xyflow/react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { MouseEvent } from "react"
 import { useConstructor, type AlgorithmNode } from "./ConstructorProvider"
 import { useSimulator } from "../simulator/SimulatorContext"
-import { getHighlightedNodeId, isCanvasLocked } from "./canvasSync"
+import {
+  getHighlightedNodeId,
+  isCanvasLocked,
+  getContextMenuPosition,
+  centerDropPosition,
+} from "./canvasSync"
 import { nodeTypes } from "./nodes"
-import { DRAG_DATA_KEY, isBlockType } from "../blocks/blockDefinitions"
+import {
+  DRAG_DATA_KEY,
+  DRAG_VARIANT_KEY,
+  getBlockDisplayName,
+  isBlockType,
+} from "../blocks/blockDefinitions"
 import ContextMenu from "./ContextMenu"
 import { RunDiagramButton } from "./RunDiagramButton"
 
@@ -63,6 +73,8 @@ export default function ConstructorCanvas({
     })
   }, [highlightedNodeId, getNode, setCenter])
 
+  const wrapperRef = useRef<HTMLDivElement>(null)
+
   const [contextMenu, setContextMenu] = useState<{
     nodeId: string
     x: number
@@ -78,12 +90,19 @@ export default function ConstructorCanvas({
 
     if (!isBlockType(type)) return
 
-    const position = screenToFlowPosition({
-      x: event.clientX,
-      y: event.clientY,
-    })
+    const rawVariant = event.dataTransfer.getData(DRAG_VARIANT_KEY)
+    const variant =
+      rawVariant === "start" || rawVariant === "end" ? rawVariant : undefined
 
-    addNode(type, position)
+    const position = centerDropPosition(
+      screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      }),
+      type,
+    )
+
+    addNode(type, position, variant)
   }
 
   const handleNodeContextMenu = useCallback(
@@ -91,14 +110,16 @@ export default function ConstructorCanvas({
       if (locked) return
       event.preventDefault()
 
-      const canvas = event.currentTarget.getBoundingClientRect()
+      const rect = wrapperRef.current?.getBoundingClientRect()
 
       setSelectedNodeId(node.id)
 
       setContextMenu({
         nodeId: node.id,
-        x: event.clientX - canvas.left / 3,
-        y: event.clientY - canvas.top / 2,
+        ...getContextMenuPosition(event.clientX, event.clientY, {
+          left: rect?.left ?? 0,
+          top: rect?.top ?? 0,
+        }),
       })
     },
     [setSelectedNodeId, locked],
@@ -133,6 +154,7 @@ export default function ConstructorCanvas({
 
   return (
     <div
+      ref={wrapperRef}
       className="relative h-full w-full"
       onDrop={handleDrop}
       onDragOver={(event) => {
@@ -177,10 +199,11 @@ export default function ConstructorCanvas({
         <ContextMenu
           x={contextMenu.x}
           y={contextMenu.y}
-          label={
-            nodes.find((node) => node.id === contextMenu.nodeId)?.data.label ||
-            ""
-          }
+          label={(() => {
+            const target = nodes.find((node) => node.id === contextMenu.nodeId)
+            if (!target) return ""
+            return getBlockDisplayName(target.data.blockType, target.data.variant)
+          })()}
           onDelete={handleDelete}
         />
       )}

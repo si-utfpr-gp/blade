@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest"
 import {
   getHighlightedNodeId,
   isCanvasLocked,
+  getContextMenuPosition,
 } from "../../components/constructor/canvasSync"
 import type { IExecutionStep } from "../../interfaces/execution"
 
@@ -46,5 +47,37 @@ describe("isCanvasLocked", () => {
 
   it("destrava quando a execução termina", () => {
     expect(isCanvasLocked(true, true)).toBe(false)
+  })
+})
+
+describe("getContextMenuPosition", () => {
+  it("posiciona o menu relativo ao canvas", () => {
+    expect(getContextMenuPosition(100, 200, { left: 10, top: 20 })).toEqual({
+      x: 90,
+      y: 180,
+    })
+  })
+
+  it("posiciona na origem quando o canvas está no canto", () => {
+    expect(getContextMenuPosition(50, 60, { left: 0, top: 0 })).toEqual({
+      x: 50,
+      y: 60,
+    })
+  })
+})
+
+describe("centerDropPosition", () => {
+  it("centraliza o bloco sob o cursor", async () => {
+    const { centerDropPosition } = await import(
+      "../../components/constructor/canvasSync"
+    )
+    expect(centerDropPosition({ x: 100, y: 100 }, "process")).toEqual({
+      x: 15,
+      y: 72,
+    })
+    expect(centerDropPosition({ x: 100, y: 100 }, "connector")).toEqual({
+      x: 76,
+      y: 76,
+    })
   })
 })

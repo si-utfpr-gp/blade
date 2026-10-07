@@ -19,6 +19,16 @@ describe("BuilderPage", () => {
     ).toBeInTheDocument()
   })
 
+  it("abre o menu de contexto junto ao ponto clicado no bloco", () => {
+    const { container } = render(<BuilderPage />)
+    const nodeEl = container.querySelector(".react-flow__node")
+    expect(nodeEl).not.toBeNull()
+    fireEvent.contextMenu(nodeEl as Element, { clientX: 120, clientY: 150 })
+    const menu = screen.getByText("Excluir").closest("div.absolute") as HTMLElement
+    expect(menu).toHaveStyle({ left: "120px", top: "150px" })
+    expect(within(menu).getByText("Início")).toBeInTheDocument()
+  })
+
   it("abre o painel do simulador ao clicar em Executar", () => {
     render(<BuilderPage />)
     fireEvent.click(screen.getByRole("button", { name: /executar/i }))
