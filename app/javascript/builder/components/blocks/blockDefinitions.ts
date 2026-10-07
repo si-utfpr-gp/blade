@@ -31,12 +31,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
     color: "bg-orange-700",
     variant: "end",
   },
-  {
-    type: "input",
-    label: "Entrada",
-    description: "Recebe dados",
-    color: "bg-cyan-500",
-  },
+
   {
     type: "memory",
     label: "Memória",
@@ -44,16 +39,16 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
     color: "bg-slate-500",
   },
   {
-    type: "process",
-    label: "Processo",
-    description: "Executa uma operação",
-    color: "bg-violet-500",
+    type: "input",
+    label: "Entrada",
+    description: "Recebe dados",
+    color: "bg-cyan-500",
   },
   {
-    type: "subroutine",
-    label: "Subrotina",
-    description: "Executa uma subrotina",
-    color: "bg-indigo-900",
+    type: "output",
+    label: "Saída",
+    description: "Exibe informações",
+    color: "bg-pink-500",
   },
   {
     type: "decision",
@@ -68,10 +63,16 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
     color: "bg-gray-500",
   },
   {
-    type: "output",
-    label: "Saída",
-    description: "Exibe informações",
-    color: "bg-pink-500",
+    type: "process",
+    label: "Processo",
+    description: "Executa uma operação",
+    color: "bg-violet-500",
+  },
+  {
+    type: "subroutine",
+    label: "Subrotina",
+    description: "Executa uma subrotina",
+    color: "bg-indigo-900",
   },
 ]
 
@@ -80,7 +81,8 @@ export function getBlockDisplayName(
   variant?: "start" | "end",
 ): string {
   const exact = BLOCK_DEFINITIONS.find(
-    (block) => block.type === type && (block.variant ?? null) === (variant ?? null),
+    (block) =>
+      block.type === type && (block.variant ?? null) === (variant ?? null),
   )
   if (exact) return exact.label
   return BLOCK_DEFINITIONS.find((block) => block.type === type)?.label ?? type

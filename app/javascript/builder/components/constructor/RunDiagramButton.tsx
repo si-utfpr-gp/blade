@@ -10,7 +10,9 @@ interface IRunDiagramButtonProps {
 export function RunDiagramButton({ onDiagramLoaded }: IRunDiagramButtonProps) {
   const { nodes, edges } = useConstructor()
   const { loadDiagram, reset } = useSimulator()
-  const [status, setStatus] = useState<{ ok: boolean; message: string } | null>(null)
+  const [status, setStatus] = useState<{ ok: boolean; message: string } | null>(
+    null,
+  )
 
   const handleRun = () => {
     reset()
@@ -22,8 +24,10 @@ export function RunDiagramButton({ onDiagramLoaded }: IRunDiagramButtonProps) {
     if (result.ok) {
       setStatus({ ok: true, message: "Diagrama carregado no simulador." })
       onDiagramLoaded?.()
+      console.log(status)
     } else {
       setStatus({ ok: false, message: result.error })
+      console.error(status)
     }
   }
 
@@ -36,13 +40,6 @@ export function RunDiagramButton({ onDiagramLoaded }: IRunDiagramButtonProps) {
       >
         Executar
       </button>
-      {status && (
-        <span
-          className={`text-xs font-medium ${status.ok ? "text-secondary" : "text-destructive"}`}
-        >
-          {status.message}
-        </span>
-      )}
     </div>
   )
 }

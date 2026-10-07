@@ -15,17 +15,18 @@ export default function BlocksPanel({ errors }: IBlocksPanelProps) {
   return (
     <div className="flex h-full flex-col bg-card">
       <div className="border-b border-border p-3">
-        <h2 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <h2 className="mb-1 text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">
           Blocos de Algoritmo
         </h2>
-        <p className="mb-2 text-[10px] text-muted-foreground">Arraste itens para a tela</p>
-        <div
-          data-testid="blocks-grid"
-          className="space-y-2"
-        >
+        <p className="mb-2 text-[12px] text-gray-700">
+          Arraste itens para a tela
+        </p>
+        <div data-testid="blocks-grid" className="space-y-2">
           {BLOCK_DEFINITIONS.map((block) => (
             <div
-              key={block.variant ? `${block.type}-${block.variant}` : block.type}
+              key={
+                block.variant ? `${block.type}-${block.variant}` : block.type
+              }
               data-testid={`block-tile-${block.type}${block.variant ? `-${block.variant}` : ""}`}
               draggable
               onDragStart={(event) => {
@@ -38,7 +39,11 @@ export default function BlocksPanel({ errors }: IBlocksPanelProps) {
               title={`${block.label} — ${block.description}`}
               className="flex cursor-grab flex-col items-center gap-1 rounded-lg border border-border bg-background p-2 transition-all hover:border-primary/30 hover:shadow-sm active:cursor-grabbing"
             >
-              <BlockShapePreview type={block.type} variant={block.variant} compact />
+              <BlockShapePreview
+                type={block.type}
+                variant={block.variant}
+                compact
+              />
               <span className="w-full truncate text-center text-[9px] font-medium leading-tight text-muted-foreground">
                 {block.label}
               </span>
