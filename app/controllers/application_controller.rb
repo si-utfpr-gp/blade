@@ -6,11 +6,11 @@ class ApplicationController < ActionController::Base
 
   # Authentication seam. Today this resolves to a development user so the
   # builder works without an LDAP server; when the university LDAP is wired in,
-  # only the session lookup changes and callers keep working.
+  # only current_user_from_fallback changes and callers keep working.
+  # Current.user lets tests and background jobs bypass the session lookup.
   def current_user
-    @current_user ||= User.find_by(id: session[:user_id]) || current_user_from_fallback.tap do |user|
-      session[:user_id] = user&.id
-    end
+    Current.user ||= User.find_by(id: session[:user_id]) ||
+      current_user_from_fallback.tap { |user| session[:user_id] = user&.id }
   end
 
   def current_user_from_fallback

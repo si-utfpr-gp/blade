@@ -11,4 +11,6 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   # root "posts#index"
   get "/", to: "builder#index", as: :builder_index
+
+  resources :algorithms, only: [ :index, :create, :show, :destroy ]
 end
