@@ -21,7 +21,7 @@ export default function BlocksPanel({ errors }: IBlocksPanelProps) {
         <p className="mb-2 text-[10px] text-muted-foreground">Arraste itens para a tela</p>
         <div
           data-testid="blocks-grid"
-          className="grid grid-cols-3 gap-1.5"
+          className="space-y-2"
         >
           {BLOCK_DEFINITIONS.map((block) => (
             <div

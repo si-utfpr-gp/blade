@@ -23,15 +23,19 @@ describe("BlocksPanel (visual palette)", () => {
   it("renderiza uma miniatura de forma para cada entrada da paleta", () => {
     renderPanel()
     for (const block of BLOCK_DEFINITIONS) {
-      const expected = BLOCK_DEFINITIONS.filter((item) => item.type === block.type).length
-      expect(screen.getAllByTestId(`block-shape-${block.type}`)).toHaveLength(expected)
+      const expected = BLOCK_DEFINITIONS.filter(
+        (item) => item.type === block.type,
+      ).length
+      expect(screen.getAllByTestId(`block-shape-${block.type}`)).toHaveLength(
+        expected,
+      )
     }
   })
 
   it("exibe a legenda curta de cada bloco", () => {
     renderPanel()
     for (const block of BLOCK_DEFINITIONS) {
-      expect(screen.getByText(block.label)).toBeInTheDocument()
+      expect(screen.getByText(block.label)).toBeTruthy()
     }
   })
 
@@ -44,10 +48,15 @@ describe("BlocksPanel (visual palette)", () => {
     expect(strokes).toContain("hsl(var(--node-end))")
   })
 
-  it("organiza os blocos lado a lado em grade", () => {
+it("organiza os blocos em coluna única com espaçamento vertical", () => {
     renderPanel()
     const grid = screen.getByTestId("blocks-grid")
-    expect(grid).toHaveClass("grid", "grid-cols-3")
+    expect(grid).toHaveClass("space-y-2")
+    const tiles = screen.getAllByTestId(/^block-tile-/)
+    expect(tiles).toHaveLength(BLOCK_DEFINITIONS.length)
+    // cada tile ocupa toda a largura (sem grid-cols-3)
+    expect(screen.getByTestId("block-tile-startEnd-start")).toBeInTheDocument()
+    expect(screen.getByTestId("block-tile-startEnd-end")).toBeInTheDocument()
   })
 
   it("inicia o arrasto com o tipo do bloco", () => {
@@ -79,6 +88,6 @@ describe("BlocksPanel (visual palette)", () => {
     })
     expect(data[DRAG_DATA_KEY]).toBe("startEnd")
     expect(data[DRAG_VARIANT_KEY]).toBe("end")
-    expect(screen.getByTestId("block-tile-startEnd-start")).toBeInTheDocument()
+    expect(screen.getByTestId("block-tile-startEnd-start")).toBeTruthy()
   })
 })
