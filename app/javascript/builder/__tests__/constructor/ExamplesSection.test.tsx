@@ -6,6 +6,7 @@ import {
   useConstructor,
 } from "../../components/constructor/ConstructorProvider"
 import { ExamplesSection } from "../../components/constructor/ExamplesSection"
+import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvider"
 import { DIAGRAM_EXAMPLES } from "../../interfaces/diagramExamples"
 
 function Probe() {
@@ -22,10 +23,12 @@ function Probe() {
 function renderSection() {
   return render(
     <SimulatorProvider>
-      <ConstructorProvider>
-        <ExamplesSection />
-        <Probe />
-      </ConstructorProvider>
+      <AlgorithmsProvider>
+        <ConstructorProvider>
+          <ExamplesSection />
+          <Probe />
+        </ConstructorProvider>
+      </AlgorithmsProvider>
     </SimulatorProvider>,
   )
 }

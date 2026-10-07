@@ -7,6 +7,7 @@ import {
   type IDiagramExample,
 } from "../../interfaces/diagramExamples"
 import { layoutExampleDiagram } from "./layoutExampleDiagram"
+import { useAlgorithms } from "./AlgorithmsProvider"
 
 const CATEGORY_COLOR: Record<string, string> = {
   "Entrada e saída": "var(--node-input)",
@@ -161,7 +162,9 @@ function SidebarDropdown({
 export function ExamplesSection() {
   const { loadCanvasNodes } = useConstructor()
   const { reset } = useSimulator()
+  const { algorithms, getAlgorithm } = useAlgorithms()
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
   const examples = DIAGRAM_EXAMPLES.filter(
     (example) => !example.diagram.subroutines?.length,
@@ -174,15 +177,27 @@ export function ExamplesSection() {
     setSelectedId(example.id)
   }
 
+  const handleSelectUserAlgorithm = async (id: string) => {
+    const saved = await getAlgorithm(Number(id))
+    if (!saved) return
+    loadCanvasNodes(saved.diagram.nodes, saved.diagram.edges)
+    reset()
+    setSelectedUserId(saved.id.toString())
+  }
+
   return (
     <div className="flex-1 space-y-2 overflow-y-auto p-3">
       <SidebarDropdown
         icon={<FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
         label="Meus algoritmos"
-        items={[]}
-        selectedId={null}
+        items={algorithms.map((algorithm) => ({
+          id: algorithm.id.toString(),
+          title: algorithm.name,
+          description: `Salvo em ${algorithm.created_at}`,
+        }))}
+        selectedId={selectedUserId}
         emptyText="Nenhum algoritmo salvo ainda."
-        onSelect={() => undefined}
+        onSelect={(id) => void handleSelectUserAlgorithm(id)}
       />
 
       <SidebarDropdown
