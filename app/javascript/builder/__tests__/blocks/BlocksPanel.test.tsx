@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest"
 import { render, screen, fireEvent } from "@testing-library/react"
 import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
 import { ConstructorProvider } from "../../components/constructor/ConstructorProvider"
+import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvider"
 import BlocksPanel from "../../components/blocks/BlocksPanel"
 import {
   BLOCK_DEFINITIONS,
@@ -12,9 +13,11 @@ import {
 function renderPanel() {
   return render(
     <SimulatorProvider>
-      <ConstructorProvider>
-        <BlocksPanel errors={[]} />
-      </ConstructorProvider>
+      <AlgorithmsProvider>
+        <ConstructorProvider>
+          <BlocksPanel errors={[]} />
+        </ConstructorProvider>
+      </AlgorithmsProvider>
     </SimulatorProvider>,
   )
 }

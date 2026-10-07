@@ -55,9 +55,7 @@ export function AlgorithmsProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AlgorithmsStatus>("idle")
   const [error, setError] = useState<string | null>(null)
 
-  const loadAlgorithms = useCallback(async () => {
-    setStatus("loading")
-    setError(null)
+  const fetchAlgorithms = useCallback(async () => {
     try {
       const response = await fetch("/algorithms", {
         method: "GET",
@@ -65,12 +63,19 @@ export function AlgorithmsProvider({ children }: { children: ReactNode }) {
       })
       if (!response.ok) throw new Error(await readErrors(response))
       setAlgorithms((await response.json()) as SavedAlgorithm[])
+      setError(null)
       setStatus("idle")
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Falha ao carregar.")
       setStatus("error")
     }
   }, [])
+
+  const loadAlgorithms = useCallback(async () => {
+    setStatus("loading")
+    setError(null)
+    await fetchAlgorithms()
+  }, [fetchAlgorithms])
 
   const saveAlgorithm = useCallback(
     async (name: string, diagram: SerializedDiagram) => {
@@ -136,8 +141,11 @@ export function AlgorithmsProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    void loadAlgorithms()
-  }, [loadAlgorithms])
+    // Data fetching on mount. Every setState inside fetchAlgorithms runs after
+    // an awaited response, so no render is cascaded synchronously here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchAlgorithms()
+  }, [fetchAlgorithms])
 
   const value = useMemo<IAlgorithmsContextValue>(
     () => ({

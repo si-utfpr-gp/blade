@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest"
 import { render, screen, fireEvent } from "@testing-library/react"
 import { SimulatorProvider, useSimulator } from "../../components/simulator/SimulatorContext"
 import { ConstructorProvider } from "../../components/constructor/ConstructorProvider"
+import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvider"
 import { RunDiagramButton } from "../../components/constructor/RunDiagramButton"
 import type { ReactNode } from "react"
 
@@ -22,7 +23,9 @@ function TestHarness({ onDiagramLoaded }: { onDiagramLoaded?: () => void }) {
 function renderIntegration(ui: ReactNode) {
   return render(
     <SimulatorProvider>
-      <ConstructorProvider>{ui}</ConstructorProvider>
+      <AlgorithmsProvider>
+        <ConstructorProvider>{ui}</ConstructorProvider>
+      </AlgorithmsProvider>
     </SimulatorProvider>,
   )
 }
