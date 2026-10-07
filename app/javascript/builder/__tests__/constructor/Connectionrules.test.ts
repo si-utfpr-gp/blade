@@ -3,6 +3,7 @@ import type { Connection, Edge } from "@xyflow/react"
 import {
   validateConnection,
   CONNECTION_REJECTION_MESSAGE,
+  decisionBranchLabel,
 } from "../../components/constructor/connectionRules"
 import type { AlgorithmNode } from "../../components/constructor/ConstructorProvider"
 
@@ -293,5 +294,21 @@ describe("validateConnection", () => {
         ],
       ).toMatch(/\S/)
     })
+  })
+})
+
+describe("decisionBranchLabel", () => {
+  it("rotula o ramo verdadeiro", () => {
+    expect(decisionBranchLabel("yes")).toBe("VERDADEIRO")
+  })
+
+  it("rotula o ramo falso", () => {
+    expect(decisionBranchLabel("no")).toBe("FALSO")
+  })
+
+  it("não rotula handles comuns", () => {
+    expect(decisionBranchLabel(null)).toBeUndefined()
+    expect(decisionBranchLabel(undefined)).toBeUndefined()
+    expect(decisionBranchLabel("bottom-out")).toBeUndefined()
   })
 })

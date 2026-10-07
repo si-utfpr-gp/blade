@@ -55,18 +55,20 @@
 
     --radius: 0.75rem;
 
-    /* Custom tokens */
-    --node-start: 170 55% 45%;
-    --node-process: 210 90% 50%;
+    /* Custom tokens — paleta semântica dos blocos:
+       decisão > saída > processo > entrada > sub-rotina >
+       início > fim > memória > conector (hierarquia de atenção) */
+    --node-start: 150 45% 42%;
+    --node-process: 255 65% 55%;
     --node-io: 35 95% 55%; /* deprecated, kept for compat */
-    --node-decision: 280 60% 55%;
-    --node-memory: 30 90% 55%;
-    --node-end: 0 72% 55%;
-    --node-input: 35 95% 55%;
-    --node-output: 200 70% 50%;
-    --node-connector: 260 50% 55%;
-    --node-subroutine: 220 45% 45%;
-    --node-error: 0 72% 55%;
+    --node-decision: 32 90% 52%;
+    --node-memory: 215 20% 50%;
+    --node-end: 8 60% 48%;
+    --node-input: 190 80% 45%;
+    --node-output: 325 75% 55%;
+    --node-connector: 0 0% 62%;
+    --node-subroutine: 225 40% 40%;
+    --node-error: 0 80% 55%;
 
     --canvas-bg: 210 20% 96%;
     --canvas-grid: 210 15% 88%;

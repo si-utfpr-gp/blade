@@ -24,9 +24,11 @@ import {
 import { ReactFlowProvider } from "@xyflow/react"
 
 import type { BlockType } from "../blocks/blockDefinitions"
+import { isBlockType } from "../blocks/blockDefinitions"
 import {
   validateConnection,
   CONNECTION_REJECTION_MESSAGE,
+  decisionBranchLabel,
   type ConnectionRejection,
 } from "./connectionRules"
 
@@ -44,6 +46,22 @@ export interface BlockNodeData extends Record<string, unknown> {
 }
 
 export type AlgorithmNode = Node<BlockNodeData>
+
+export interface CanvasNodeInput {
+  id: string
+  type: string
+  data: Record<string, unknown>
+  position: { x: number; y: number }
+}
+
+export interface CanvasEdgeInput {
+  id: string
+  source: string
+  target: string
+  sourceHandle?: string
+  targetHandle?: string
+  label?: string
+}
 
 interface ConstructorContextValue {
   nodes: AlgorithmNode[]
@@ -67,13 +85,23 @@ interface ConstructorContextValue {
   isValidConnection: (connection: Connection | Edge) => boolean
   connectionError: string | null
 
-  addNode: (type: BlockType, position: { x: number; y: number }) => void
+  addNode: (
+    type: BlockType,
+    position: { x: number; y: number },
+    variant?: "start" | "end",
+  ) => void
 
   updateNodeData: (id: string, data: Partial<BlockNodeData>) => void
 
   removeNode: (id: string) => void
 
   duplicateNode: (id: string) => void
+
+  loadCanvasNodes: (nodes: CanvasNodeInput[], edges: CanvasEdgeInput[]) => void
+
+  resetCanvas: () => void
+
+  clearCanvas: () => void
 }
 
 const ConstructorContext = createContext<ConstructorContextValue | null>(null)
@@ -121,10 +149,13 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
         return
       }
 
+      const branchLabel = decisionBranchLabel(connection.sourceHandle)
+
       setEdges((currentEdges) =>
         addEdge(
           {
             ...connection,
+            ...(branchLabel !== undefined ? { label: branchLabel } : {}),
             type: "step",
             markerEnd: { type: MarkerType.ArrowClosed },
           },
@@ -150,8 +181,13 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       }
 
       edgeReconnectSuccessful.current = true
+      const branchLabel = decisionBranchLabel(newConnection.sourceHandle)
       setEdges((currentEdges) =>
-        reconnectEdge(oldEdge, newConnection, currentEdges),
+        reconnectEdge(
+          { ...oldEdge, label: branchLabel },
+          newConnection,
+          currentEdges,
+        ),
       )
     },
     [nodes, edges, setEdges, reportRejection],
@@ -187,17 +223,22 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
   )
 
   const addNode = useCallback(
-    (type: BlockType, position: { x: number; y: number }) => {
+    (
+      type: BlockType,
+      position: { x: number; y: number },
+      explicitVariant?: "start" | "end",
+    ) => {
       const id = `${type}-${crypto.randomUUID()}`
 
       const variant: "start" | "end" | undefined =
         type === "startEnd"
-          ? nodes.some(
+          ? (explicitVariant ??
+            (nodes.some(
               (n) =>
                 n.data.blockType === "startEnd" && n.data.variant === "start",
             )
-            ? "end"
-            : "start"
+              ? "end"
+              : "start"))
           : undefined
 
       const node: AlgorithmNode = {
@@ -276,6 +317,56 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
     [nodes, setNodes],
   )
 
+  const loadCanvasNodes = useCallback(
+    (inputNodes: CanvasNodeInput[], inputEdges: CanvasEdgeInput[]) => {
+      const nextNodes: AlgorithmNode[] = inputNodes
+        .filter((node) => isBlockType(node.type))
+        .map((node) => ({
+          id: node.id,
+          type: node.type,
+          position: node.position,
+          data: {
+            blockType: node.type as BlockType,
+            label: (node.data.label as string | undefined) ?? "",
+            ...(node.data.variant !== undefined
+              ? { variant: node.data.variant as "start" | "end" }
+              : {}),
+            ...(node.data.rows !== undefined
+              ? { rows: node.data.rows as MemoryRow[] }
+              : {}),
+          },
+        }))
+
+      const nextEdges: Edge[] = inputEdges.map((edge) => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        ...(edge.sourceHandle !== undefined ? { sourceHandle: edge.sourceHandle } : {}),
+        ...(edge.targetHandle !== undefined ? { targetHandle: edge.targetHandle } : {}),
+        ...(edge.label !== undefined ? { label: edge.label } : {}),
+        type: "step",
+        markerEnd: { type: MarkerType.ArrowClosed },
+      }))
+
+      setNodes(nextNodes)
+      setEdges(nextEdges)
+      setSelectedNodeId(null)
+    },
+    [setNodes, setEdges],
+  )
+
+  const resetCanvas = useCallback(() => {
+    setNodes(initialNodes)
+    setEdges(initialEdges)
+    setSelectedNodeId(null)
+  }, [setNodes, setEdges])
+
+  const clearCanvas = useCallback(() => {
+    setNodes([])
+    setEdges([])
+    setSelectedNodeId(null)
+  }, [setNodes, setEdges])
+
   const value = useMemo(
     () => ({
       nodes,
@@ -294,6 +385,9 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       updateNodeData,
       removeNode,
       duplicateNode,
+      loadCanvasNodes,
+      resetCanvas,
+      clearCanvas,
     }),
     [
       nodes,
@@ -311,6 +405,9 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       updateNodeData,
       removeNode,
       duplicateNode,
+      loadCanvasNodes,
+      resetCanvas,
+      clearCanvas,
     ],
   )
 

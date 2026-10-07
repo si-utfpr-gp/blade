@@ -15,6 +15,14 @@ export type ConnectionValidation =
   | { valid: true }
   | { valid: false; reason: ConnectionRejection }
 
+export function decisionBranchLabel(
+  sourceHandle?: string | null,
+): "VERDADEIRO" | "FALSO" | undefined {
+  if (sourceHandle === "yes") return "VERDADEIRO"
+  if (sourceHandle === "no") return "FALSO"
+  return undefined
+}
+
 export const CONNECTION_REJECTION_MESSAGE: Record<ConnectionRejection, string> =
   {
     "unknown-node": "Bloco de origem ou destino não encontrado.",
