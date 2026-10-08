@@ -105,7 +105,7 @@ builder:
 ssh:
   user: root
   keys:
-    - ~/.ssh/id_ed25519_blade
+    - ~/.ssh/ed25519_blade_deploy
 
 # Use accessory services (secrets come from .kamal/secrets).
 # PostgreSQL usado pelo Blade, acessível pela rede interna do Kamal.
