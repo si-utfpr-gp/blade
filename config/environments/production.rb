@@ -83,5 +83,5 @@ Rails.application.configure do
   config.hosts = [ "myblade.dev", "www.myblade.dev" ]
   #
   # Skip DNS rebinding protection for the default health check endpoint.
-  # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+  config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 end
