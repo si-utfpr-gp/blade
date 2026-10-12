@@ -1,4 +1,5 @@
 import { Save } from "lucide-react"
+import { useToast } from "../ui/Toast"
 import { useConstructor } from "./ConstructorProvider"
 import { useAlgorithms } from "./AlgorithmsProvider"
 import { useDiagramOrigin } from "./DiagramOrigin"
@@ -10,6 +11,7 @@ export function CanvasSaveButton() {
   const { saveAlgorithm, updateAlgorithm, status, error } = useAlgorithms()
   const { origin, isReadOnly, markSaved } = useDiagramOrigin()
   const { algorithmName } = useAlgorithmNameField()
+  const { notify } = useToast()
 
   const handleSave = async () => {
     const trimmed = algorithmName.trim()
@@ -22,10 +24,22 @@ export function CanvasSaveButton() {
     // The name stays in the field after saving: emptying it made the save look
     // like it had failed, and the diagram on screen is still that algorithm.
     if (origin.kind === "saved") {
-      await updateAlgorithm(origin.id, trimmed, diagram)
+      const updated = await updateAlgorithm(origin.id, trimmed, diagram)
+      if (updated) {
+        notify(`Algoritmo "${updated.name}" atualizado.`, "success")
+      } else {
+        notify("Não foi possível atualizar o algoritmo.", "error")
+      }
+      return
+    }
+
+    const saved = await saveAlgorithm(trimmed, diagram)
+    if (saved) {
+      markSaved(saved.id)
+      notify(`Algoritmo "${saved.name}" salvo.`, "success")
     } else {
-      const saved = await saveAlgorithm(trimmed, diagram)
-      if (saved) markSaved(saved.id)
+      // saveAlgorithm already stored the API message on `error`.
+      notify("Não foi possível salvar o algoritmo.", "error")
     }
   }
 
@@ -45,13 +59,13 @@ export function CanvasSaveButton() {
         onClick={handleSave}
         disabled={!canSave}
         title={isReadOnly ? "Exemplos não podem ser alterados" : undefined}
-        className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[10px] font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-muted/50 disabled:opacity-40"
+        className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[12px] font-medium text-shadow-card-foreground transition-colors hover:border-primary/40 disabled:hover:border-none hover:bg-muted/50 disabled:opacity-80 hover:cursor-pointer disabled:cursor-not-allowed"
       >
         <Save className="h-3 w-3" />
         {saving ? "Salvando..." : label}
       </button>
       {error && (
-        <span className="text-[10px] text-destructive" role="alert">
+        <span className="sr-only" role="alert">
           {error}
         </span>
       )}

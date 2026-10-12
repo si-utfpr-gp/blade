@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { useState, type ReactNode } from "react"
 
+import { ToastProvider } from "../../components/ui/Toast"
 import Header from "../../components/layout/Header"
 import BlocksPanel from "../../components/blocks/BlocksPanel"
 import { ConstructorProvider } from "../../components/constructor/ConstructorProvider"
@@ -56,25 +57,30 @@ function CanvasNameInput() {
 function wrap(ui: ReactNode) {
   return (
     <SimulatorProvider>
-      <AlgorithmsProvider>
-        <DiagramOriginProvider><AlgorithmNameProvider>
-          <ConstructorProvider>{ui}</ConstructorProvider>
-        </AlgorithmNameProvider></DiagramOriginProvider>
-      </AlgorithmsProvider>
+      <ToastProvider>
+        <AlgorithmsProvider>
+          <DiagramOriginProvider>
+            <AlgorithmNameProvider>
+              <ConstructorProvider>{ui}</ConstructorProvider>
+            </AlgorithmNameProvider>
+          </DiagramOriginProvider>
+        </AlgorithmsProvider>
+      </ToastProvider>
     </SimulatorProvider>
   )
 }
 
 describe("UI test layout", () => {
   describe("header", () => {
-    it("shows the tool description instead of the old slogan", () => {
+    it("shows only the product name, with no slogan beside it", () => {
       renderHeader({ title: "", userName: "Ana Souza" })
 
-      expect(
-        screen.getByText(/Monte e execute algoritmos em blocos/i),
-      ).toBeInTheDocument()
+      expect(screen.getByText("Blade")).toBeInTheDocument()
       expect(
         screen.queryByText("Construa seu algoritmo"),
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByText(/Monte e execute algoritmos/i),
       ).not.toBeInTheDocument()
     })
 

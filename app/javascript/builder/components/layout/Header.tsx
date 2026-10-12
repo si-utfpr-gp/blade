@@ -32,10 +32,6 @@ export default function Header({
           <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
         </svg>
         <span className="font-bold text-2xl">Blade</span>
-        <span className="text-gray-400 text-xl">·</span>
-        <span className="text-xs text-gray-500">
-          Monte e execute algoritmos em blocos
-        </span>
       </div>
 
       <div className="absolute left-1/2 -translate-x-1/2">

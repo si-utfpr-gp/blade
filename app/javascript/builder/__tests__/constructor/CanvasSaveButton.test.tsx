@@ -1,3 +1,4 @@
+import { ToastProvider } from "../../components/ui/Toast"
 import { describe, it, expect } from "vitest"
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
@@ -47,6 +48,7 @@ function mockFetch(...responses: unknown[]) {
 function renderSave() {
   return render(
     <SimulatorProvider>
+      <ToastProvider>
       <AlgorithmsProvider>
         <DiagramOriginProvider><AlgorithmNameProvider>
           <ConstructorProvider>
@@ -55,6 +57,7 @@ function renderSave() {
           </ConstructorProvider>
         </AlgorithmNameProvider></DiagramOriginProvider>
       </AlgorithmsProvider>
+    </ToastProvider>
     </SimulatorProvider>,
   )
 }
@@ -173,6 +176,7 @@ describe("CanvasActions — novo algoritmo", () => {
 
     render(
       <SimulatorProvider>
+      <ToastProvider>
         <AlgorithmsProvider>
           <DiagramOriginProvider><AlgorithmNameProvider>
             <ConstructorProvider>
@@ -181,7 +185,8 @@ describe("CanvasActions — novo algoritmo", () => {
             </ConstructorProvider>
           </AlgorithmNameProvider></DiagramOriginProvider>
         </AlgorithmsProvider>
-      </SimulatorProvider>,
+      </ToastProvider>
+    </SimulatorProvider>,
     )
     await waitFor(() => expect(fetchMock).toHaveBeenCalled())
 
@@ -207,6 +212,7 @@ describe("nome do algoritmo acompanha o diagrama carregado", () => {
 
     render(
       <SimulatorProvider>
+      <ToastProvider>
         <AlgorithmsProvider>
           <DiagramOriginProvider><AlgorithmNameProvider>
             <ConstructorProvider>
@@ -215,7 +221,8 @@ describe("nome do algoritmo acompanha o diagrama carregado", () => {
             </ConstructorProvider>
           </AlgorithmNameProvider></DiagramOriginProvider>
         </AlgorithmsProvider>
-      </SimulatorProvider>,
+      </ToastProvider>
+    </SimulatorProvider>,
     )
     await waitFor(() => expect(fetchMock).toHaveBeenCalled())
 
@@ -251,6 +258,7 @@ describe("nome do algoritmo acompanha o diagrama carregado", () => {
 
     render(
       <SimulatorProvider>
+      <ToastProvider>
         <AlgorithmsProvider>
           <DiagramOriginProvider><AlgorithmNameProvider>
             <ConstructorProvider>
@@ -259,7 +267,8 @@ describe("nome do algoritmo acompanha o diagrama carregado", () => {
             </ConstructorProvider>
           </AlgorithmNameProvider></DiagramOriginProvider>
         </AlgorithmsProvider>
-      </SimulatorProvider>,
+      </ToastProvider>
+    </SimulatorProvider>,
     )
     await waitFor(() =>
       expect(

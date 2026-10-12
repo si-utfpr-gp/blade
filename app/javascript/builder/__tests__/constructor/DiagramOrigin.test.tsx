@@ -43,17 +43,21 @@ function HeaderNameInput() {
 function renderBuilder() {
   return render(
     <SimulatorProvider>
+      <ToastProvider>
       <AlgorithmsProvider>
-        <DiagramOriginProvider><AlgorithmNameProvider>
-          <ConstructorProvider>
+        <DiagramOriginProvider>
+          <AlgorithmNameProvider>
+            <ConstructorProvider>
             <HeaderNameInput />
             <ExamplesSection />
             <CanvasSaveButton />
             <CanvasActions />
             <CanvasLockProbe />
-          </ConstructorProvider>
-        </AlgorithmNameProvider></DiagramOriginProvider>
+            </ConstructorProvider>
+          </AlgorithmNameProvider>
+        </DiagramOriginProvider>
       </AlgorithmsProvider>
+      </ToastProvider>
     </SimulatorProvider>,
   )
 }
@@ -68,6 +72,7 @@ function CanvasLockProbe() {
   )
 }
 
+import { ToastProvider } from "../../components/ui/Toast"
 import { useCanvasLock } from "../../components/constructor/CanvasLock"
 
 async function pickExample(name: RegExp | string) {
@@ -329,5 +334,117 @@ describe("salvar duas vezes não duplica", () => {
     expect(
       fetchMock.mock.calls.filter(([, init]) => init?.method === "POST"),
     ).toHaveLength(1)
+  })
+})
+
+describe("aviso ao salvar", () => {
+  it("confirma o salvamento, a atualização e a recusa", async () => {
+    const savedDiagram = {
+      nodes: [
+        {
+          id: "s1",
+          type: "startEnd",
+          position: { x: 10, y: 20 },
+          data: { label: "Início", variant: "start" },
+        },
+      ],
+      edges: [],
+    }
+
+    // 1. creating an algorithm
+    const createFetch = mockFetch(
+      jsonResponse([]),
+      jsonResponse({
+        id: 9,
+        name: "Contador",
+        diagram: savedDiagram,
+        created_at: "2026-10-07",
+      }),
+    )
+    renderBuilder()
+    await waitFor(() => expect(createFetch).toHaveBeenCalled())
+
+    fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
+      target: { value: "Contador" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    expect(
+      await screen.findByText(/algoritmo "contador" salvo/i),
+    ).toBeInTheDocument()
+  })
+
+  it("confirma a atualização de um algoritmo já salvo", async () => {
+    const savedDiagram = { nodes: [], edges: [] }
+    const fetchMock = mockFetch(
+      jsonResponse([
+        {
+          id: 7,
+          name: "Meu algoritmo salvo",
+          diagram: savedDiagram,
+          created_at: "2026-10-07",
+        },
+      ]),
+      jsonResponse({
+        id: 7,
+        name: "Meu algoritmo salvo",
+        diagram: savedDiagram,
+        created_at: "2026-10-07",
+      }),
+      jsonResponse({
+        id: 7,
+        name: "Meu algoritmo salvo",
+        diagram: savedDiagram,
+        created_at: "2026-10-07",
+      }),
+    )
+
+    renderBuilder()
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", {
+          name: /^Meus algoritmos: nenhum selecionado/i,
+        }),
+      ).toBeInTheDocument(),
+    )
+
+    await pickSaved(/Meu algoritmo salvo/i)
+    await waitFor(() =>
+      expect(screen.getByLabelText(/nome do algoritmo/i)).toHaveValue(
+        "Meu algoritmo salvo",
+      ),
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: /atualizar algoritmo/i }))
+    // The notice is only raised once the PATCH resolves, so waiting for it
+    // also proves the request completed rather than merely being fired.
+    expect(
+      await screen.findByText(/algoritmo "meu algoritmo salvo" atualizado/i),
+    ).toBeInTheDocument()
+    expect(
+      fetchMock.mock.calls.filter(([, init]) => init?.method === "PATCH"),
+    ).toHaveLength(1)
+  })
+
+  it("avisa quando a API recusa o salvamento", async () => {
+    mockFetch(
+      jsonResponse([]),
+      jsonResponse({ errors: ["Nome não pode ficar em branco"] }, 422),
+    )
+
+    renderBuilder()
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: /salvar algoritmo/i }),
+      ).toBeInTheDocument(),
+    )
+
+    fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
+      target: { value: "x" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+
+    expect(
+      await screen.findByText(/não foi possível salvar/i),
+    ).toBeInTheDocument()
   })
 })

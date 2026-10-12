@@ -15,6 +15,7 @@ import {
   useAlgorithmNameField,
 } from "./components/constructor/AlgorithmNameProvider"
 import { DiagramOriginProvider } from "./components/constructor/DiagramOrigin"
+import { ToastProvider } from "./components/ui/Toast"
 
 function BuilderHeader({ userName }: { userName: string | null }) {
   const { algorithmName, onAlgorithmNameChange, isNameLocked } =
@@ -38,7 +39,8 @@ export default function BuilderPage({
   const [debuggerCollapsed, setDebuggerCollapsed] = useState(true)
 
   return (
-    <SimulatorProvider>
+    <ToastProvider>
+      <SimulatorProvider>
       <AlgorithmsProvider>
         <AlgorithmNameProvider>
           <DiagramOriginProvider>
@@ -61,6 +63,7 @@ export default function BuilderPage({
           </DiagramOriginProvider>
         </AlgorithmNameProvider>
       </AlgorithmsProvider>
-    </SimulatorProvider>
+      </SimulatorProvider>
+    </ToastProvider>
   )
 }
