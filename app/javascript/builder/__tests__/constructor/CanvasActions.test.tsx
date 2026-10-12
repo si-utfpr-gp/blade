@@ -7,6 +7,7 @@ import {
 } from "../../components/constructor/ConstructorProvider"
 import { CanvasActions } from "../../components/constructor/CanvasActions"
 import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvider"
+import { AlgorithmNameProvider } from "../../components/constructor/AlgorithmNameProvider"
 
 function Probe() {
   const { nodes, addNode } = useConstructor()
@@ -36,10 +37,12 @@ function renderActions() {
   return render(
     <SimulatorProvider>
       <AlgorithmsProvider>
-        <ConstructorProvider>
+        <AlgorithmNameProvider>
+          <ConstructorProvider>
           <CanvasActions />
           <Probe />
-        </ConstructorProvider>
+          </ConstructorProvider>
+        </AlgorithmNameProvider>
       </AlgorithmsProvider>
     </SimulatorProvider>,
   )

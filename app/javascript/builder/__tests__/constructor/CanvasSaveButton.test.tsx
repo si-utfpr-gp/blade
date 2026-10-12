@@ -3,7 +3,25 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
 import { ConstructorProvider } from "../../components/constructor/ConstructorProvider"
 import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvider"
+import {
+  AlgorithmNameProvider,
+  useAlgorithmNameField,
+} from "../../components/constructor/AlgorithmNameProvider"
+import { CanvasSaveButton } from "../../components/constructor/CanvasSaveButton"
 import { CanvasActions } from "../../components/constructor/CanvasActions"
+
+// Stands in for the header input: same context, so the button under test
+// consumes the name exactly as it does in the real layout.
+function HeaderNameInput() {
+  const { algorithmName, onAlgorithmNameChange } = useAlgorithmNameField()
+  return (
+    <input
+      aria-label="Nome do algoritmo"
+      value={algorithmName}
+      onChange={(event) => onAlgorithmNameChange(event.target.value)}
+    />
+  )
+}
 
 function jsonResponse(body: unknown, status = 200) {
   return {
@@ -24,30 +42,34 @@ function mockFetch(...responses: unknown[]) {
   return fn
 }
 
-function renderActions() {
+function renderSave() {
   return render(
     <SimulatorProvider>
       <AlgorithmsProvider>
-        <ConstructorProvider>
-          <CanvasActions />
-        </ConstructorProvider>
+        <AlgorithmNameProvider>
+          <ConstructorProvider>
+            <HeaderNameInput />
+            <CanvasSaveButton />
+          </ConstructorProvider>
+        </AlgorithmNameProvider>
       </AlgorithmsProvider>
     </SimulatorProvider>,
   )
 }
 
-describe("CanvasActions — salvar algoritmo", () => {
-  it("exige um nome antes de salvar", async () => {
+describe("CanvasSaveButton — salvar algoritmo", () => {
+  it("não salva sem nome", async () => {
     const fetchMock = mockFetch(jsonResponse([]))
 
-    renderActions()
+    renderSave()
     await waitFor(() => expect(fetchMock).toHaveBeenCalled())
 
-    fireEvent.click(screen.getByRole("button", { name: /salvar/i }))
+    const button = screen.getByRole("button", { name: /salvar algoritmo/i })
+    expect(button).toBeDisabled()
 
+    fireEvent.click(button)
     // Only the initial GET happened; no POST was issued.
     expect(fetchMock).toHaveBeenCalledTimes(1)
-    expect(screen.getByText(/informe um nome/i)).toBeInTheDocument()
   })
 
   it("salva o diagrama atual com o nome informado", async () => {
@@ -64,13 +86,13 @@ describe("CanvasActions — salvar algoritmo", () => {
       ),
     )
 
-    renderActions()
+    renderSave()
     await waitFor(() => expect(fetchMock).toHaveBeenCalled())
 
     fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
       target: { value: "Meu algoritmo" },
     })
-    fireEvent.click(screen.getByRole("button", { name: /salvar/i }))
+    fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
 
@@ -85,7 +107,7 @@ describe("CanvasActions — salvar algoritmo", () => {
     expect(payload.diagram.edges).toEqual([])
   })
 
-  it("confirma o salvamento e limpa o campo", async () => {
+  it("limpa o nome depois de salvar", async () => {
     mockFetch(
       jsonResponse([]),
       jsonResponse(
@@ -99,36 +121,73 @@ describe("CanvasActions — salvar algoritmo", () => {
       ),
     )
 
-    renderActions()
-    await waitFor(() => expect(screen.getByLabelText(/nome do algoritmo/i)).toBeInTheDocument())
+    renderSave()
+    await waitFor(() =>
+      expect(screen.getByLabelText(/nome do algoritmo/i)).toBeInTheDocument(),
+    )
 
     fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
       target: { value: "Meu algoritmo" },
     })
-    fireEvent.click(screen.getByRole("button", { name: /salvar/i }))
+    fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
 
     await waitFor(() =>
-      expect(screen.getByText(/salvo\./i)).toBeInTheDocument(),
+      expect(screen.getByLabelText(/nome do algoritmo/i)).toHaveValue(""),
     )
-    expect(screen.getByLabelText(/nome do algoritmo/i)).toHaveValue("")
   })
 
   it("mostra o erro devolvido pela API", async () => {
     mockFetch(
       jsonResponse([]),
-      jsonResponse({ errors: [ "Nome não pode ficar em branco" ] }, 422),
+      jsonResponse({ errors: ["Nome não pode ficar em branco"] }, 422),
     )
 
-    renderActions()
-    await waitFor(() => expect(screen.getByLabelText(/nome do algoritmo/i)).toBeInTheDocument())
+    renderSave()
+    await waitFor(() =>
+      expect(screen.getByLabelText(/nome do algoritmo/i)).toBeInTheDocument(),
+    )
 
     fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
       target: { value: "x" },
     })
-    fireEvent.click(screen.getByRole("button", { name: /salvar/i }))
+    fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
 
     await waitFor(() =>
-      expect(screen.getByText(/nome não pode ficar em branco/i)).toBeInTheDocument(),
+      expect(
+        screen.getByText(/nome não pode ficar em branco/i),
+      ).toBeInTheDocument(),
+    )
+  })
+})
+describe("CanvasActions — novo algoritmo", () => {
+  it("limpa o nome do header junto com a tela", async () => {
+    const fetchMock = mockFetch(jsonResponse([]))
+
+    render(
+      <SimulatorProvider>
+        <AlgorithmsProvider>
+          <AlgorithmNameProvider>
+            <ConstructorProvider>
+              <HeaderNameInput />
+              <CanvasActions />
+            </ConstructorProvider>
+          </AlgorithmNameProvider>
+        </AlgorithmsProvider>
+      </SimulatorProvider>,
+    )
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+
+    fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
+      target: { value: "Meu algoritmo" },
+    })
+    expect(screen.getByLabelText(/nome do algoritmo/i)).toHaveValue(
+      "Meu algoritmo",
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: /novo algoritmo/i }))
+
+    await waitFor(() =>
+      expect(screen.getByLabelText(/nome do algoritmo/i)).toHaveValue(""),
     )
   })
 })

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest"
 import { render, screen, fireEvent } from "@testing-library/react"
 import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
 import { ConstructorProvider } from "../../components/constructor/ConstructorProvider"
+import { AlgorithmNameProvider } from "../../components/constructor/AlgorithmNameProvider"
 import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvider"
 import BlocksPanel from "../../components/blocks/BlocksPanel"
 import {
@@ -14,9 +15,11 @@ function renderPanel() {
   return render(
     <SimulatorProvider>
       <AlgorithmsProvider>
-        <ConstructorProvider>
-          <BlocksPanel errors={[]} />
-        </ConstructorProvider>
+        <AlgorithmNameProvider>
+          <ConstructorProvider>
+            <BlocksPanel errors={[]} />
+          </ConstructorProvider>
+        </AlgorithmNameProvider>
       </AlgorithmsProvider>
     </SimulatorProvider>,
   )
@@ -51,13 +54,14 @@ describe("BlocksPanel (visual palette)", () => {
     expect(strokes).toContain("hsl(var(--node-end))")
   })
 
-it("organiza os blocos em coluna única com espaçamento vertical", () => {
+it("organiza os blocos em grid de duas colunas", () => {
     renderPanel()
     const grid = screen.getByTestId("blocks-grid")
-    expect(grid).toHaveClass("space-y-2")
+    // Duas colunas cabem em telas menores, deixando o menu de exemplos visível.
+    expect(grid).toHaveClass("grid", "grid-cols-2")
+    expect(grid).not.toHaveClass("space-y-2")
     const tiles = screen.getAllByTestId(/^block-tile-/)
     expect(tiles).toHaveLength(BLOCK_DEFINITIONS.length)
-    // cada tile ocupa toda a largura (sem grid-cols-3)
     expect(screen.getByTestId("block-tile-startEnd-start")).toBeInTheDocument()
     expect(screen.getByTestId("block-tile-startEnd-end")).toBeInTheDocument()
   })
