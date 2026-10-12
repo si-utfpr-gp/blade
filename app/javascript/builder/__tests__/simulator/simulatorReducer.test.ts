@@ -78,6 +78,7 @@ describe("simulatorReducer", () => {
     )
     expect(state.error).toBe("Algo deu errado")
     expect(state.isRunning).toBe(false)
+    expect(state.isFinished).toBe(false)
   })
 
   it("SET_OUTPUTS replaces outputs", () => {

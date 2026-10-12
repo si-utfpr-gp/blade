@@ -9,6 +9,7 @@ import SimulatorExplain from "./SimulatorExplain";
 import SimulatorCode from "./SimulatorCode";
 import SimulatorStatusBar from "./SimulatorStatusBar";
 import InputDialog from "./InputDialog";
+import SimulatorErrorToast from "./SimulatorErrorToast";
 
 interface ISimulatorPanelProps {
   collapsed?: boolean
@@ -16,8 +17,11 @@ interface ISimulatorPanelProps {
 }
 
 export default function SimulatorPanel({ collapsed = false, onToggleCollapsed }: ISimulatorPanelProps) {
+  const { state } = useSimulator();
+
   return (
     <TooltipProvider delayDuration={200}>
+      <SimulatorErrorToast message={state.error} />
       {collapsed ? (
         <CollapsedDebuggerRail onToggleCollapsed={onToggleCollapsed} />
       ) : (

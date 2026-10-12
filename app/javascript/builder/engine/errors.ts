@@ -87,6 +87,18 @@ export function classifyError(e: unknown, blockId: string | null): IExecutionErr
   return { type: errorTypeFor(message), message, blockId }
 }
 
+export function userFacingExecutionError(error: unknown): string {
+  const classified = typeof error === "object" && error !== null && "type" in error
+    ? error as IExecutionError
+    : classifyError(error, null)
+
+  if (classified.type === ERROR_TYPES.MAX_STEPS_EXCEEDED) {
+    return "A execução foi interrompida por exceder o limite de segurança. Revise o fluxo do seu diagrama."
+  }
+
+  return "O motor de execução identificou um problema no seu diagrama. Revise o fluxo e tente novamente."
+}
+
 function containsDivisionByZero(node: ExpressionNode): boolean {
   if (node.kind === "unary") return containsDivisionByZero(node.operand)
   if (node.kind !== "binary") return false

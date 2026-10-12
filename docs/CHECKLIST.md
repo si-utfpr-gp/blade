@@ -1,7 +1,7 @@
 # Checklist - Blade
 
 **Versao:** 2.0.0
-**Atualizado em:** 2026-08-25 (execução de sub-rotinas visuais e exemplos JSON atualizados)
+**Atualizado em:** 2026-10-12 (integração Constructor → Simulator e tratamento pedagógico de erros atualizados)
 
 ---
 
@@ -60,11 +60,11 @@
 | 8 | [#58](https://github.com/si-utfpr-gp/blade/issues/58) | Execution Errors detection (div by zero, etc.) | ✅ Feito |
 | 9 | [#59](https://github.com/si-utfpr-gp/blade/issues/59) | User Input During Execution (input block) | ✅ Feito |
 | 10 | [#60](https://github.com/si-utfpr-gp/blade/issues/60) | Navigate to Specific Step in History | ✅ Feito |
-| 11 | [#61](https://github.com/si-utfpr-gp/blade/issues/61) | Builder ↔ Simulator Integration | ⬜ Pendente |
-| 12 | [#62](https://github.com/si-utfpr-gp/blade/issues/62) | Custom Hooks (useExecutionEngine, useParser, useCodeGeneration) | ⬜ Pendente |
-| 13 | — | Aceitar JSON de execução sem `position` nos nós | ✅ Feito |
-| 14 | — | Gerar código JS/TS com inputs tipados, operadores Portugol e `while` para loops simples | ✅ Feito |
-| 15 | — | Avaliador seguro e erros estruturados: `ExprEvaluator` interpreta apenas a AST interna permitida, sem `eval` ou `new Function`; `ExecutionError` preserva `{ type, message, blockId }` até a `ExecutionEngine`. Chamadas, propriedades e payloads de construtor fora da gramática são rejeitados. | ✅ Feito |
+| 11 | [#61](https://github.com/si-utfpr-gp/blade/issues/61) | Builder ↔ Simulator Integration | ✅ Feito |
+| 12 | — | Aceitar JSON de execução sem `position` nos nós | ✅ Feito |
+| 13 | — | Gerar código JS/TS com inputs tipados, operadores Portugol e `while` para loops simples | ✅ Feito |
+| 14 | — | Avaliador seguro e erros estruturados: `ExprEvaluator` interpreta apenas a AST interna permitida, sem `eval` ou `new Function`; `ExecutionError` preserva `{ type, message, blockId }` até a `ExecutionEngine`. Chamadas, propriedades e payloads de construtor fora da gramática são rejeitados. | ✅ Feito |
+| 15 | — | Proteção contra excesso de passos/loops e mensagens pedagógicas de erro sem expor bloco ou variável ao aluno | ✅ Feito |
 
 ---
 
@@ -93,7 +93,8 @@
 | SimulatorCode (JS/TS code viewer) | ✅ Feito |
 | SimulatorStatusBar (step counter) | ✅ Feito |
 | Labels em Portugues (nodeTypeLabel) | ✅ Feito |
-| Testes unitarios (19 files, 229 tests) | ✅ Feito |
+| Testes unitários (34 arquivos, 369 testes) | 🟡 Em andamento |
+| Toast de erro de execução com mensagem pedagógica | ✅ Feito |
 
 ---
 
@@ -132,7 +133,7 @@ Campos mínimos por nó: `id`, `type`, `data`. Campos mínimos por aresta: `id`,
 | Documento | Status |
 |-----------|--------|
 | PRD (docs/prd.md) | ✅ Atualizado v2.0.0 |
-| SSD (docs/ssd.md) | ✅ Atualizado v2.0.0 |
+| SDD (docs/sdd.md) | ✅ Atualizado v2.0.0 |
 | Contributing (docs/contributing.md) | ✅ Feito |
 | CHECKLIST.md | ✅ Feito |
 

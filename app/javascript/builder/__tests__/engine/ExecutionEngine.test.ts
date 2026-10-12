@@ -373,6 +373,43 @@ describe("ExecutionEngine", () => {
     expect(e.step()?.nodeType).toBe("startEnd")
   })
 
+  it("throws when a decision branch points to a missing block", () => {
+    const e = new ExecutionEngine(g(
+      [
+        { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+        { id: "decision", type: "decision", position: { x: 0, y: 100 }, data: { label: "1 <= 1" } },
+      ],
+      [
+        { id: "e1", source: "start", target: "decision" },
+        { id: "e2", source: "decision", target: "missing", sourceHandle: "yes" },
+      ],
+    ))
+
+    e.start()
+    e.step()
+    e.step()
+
+    expect(() => e.step()).toThrow("Bloco 'missing' não encontrado")
+    expect(e.getCurrentState().error).toContain("Bloco 'missing' não encontrado")
+    expect(e.getCurrentState().finished).toBe(false)
+  })
+
+  it("throws a structured error when execution exceeds the safety limit", () => {
+    const e = new ExecutionEngine(g(
+      [
+        { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+        { id: "end", type: "startEnd", position: { x: 0, y: 100 }, data: { variant: "end" } },
+      ],
+      [{ id: "e1", source: "start", target: "end" }],
+    ))
+    ;(e as unknown as { max: number }).max = 1
+
+    e.start()
+
+    expect(() => e.step()).toThrow("Limite de passos excedido")
+    expect(e.getCurrentState().finished).toBe(false)
+  })
+
   it("reset limpa tudo", () => {
     const e = new ExecutionEngine(g(
       [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"}},

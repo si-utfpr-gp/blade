@@ -16,6 +16,7 @@ import { initialState, simulatorReducer } from "../../interfaces/simulator"
 import { ExecutionEngine } from "../../engine/ExecutionEngine"
 import { parse } from "../../parser"
 import { CodeGenerator } from "../../engine/CodeGenerator"
+import { userFacingExecutionError } from "../../engine/errors"
 import type {
   IRawSubroutineDefinition,
   IParserInputNode,
@@ -134,7 +135,12 @@ export function SimulatorProvider({
       try {
         const step = engine.step(input)
         if (!step) {
-          dispatch({ type: "FINISH" })
+          const execution = engine.getCurrentState()
+          if (execution.error) {
+            dispatch({ type: "SET_ERROR", error: userFacingExecutionError(execution.error) })
+          } else {
+            dispatch({ type: "FINISH" })
+          }
           return
         }
 
@@ -150,8 +156,7 @@ export function SimulatorProvider({
           syncFromEngine()
         }
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "Erro durante a execução."
-        dispatch({ type: "SET_ERROR", error: msg })
+        dispatch({ type: "SET_ERROR", error: userFacingExecutionError(e) })
       }
     },
     [syncFromEngine],
@@ -162,9 +167,23 @@ export function SimulatorProvider({
     callbacks?.onStart?.()
 
     const engine = engineRef.current
-    if (engine) {
+    if (!engine) {
+      dispatch({ type: "SET_ERROR", error: "Nenhum diagrama carregado." })
+      return
+    }
+
+    try {
       const step = engine.start()
-      if (step) syncFromEngine()
+      if (step) {
+        syncFromEngine()
+      } else {
+        const execution = engine.getCurrentState()
+        if (execution.error) {
+          dispatch({ type: "SET_ERROR", error: userFacingExecutionError(execution.error) })
+        }
+      }
+    } catch (e) {
+      dispatch({ type: "SET_ERROR", error: userFacingExecutionError(e) })
     }
   }, [callbacks, syncFromEngine])
 

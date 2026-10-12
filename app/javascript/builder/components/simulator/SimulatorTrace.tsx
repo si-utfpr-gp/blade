@@ -3,7 +3,6 @@ import {
   Info,
   HelpCircle,
   Monitor,
-  AlertTriangle,
   CheckCircle2,
   Variable as VarIcon,
 } from "lucide-react";
@@ -317,12 +316,6 @@ export default function SimulatorTrace() {
             )}
           </div>
         </div>
-
-        {error && (
-          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
-            <p className="flex items-center gap-1.5 text-xs text-destructive font-medium"><AlertTriangle className="w-3.5 h-3.5" /> {error}</p>
-          </div>
-        )}
 
         {isFinished && !error && (
           <div className="rounded-lg border border-emerald-300/70 bg-emerald-50/60 p-3 text-center ">

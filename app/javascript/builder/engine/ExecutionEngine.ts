@@ -58,8 +58,13 @@ export class ExecutionEngine {
         const frame = this.activeFrame()
         if (this._done || !frame?.current) return null
         if (this.snapshots.size >= this.max) {
-            this._err = "Limite de passos excedido"
-            return null
+            const error = new ExecutionError(
+                ERROR_TYPES.MAX_STEPS_EXCEEDED,
+                "Limite de passos excedido",
+                frame.current,
+            )
+            this._err = error.message
+            throw error
         }
 
         const decisionBranch = this.advancePendingDecision()
@@ -73,8 +78,10 @@ export class ExecutionEngine {
 
         const node = active.graph.nodes.get(active.current)
         if (!node) {
-            this._err = `Bloco '${active.current}' não encontrado`
-            return null
+            const message = `Bloco '${active.current}' não encontrado`
+            const error = new ExecutionError(ERROR_TYPES.UNKNOWN_BLOCK, message, active.current)
+            this._err = error.message
+            throw error
         }
 
         try {

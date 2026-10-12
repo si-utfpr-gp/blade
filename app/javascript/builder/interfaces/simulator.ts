@@ -88,7 +88,7 @@ export function simulatorReducer(state: ISimulatorState, action: ISimulatorActio
     case "SET_SPEED":
       return { ...state, speed: action.speed }
     case "SET_ERROR":
-      return { ...state, error: action.error, isRunning: false }
+      return { ...state, error: action.error, isRunning: false, isFinished: false }
     case "SET_OUTPUTS":
       return { ...state, outputs: action.outputs }
     case "SET_CODE":
