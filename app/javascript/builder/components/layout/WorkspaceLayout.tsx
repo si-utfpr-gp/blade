@@ -53,7 +53,9 @@ export default function WorkspaceLayout({
 
   const inspectorClassName = inspectorCollapsed
     ? "w-14 min-w-14 max-w-14"
-    : "w-[40%] min-w-[240px] max-w-[900px] max-md:w-[min(90vw,420px)] max-md:min-w-[280px]"
+    : // Below md the panel floats over the canvas. As a column it took 90vw and
+      // left a 34px canvas on a 338px phone.
+      "w-[40%] min-w-[240px] max-w-[900px] max-md:fixed max-md:inset-y-0 max-md:right-0 max-md:z-40 max-md:w-[min(90vw,420px)] max-md:shadow-xl"
 
   return (
     <DrawerProvider value={drawer}>

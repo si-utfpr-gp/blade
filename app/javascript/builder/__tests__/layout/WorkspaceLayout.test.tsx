@@ -283,3 +283,57 @@ describe("botão do menu com header embrulhado", () => {
     )
   })
 })
+
+/**
+ * At 338px the debugger was taking 90vw, leaving a 34px canvas. Collapsed it
+ * stays a 56px rail in the flow; expanded it has to float over the canvas
+ * instead of squeezing it.
+ */
+describe("depurador em tela estreita", () => {
+  function renderInspector(viewport: "mobile" | "desktop", collapsed: boolean) {
+    setViewport(viewport)
+    return render(
+      <WorkspaceLayout
+        header={<Header title="" userName="Ana" />}
+        sidebar={<div>blocos</div>}
+        canvas={<div data-testid="canvas">canvas</div>}
+        inspector={<div data-testid="inspector">simulador</div>}
+        inspectorCollapsed={collapsed}
+      />,
+    )
+  }
+
+  it("colapsado, vira a barrinha estreita que já existia", () => {
+    renderInspector("mobile", true)
+    const inspector = screen.getByTestId("inspector").parentElement
+
+    expect(inspector).toHaveClass("w-14", "min-w-14", "max-w-14")
+    // 338px - 56px deixa 282px de canvas.
+    expect(inspector).not.toHaveClass("fixed")
+  })
+
+  it("aberto, flutua por cima do canvas em vez de espremê-lo", () => {
+    renderInspector("mobile", false)
+    const inspector = screen.getByTestId("inspector").parentElement
+
+    expect(inspector).toHaveClass("max-md:fixed", "max-md:w-[min(90vw,420px)]")
+    // O min-w de 280px era o que travava o canvas em 34px.
+    expect(inspector?.className).not.toContain("min-w-[280px]")
+  })
+
+  it("mantém as três colunas em tela grande", () => {
+    renderInspector("desktop", false)
+    const inspector = screen.getByTestId("inspector").parentElement
+
+    // As classes max-md: ficam no markup e o Tailwind as neutraliza a partir
+    // de md, então o que garante as três colunas aqui é a largura percentual.
+    expect(inspector).toHaveClass("w-[40%]", "min-w-[240px]", "max-w-[900px]")
+  })
+
+  it("mantém a largura original em tela grande", () => {
+    renderInspector("desktop", true)
+    const inspector = screen.getByTestId("inspector").parentElement
+
+    expect(inspector).toHaveClass("w-14")
+  })
+})
