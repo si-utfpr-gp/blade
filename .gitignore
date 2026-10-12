@@ -47,3 +47,7 @@
 
 # Local Git worktrees used during development.
 .worktrees/
+
+# Ignore key files for decrypting credentials and more.
+/config/credentials/*.key
+
