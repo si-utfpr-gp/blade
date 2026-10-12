@@ -19,6 +19,7 @@ import {
 import ContextMenu from "./ContextMenu"
 import { RunDiagramButton } from "./RunDiagramButton"
 import { CanvasSaveButton } from "./CanvasSaveButton"
+import { useDiagramOrigin } from "./DiagramOrigin"
 
 interface IConstructorCanvasProps {
   onDiagramLoaded?: () => void
@@ -46,10 +47,13 @@ export default function ConstructorCanvas({
   const { screenToFlowPosition, getNode, setCenter } = useReactFlow()
   const { state: simulatorState } = useSimulator()
 
-  const locked = isCanvasLocked(
-    simulatorState.isStarted,
-    simulatorState.isFinished,
-  )
+  const { isReadOnly } = useDiagramOrigin()
+
+  // Two independent reasons to lock: the simulator is running, or the
+  // diagram is a read-only bundled example.
+  const locked =
+    isCanvasLocked(simulatorState.isStarted, simulatorState.isFinished) ||
+    isReadOnly
   const highlightedNodeId = getHighlightedNodeId(
     simulatorState.steps,
     simulatorState.currentStepIndex,

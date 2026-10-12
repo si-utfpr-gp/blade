@@ -7,6 +7,8 @@ import {
   type ReactNode,
 } from "react"
 
+import { useDiagramOrigin } from "./DiagramOrigin"
+
 interface IAlgorithmNameContextValue {
   algorithmName: string
   setAlgorithmName: (name: string) => void
@@ -53,8 +55,10 @@ export function useAlgorithmNameField(): {
   algorithmName: string
   onAlgorithmNameChange: (name: string) => void
   clearAlgorithmName: () => void
+  isNameLocked: boolean
 } {
   const { algorithmName, setAlgorithmName } = useAlgorithmName()
+  const { isReadOnly } = useDiagramOrigin()
 
   const onAlgorithmNameChange = useCallback(
     (name: string) => setAlgorithmName(name),
@@ -65,5 +69,10 @@ export function useAlgorithmNameField(): {
     setAlgorithmName,
   ])
 
-  return { algorithmName, onAlgorithmNameChange, clearAlgorithmName }
+  return {
+    algorithmName,
+    onAlgorithmNameChange,
+    clearAlgorithmName,
+    isNameLocked: isReadOnly,
+  }
 }

@@ -12,5 +12,5 @@ Rails.application.routes.draw do
   # root "posts#index"
   get "/", to: "builder#index", as: :builder_index
 
-  resources :algorithms, only: [ :index, :create, :show, :destroy ]
+  resources :algorithms, only: [ :index, :create, :show, :update, :destroy ]
 end

@@ -14,15 +14,18 @@ import {
   AlgorithmNameProvider,
   useAlgorithmNameField,
 } from "./components/constructor/AlgorithmNameProvider"
+import { DiagramOriginProvider } from "./components/constructor/DiagramOrigin"
 
 function BuilderHeader({ userName }: { userName: string | null }) {
-  const { algorithmName, onAlgorithmNameChange } = useAlgorithmNameField()
+  const { algorithmName, onAlgorithmNameChange, isNameLocked } =
+    useAlgorithmNameField()
   return (
     <Header
       title="Construa seu algoritmo"
       userName={userName}
       algorithmName={algorithmName}
       onAlgorithmNameChange={onAlgorithmNameChange}
+      isNameLocked={isNameLocked}
     />
   )
 }
@@ -38,7 +41,8 @@ export default function BuilderPage({
     <SimulatorProvider>
       <AlgorithmsProvider>
         <AlgorithmNameProvider>
-          <ConstructorProvider>
+          <DiagramOriginProvider>
+            <ConstructorProvider>
             <WorkspaceLayout
               header={<BuilderHeader userName={userName} />}
               sidebar={<BlocksPanel errors={[]} />}
@@ -53,7 +57,8 @@ export default function BuilderPage({
               }
               inspectorCollapsed={debuggerCollapsed}
             />
-          </ConstructorProvider>
+            </ConstructorProvider>
+          </DiagramOriginProvider>
         </AlgorithmNameProvider>
       </AlgorithmsProvider>
     </SimulatorProvider>

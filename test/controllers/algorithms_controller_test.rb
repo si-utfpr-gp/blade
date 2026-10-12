@@ -91,3 +91,53 @@ class AlgorithmsControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 end
+# The save button updates the selected algorithm instead of always creating a
+# new one, so the API needs a write path that changes an existing record.
+class AlgorithmsUpdateTest < ActionDispatch::IntegrationTest
+  setup do
+    @user = User.find_or_create_by!(login: "dev") { |user| user.name = "Aluno de Teste" }
+    @other = User.create!(login: "aluno-outro", name: "Outro Aluno")
+    Algorithm.where(user: [ @user, @other ]).delete_all
+    @algorithm = Algorithm.create!(
+      user: @user,
+      name: "Original",
+      diagram: { "nodes" => [ { "id" => "a" } ], "edges" => [] }
+    )
+  end
+
+  test "update changes the name and the diagram" do
+    patch algorithm_url(@algorithm), as: :json,
+      params: { name: "Renomeado", diagram: { nodes: [ { id: "b" } ], edges: [] } }
+
+    assert_response :success
+    @algorithm.reload
+    assert_equal "Renomeado", @algorithm.name
+    assert_equal [ "b" ], @algorithm.diagram["nodes"].map { |n| n["id"] }
+  end
+
+  test "update does not create a second record" do
+    assert_difference -> { Algorithm.where(user: @user).count }, 0 do
+      patch algorithm_url(@algorithm), as: :json,
+        params: { name: "Renomeado", diagram: { nodes: [], edges: [] } }
+    end
+  end
+
+  test "update is refused for an algorithm owned by someone else" do
+    foreign = Algorithm.create!(user: @other, name: "Secreto",
+      diagram: { "nodes" => [], "edges" => [] })
+
+    patch algorithm_url(foreign), as: :json,
+      params: { name: "Invadido", diagram: { nodes: [], edges: [] } }
+
+    assert_response :not_found
+    assert_equal "Secreto", foreign.reload.name
+  end
+
+  test "update rejects a blank name" do
+    patch algorithm_url(@algorithm), as: :json,
+      params: { name: "", diagram: { nodes: [], edges: [] } }
+
+    assert_response :unprocessable_entity
+    assert_equal "Original", @algorithm.reload.name
+  end
+end

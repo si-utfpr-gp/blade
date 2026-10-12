@@ -8,6 +8,7 @@ import {
 import { ExamplesSection } from "../../components/constructor/ExamplesSection"
 import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvider"
 import { AlgorithmNameProvider } from "../../components/constructor/AlgorithmNameProvider"
+import { DiagramOriginProvider } from "../../components/constructor/DiagramOrigin"
 
 function Probe() {
   const { nodes } = useConstructor()
@@ -24,12 +25,12 @@ function renderSection() {
   return render(
     <SimulatorProvider>
       <AlgorithmsProvider>
-        <AlgorithmNameProvider>
+        <DiagramOriginProvider><AlgorithmNameProvider>
           <ConstructorProvider>
           <ExamplesSection />
           <Probe />
           </ConstructorProvider>
-        </AlgorithmNameProvider>
+        </AlgorithmNameProvider></DiagramOriginProvider>
       </AlgorithmsProvider>
     </SimulatorProvider>,
   )

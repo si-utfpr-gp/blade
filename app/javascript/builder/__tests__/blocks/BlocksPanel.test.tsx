@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from "@testing-library/react"
 import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
 import { ConstructorProvider } from "../../components/constructor/ConstructorProvider"
 import { AlgorithmNameProvider } from "../../components/constructor/AlgorithmNameProvider"
+import { DiagramOriginProvider } from "../../components/constructor/DiagramOrigin"
 import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvider"
 import BlocksPanel from "../../components/blocks/BlocksPanel"
 import {
@@ -15,11 +16,11 @@ function renderPanel() {
   return render(
     <SimulatorProvider>
       <AlgorithmsProvider>
-        <AlgorithmNameProvider>
+        <DiagramOriginProvider><AlgorithmNameProvider>
           <ConstructorProvider>
             <BlocksPanel errors={[]} />
           </ConstructorProvider>
-        </AlgorithmNameProvider>
+        </AlgorithmNameProvider></DiagramOriginProvider>
       </AlgorithmsProvider>
     </SimulatorProvider>,
   )

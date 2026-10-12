@@ -7,6 +7,7 @@ import {
   AlgorithmNameProvider,
   useAlgorithmNameField,
 } from "../../components/constructor/AlgorithmNameProvider"
+import { DiagramOriginProvider } from "../../components/constructor/DiagramOrigin"
 import { CanvasSaveButton } from "../../components/constructor/CanvasSaveButton"
 import { CanvasActions } from "../../components/constructor/CanvasActions"
 import { ExamplesSection } from "../../components/constructor/ExamplesSection"
@@ -47,12 +48,12 @@ function renderSave() {
   return render(
     <SimulatorProvider>
       <AlgorithmsProvider>
-        <AlgorithmNameProvider>
+        <DiagramOriginProvider><AlgorithmNameProvider>
           <ConstructorProvider>
             <HeaderNameInput />
             <CanvasSaveButton />
           </ConstructorProvider>
-        </AlgorithmNameProvider>
+        </AlgorithmNameProvider></DiagramOriginProvider>
       </AlgorithmsProvider>
     </SimulatorProvider>,
   )
@@ -167,12 +168,12 @@ describe("CanvasActions — novo algoritmo", () => {
     render(
       <SimulatorProvider>
         <AlgorithmsProvider>
-          <AlgorithmNameProvider>
+          <DiagramOriginProvider><AlgorithmNameProvider>
             <ConstructorProvider>
               <HeaderNameInput />
               <CanvasActions />
             </ConstructorProvider>
-          </AlgorithmNameProvider>
+          </AlgorithmNameProvider></DiagramOriginProvider>
         </AlgorithmsProvider>
       </SimulatorProvider>,
     )
@@ -200,12 +201,12 @@ describe("nome do algoritmo acompanha o diagrama carregado", () => {
     render(
       <SimulatorProvider>
         <AlgorithmsProvider>
-          <AlgorithmNameProvider>
+          <DiagramOriginProvider><AlgorithmNameProvider>
             <ConstructorProvider>
               <HeaderNameInput />
               <ExamplesSection />
             </ConstructorProvider>
-          </AlgorithmNameProvider>
+          </AlgorithmNameProvider></DiagramOriginProvider>
         </AlgorithmsProvider>
       </SimulatorProvider>,
     )
@@ -244,12 +245,12 @@ describe("nome do algoritmo acompanha o diagrama carregado", () => {
     render(
       <SimulatorProvider>
         <AlgorithmsProvider>
-          <AlgorithmNameProvider>
+          <DiagramOriginProvider><AlgorithmNameProvider>
             <ConstructorProvider>
               <HeaderNameInput />
               <ExamplesSection />
             </ConstructorProvider>
-          </AlgorithmNameProvider>
+          </AlgorithmNameProvider></DiagramOriginProvider>
         </AlgorithmsProvider>
       </SimulatorProvider>,
     )

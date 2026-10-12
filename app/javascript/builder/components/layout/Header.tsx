@@ -6,6 +6,7 @@ interface IHeaderProps {
   userName?: string | null
   algorithmName?: string
   onAlgorithmNameChange?: (name: string) => void
+  isNameLocked?: boolean
 }
 
 export default function Header({
@@ -13,6 +14,7 @@ export default function Header({
   userName,
   algorithmName = "",
   onAlgorithmNameChange,
+  isNameLocked = false,
 }: IHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -43,6 +45,12 @@ export default function Header({
             aria-label="Nome do algoritmo"
             value={algorithmName}
             placeholder="Sem título"
+            disabled={isNameLocked}
+            title={
+              isNameLocked
+                ? "O nome de um exemplo não pode ser alterado"
+                : undefined
+            }
             onChange={(event) => onAlgorithmNameChange(event.target.value)}
             className="w-64 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none"
           />

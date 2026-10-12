@@ -25,6 +25,22 @@ class AlgorithmsController < ApplicationController
     end
   end
 
+  def update
+    algorithm = owned_algorithm
+    return head :not_found unless algorithm
+
+    algorithm.assign_attributes(
+      name: params[:name],
+      diagram: diagram_param
+    )
+
+    if algorithm.save
+      render json: algorithm
+    else
+      render json: { errors: algorithm.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
   def destroy
     algorithm = owned_algorithm
     return head :not_found unless algorithm

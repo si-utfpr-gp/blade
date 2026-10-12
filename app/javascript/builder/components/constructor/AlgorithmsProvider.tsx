@@ -24,6 +24,7 @@ interface IAlgorithmsContextValue {
   error: string | null
   loadAlgorithms: () => Promise<void>
   saveAlgorithm: (name: string, diagram: SerializedDiagram) => Promise<SavedAlgorithm | null>
+  updateAlgorithm: (id: number, name: string, diagram: SerializedDiagram) => Promise<SavedAlgorithm | null>
   deleteAlgorithm: (id: number) => Promise<boolean>
   getAlgorithm: (id: number) => Promise<SavedAlgorithm | null>
 }
@@ -108,6 +109,38 @@ export function AlgorithmsProvider({ children }: { children: ReactNode }) {
     [],
   )
 
+  const updateAlgorithm = useCallback(
+    async (id: number, name: string, diagram: SerializedDiagram) => {
+      setStatus("saving")
+      setError(null)
+      try {
+        const response = await fetch(`/algorithms/${id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "X-CSRF-Token": csrfToken(),
+          },
+          body: JSON.stringify({ name, diagram }),
+        })
+        if (!response.ok) throw new Error(await readErrors(response))
+        const updated = (await response.json()) as SavedAlgorithm
+        setAlgorithms((current) =>
+          current.map((item) => (item.id === id ? updated : item)),
+        )
+        setStatus("idle")
+        return updated
+      } catch (cause) {
+        setError(
+          cause instanceof Error ? cause.message : "Falha ao atualizar.",
+        )
+        setStatus("error")
+        return null
+      }
+    },
+    [],
+  )
+
   const deleteAlgorithm = useCallback(async (id: number) => {
     setStatus("deleting")
     setError(null)
@@ -154,6 +187,7 @@ export function AlgorithmsProvider({ children }: { children: ReactNode }) {
       error,
       loadAlgorithms,
       saveAlgorithm,
+      updateAlgorithm,
       deleteAlgorithm,
       getAlgorithm,
     }),
@@ -163,6 +197,7 @@ export function AlgorithmsProvider({ children }: { children: ReactNode }) {
       error,
       loadAlgorithms,
       saveAlgorithm,
+      updateAlgorithm,
       deleteAlgorithm,
       getAlgorithm,
     ],

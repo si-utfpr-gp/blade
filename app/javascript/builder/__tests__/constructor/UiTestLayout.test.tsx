@@ -11,6 +11,7 @@ import {
   AlgorithmNameProvider,
   useAlgorithmNameField,
 } from "../../components/constructor/AlgorithmNameProvider"
+import { DiagramOriginProvider } from "../../components/constructor/DiagramOrigin"
 import { CanvasSaveButton } from "../../components/constructor/CanvasSaveButton"
 import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
 
@@ -56,9 +57,9 @@ function wrap(ui: ReactNode) {
   return (
     <SimulatorProvider>
       <AlgorithmsProvider>
-        <AlgorithmNameProvider>
+        <DiagramOriginProvider><AlgorithmNameProvider>
           <ConstructorProvider>{ui}</ConstructorProvider>
-        </AlgorithmNameProvider>
+        </AlgorithmNameProvider></DiagramOriginProvider>
       </AlgorithmsProvider>
     </SimulatorProvider>
   )
