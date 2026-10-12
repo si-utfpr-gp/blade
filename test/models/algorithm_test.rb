@@ -16,10 +16,10 @@ class AlgorithmTest < ActiveSupport::TestCase
     algorithm = Algorithm.create!(
       user: @user,
       name: "Soma",
-      diagram: { "nodes" => [{ "id" => "n1" }], "edges" => [] }
+      diagram: { "nodes" => [ { "id" => "n1" } ], "edges" => [] }
     )
 
-    assert_equal [{ "id" => "n1" }], algorithm.diagram["nodes"]
+    assert_equal [ { "id" => "n1" } ], algorithm.diagram["nodes"]
     assert_equal [], algorithm.diagram["edges"]
   end
 
