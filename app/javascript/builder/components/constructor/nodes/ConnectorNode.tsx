@@ -62,7 +62,7 @@ const ConnectorNode = memo(({ data, selected }: NodeProps<AlgorithmNode>) => {
       <NotEditableLabel
         value={""}
         inputStyle={{ maxWidth: "30px", fontSize: "0.65rem" }}
-        displayClassName="text-[10px] font-bold"
+        displayClassName="text-xs font-bold"
       />
     </div>
   )

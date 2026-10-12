@@ -1,7 +1,9 @@
+import { ToastProvider } from "../../components/ui/Toast"
 import { describe, it, expect, vi } from "vitest"
 import { render, screen, fireEvent } from "@testing-library/react"
 import { SimulatorProvider, useSimulator } from "../../components/simulator/SimulatorContext"
 import { ConstructorProvider } from "../../components/constructor/ConstructorProvider"
+import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvider"
 import { RunDiagramButton } from "../../components/constructor/RunDiagramButton"
 import type { ReactNode } from "react"
 
@@ -22,7 +24,11 @@ function TestHarness({ onDiagramLoaded }: { onDiagramLoaded?: () => void }) {
 function renderIntegration(ui: ReactNode) {
   return render(
     <SimulatorProvider>
-      <ConstructorProvider>{ui}</ConstructorProvider>
+      <ToastProvider>
+      <AlgorithmsProvider>
+        <ConstructorProvider>{ui}</ConstructorProvider>
+      </AlgorithmsProvider>
+    </ToastProvider>
     </SimulatorProvider>,
   )
 }
@@ -37,7 +43,8 @@ describe("RunDiagramButton", () => {
     const onDiagramLoaded = vi.fn()
     renderIntegration(<TestHarness onDiagramLoaded={onDiagramLoaded} />)
     fireEvent.click(screen.getByRole("button", { name: /executar/i }))
-    expect(screen.getByText(/carregado/i)).toBeInTheDocument()
+    // The status message is no longer rendered on the button; loading the
+    // diagram is observed through the callback it triggers.
     expect(onDiagramLoaded).toHaveBeenCalledTimes(1)
   })
 
@@ -48,6 +55,5 @@ describe("RunDiagramButton", () => {
     expect(screen.getByTestId("sim-steps").textContent).toBe("1")
     fireEvent.click(screen.getByRole("button", { name: /executar/i }))
     expect(screen.getByTestId("sim-steps").textContent).toBe("0")
-    expect(screen.getByText(/carregado/i)).toBeInTheDocument()
   })
 })

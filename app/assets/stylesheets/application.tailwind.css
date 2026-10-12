@@ -21,6 +21,10 @@
   --color-input: hsl(214.3 31.8% 91.4%);
   --color-ring: hsl(221.2 83.2% 53.3%);
   --radius: 0.5rem;
+
+  /* Breakpoint in rem, matching Tailwind's md. Kept explicit so the drawer
+     threshold in useMediaQuery and the CSS stay in agreement. */
+  --breakpoint-md: 48rem;
 }
 
 @layer base {
@@ -59,9 +63,8 @@
        decisão > saída > processo > entrada > sub-rotina >
        início > fim > memória > conector (hierarquia de atenção) */
     --node-start: 150 45% 42%;
-    --node-process: 255 65% 55%;
-    --node-io: 35 95% 55%; /* deprecated, kept for compat */
-    --node-decision: 32 90% 52%;
+--node-process: 255 65% 55%;
+  --node-decision: 32 90% 52%;
     --node-memory: 215 20% 50%;
     --node-end: 8 60% 48%;
     --node-input: 190 80% 45%;

@@ -1,5 +1,5 @@
-import { Play, RotateCcw, StepBack, StepForward, Square } from "lucide-react";
-import { useSimulator } from "./SimulatorContext";
+import { Play, StepBack, StepForward, Square } from "lucide-react"
+import { useSimulator } from "./SimulatorContext"
 
 export default function SimulatorControl() {
   const {
@@ -15,8 +15,8 @@ export default function SimulatorControl() {
     stop,
     reset,
     setSpeed,
-  } = useSimulator();
-  const { isStarted, isRunning, isFinished, speed } = state;
+  } = useSimulator()
+  const { isStarted, isRunning, isFinished, speed } = state
 
   return (
     <div className="flex items-center gap-1.5 px-3 py-2 border-b border-border flex-wrap">
@@ -33,9 +33,9 @@ export default function SimulatorControl() {
           <button
             onClick={reset}
             className="p-1.5 rounded-md hover:bg-muted transition-colors"
-            title="Reiniciar"
+            title="Parar Algoritmo e reiniciar"
           >
-            <RotateCcw className="w-3.5 h-3.5 text-muted-foreground" />
+            <Square className="w-3 h-3" />
           </button>
           <button
             onClick={stepBack}
@@ -99,5 +99,5 @@ export default function SimulatorControl() {
       )}
       <div className="flex-1" />
     </div>
-  );
+  )
 }

@@ -1,23 +1,39 @@
 import { Plus, Trash2 } from "lucide-react"
 import { useConstructor } from "./ConstructorProvider"
 import { useSimulator } from "../simulator/SimulatorContext"
+import { useAlgorithms } from "./AlgorithmsProvider"
+import { useAlgorithmNameField } from "./AlgorithmNameProvider"
+import { useDiagramOrigin } from "./DiagramOrigin"
 
 export function CanvasActions() {
   const { resetCanvas, clearCanvas } = useConstructor()
   const { reset } = useSimulator()
+  const { error } = useAlgorithms()
+  const { clearAlgorithmName } = useAlgorithmNameField()
+  const { markBlank } = useDiagramOrigin()
 
   const handleNew = () => {
     resetCanvas()
     reset()
+    clearAlgorithmName()
+    markBlank()
   }
 
   const handleClear = () => {
     clearCanvas()
     reset()
+    clearAlgorithmName()
+    markBlank()
   }
 
   return (
     <div className="space-y-2 border-t border-border p-2">
+      {error && (
+        <p className="text-xs text-destructive" role="alert">
+          {error}
+        </p>
+      )}
+
       <button
         type="button"
         onClick={handleNew}

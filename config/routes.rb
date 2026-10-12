@@ -1,6 +1,4 @@
 Rails.application.routes.draw do
-
-
   get "up" => "rails/health#show", as: :rails_health_check
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
@@ -15,4 +13,6 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   # root "posts#index"
   get "/", to: "builder#index", as: :builder_index
+
+  resources :algorithms, only: [ :index, :create, :show, :update, :destroy ]
 end

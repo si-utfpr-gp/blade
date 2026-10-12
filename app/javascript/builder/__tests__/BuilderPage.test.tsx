@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, beforeEach } from "vitest"
 import { render, screen, fireEvent, within } from "@testing-library/react"
 import BuilderPage from "../BuilderPage"
 
@@ -38,5 +38,48 @@ describe("BuilderPage", () => {
     expect(
       screen.queryByRole("button", { name: /mostrar depurador/i }),
     ).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * A pessoa no celular só consegue usar o menu de blocos se este botão existir.
+ * O cabeçalho real é um wrapper em volta do Header, então este teste cobre a
+ * estrutura de verdade, não o Header isolado.
+ */
+describe("BuilderPage — menu de blocos no celular", () => {
+  beforeEach(() => {
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes("min-width") ? false : true,
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+      onchange: null,
+    })) as unknown as typeof window.matchMedia
+  })
+
+  it("tem o botão hamburguer para abrir os blocos", () => {
+    render(<BuilderPage />)
+
+    expect(
+      screen.getByRole("button", { name: /abrir menu de blocos/i }),
+    ).toBeInTheDocument()
+  })
+
+  it("abre os blocos e os exemplos ao clicar no botão", () => {
+    render(<BuilderPage />)
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /abrir menu de blocos/i }),
+    )
+
+    const sidebar = document.getElementById("workspace-sidebar")
+    expect(sidebar).not.toHaveClass("-translate-x-full")
+    expect(
+      screen.getByRole("button", { name: /^Meus algoritmos/i }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /^Exemplos/i })).toBeInTheDocument()
   })
 })

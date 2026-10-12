@@ -18,6 +18,10 @@ import {
 } from "../blocks/blockDefinitions"
 import ContextMenu from "./ContextMenu"
 import { RunDiagramButton } from "./RunDiagramButton"
+import { CanvasSaveButton } from "./CanvasSaveButton"
+import { usePanePlacement } from "./usePanePlacement"
+import { PlacementHint } from "./PlacementHint"
+import { useDiagramOrigin } from "./DiagramOrigin"
 
 interface IConstructorCanvasProps {
   onDiagramLoaded?: () => void
@@ -43,12 +47,16 @@ export default function ConstructorCanvas({
   } = useConstructor()
 
   const { screenToFlowPosition, getNode, setCenter } = useReactFlow()
+  const placeAt = usePanePlacement()
   const { state: simulatorState } = useSimulator()
 
-  const locked = isCanvasLocked(
-    simulatorState.isStarted,
-    simulatorState.isFinished,
-  )
+  const { isReadOnly } = useDiagramOrigin()
+
+  // Two independent reasons to lock: the simulator is running, or the
+  // diagram is a read-only bundled example.
+  const locked =
+    isCanvasLocked(simulatorState.isStarted, simulatorState.isFinished) ||
+    isReadOnly
   const highlightedNodeId = getHighlightedNodeId(
     simulatorState.steps,
     simulatorState.currentStepIndex,
@@ -162,6 +170,15 @@ export default function ConstructorCanvas({
         event.dataTransfer.dropEffect = "move"
       }}
     >
+      {/* Save sits on the left edge, run on the right, so a click never
+          lands on the wrong one. */}
+      <div
+        data-testid="canvas-toolbar-save"
+        className="absolute left-3 top-3 z-10 rounded-lg border border-border bg-card/95 px-2 py-1.5 shadow-md backdrop-blur"
+      >
+        <CanvasSaveButton />
+      </div>
+
       <div
         data-testid="canvas-toolbar"
         className="absolute right-3 top-3 z-10 rounded-lg border border-border bg-card/95 px-2 py-1.5 shadow-md backdrop-blur"
@@ -170,6 +187,7 @@ export default function ConstructorCanvas({
       </div>
 
       <ReactFlow
+        onPaneClick={(event) => placeAt(screenToFlowPosition({ x: event.clientX, y: event.clientY }))}
         nodes={displayNodes}
         edges={edges}
         onNodesChange={onNodesChange}
@@ -191,6 +209,7 @@ export default function ConstructorCanvas({
         nodeTypes={nodeTypes}
         fitView
       >
+        <PlacementHint />
         <Background />
         <Controls />
       </ReactFlow>

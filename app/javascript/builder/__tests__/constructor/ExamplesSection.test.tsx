@@ -6,6 +6,9 @@ import {
   useConstructor,
 } from "../../components/constructor/ConstructorProvider"
 import { ExamplesSection } from "../../components/constructor/ExamplesSection"
+import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvider"
+import { AlgorithmNameProvider } from "../../components/constructor/AlgorithmNameProvider"
+import { DiagramOriginProvider } from "../../components/constructor/DiagramOrigin"
 import { DIAGRAM_EXAMPLES } from "../../interfaces/diagramExamples"
 
 function Probe() {
@@ -22,10 +25,14 @@ function Probe() {
 function renderSection() {
   return render(
     <SimulatorProvider>
-      <ConstructorProvider>
-        <ExamplesSection />
-        <Probe />
-      </ConstructorProvider>
+      <AlgorithmsProvider>
+        <DiagramOriginProvider><AlgorithmNameProvider>
+          <ConstructorProvider>
+          <ExamplesSection />
+          <Probe />
+          </ConstructorProvider>
+        </AlgorithmNameProvider></DiagramOriginProvider>
+      </AlgorithmsProvider>
     </SimulatorProvider>,
   )
 }
