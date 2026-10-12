@@ -8,6 +8,7 @@ import {
 } from "../../interfaces/diagramExamples"
 import { layoutExampleDiagram } from "./layoutExampleDiagram"
 import { useAlgorithms } from "./AlgorithmsProvider"
+import { useAlgorithmNameField } from "./AlgorithmNameProvider"
 
 const CATEGORY_COLOR: Record<string, string> = {
   "Entrada e saída": "var(--node-input)",
@@ -163,6 +164,7 @@ export function ExamplesSection() {
   const { loadCanvasNodes } = useConstructor()
   const { reset } = useSimulator()
   const { algorithms, getAlgorithm } = useAlgorithms()
+  const { onAlgorithmNameChange } = useAlgorithmNameField()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
@@ -174,6 +176,7 @@ export function ExamplesSection() {
     const { nodes, edges } = layoutExampleDiagram(example)
     loadCanvasNodes(nodes, edges)
     reset()
+    onAlgorithmNameChange(example.title)
     setSelectedId(example.id)
   }
 
@@ -182,6 +185,7 @@ export function ExamplesSection() {
     if (!saved) return
     loadCanvasNodes(saved.diagram.nodes, saved.diagram.edges)
     reset()
+    onAlgorithmNameChange(saved.name)
     setSelectedUserId(saved.id.toString())
   }
 

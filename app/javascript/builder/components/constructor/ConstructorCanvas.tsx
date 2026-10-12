@@ -163,11 +163,19 @@ export default function ConstructorCanvas({
         event.dataTransfer.dropEffect = "move"
       }}
     >
+      {/* Save sits on the left edge, run on the right, so a click never
+          lands on the wrong one. */}
       <div
-        data-testid="canvas-toolbar"
-        className="absolute right-3 top-3 z-10 flex items-center gap-2 rounded-lg border border-border bg-card/95 px-2 py-1.5 shadow-md backdrop-blur"
+        data-testid="canvas-toolbar-save"
+        className="absolute left-3 top-3 z-10 rounded-lg border border-border bg-card/95 px-2 py-1.5 shadow-md backdrop-blur"
       >
         <CanvasSaveButton />
+      </div>
+
+      <div
+        data-testid="canvas-toolbar"
+        className="absolute right-3 top-3 z-10 rounded-lg border border-border bg-card/95 px-2 py-1.5 shadow-md backdrop-blur"
+      >
         <RunDiagramButton onDiagramLoaded={onDiagramLoaded} />
       </div>
 

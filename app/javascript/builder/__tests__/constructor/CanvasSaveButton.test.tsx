@@ -9,6 +9,7 @@ import {
 } from "../../components/constructor/AlgorithmNameProvider"
 import { CanvasSaveButton } from "../../components/constructor/CanvasSaveButton"
 import { CanvasActions } from "../../components/constructor/CanvasActions"
+import { ExamplesSection } from "../../components/constructor/ExamplesSection"
 
 // Stands in for the header input: same context, so the button under test
 // consumes the name exactly as it does in the real layout.
@@ -188,6 +189,91 @@ describe("CanvasActions — novo algoritmo", () => {
 
     await waitFor(() =>
       expect(screen.getByLabelText(/nome do algoritmo/i)).toHaveValue(""),
+    )
+  })
+})
+
+describe("nome do algoritmo acompanha o diagrama carregado", () => {
+  it("usa o título do exemplo selecionado", async () => {
+    const fetchMock = mockFetch(jsonResponse([]))
+
+    render(
+      <SimulatorProvider>
+        <AlgorithmsProvider>
+          <AlgorithmNameProvider>
+            <ConstructorProvider>
+              <HeaderNameInput />
+              <ExamplesSection />
+            </ConstructorProvider>
+          </AlgorithmNameProvider>
+        </AlgorithmsProvider>
+      </SimulatorProvider>,
+    )
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /^Exemplos: nenhum selecionado/i }),
+    )
+    fireEvent.click(screen.getByRole("button", { name: /Par ou Ímpar/i }))
+
+    await waitFor(() =>
+      expect(screen.getByLabelText(/nome do algoritmo/i)).toHaveValue(
+        "Par ou Ímpar",
+      ),
+    )
+  })
+
+  it("usa o nome do algoritmo salvo", async () => {
+    mockFetch(
+      jsonResponse([
+        {
+          id: 7,
+          name: "Meu algoritmo salvo",
+          diagram: { nodes: [], edges: [] },
+          created_at: "2026-10-07",
+        },
+      ]),
+      jsonResponse({
+        id: 7,
+        name: "Meu algoritmo salvo",
+        diagram: { nodes: [], edges: [] },
+        created_at: "2026-10-07",
+      }),
+    )
+
+    render(
+      <SimulatorProvider>
+        <AlgorithmsProvider>
+          <AlgorithmNameProvider>
+            <ConstructorProvider>
+              <HeaderNameInput />
+              <ExamplesSection />
+            </ConstructorProvider>
+          </AlgorithmNameProvider>
+        </AlgorithmsProvider>
+      </SimulatorProvider>,
+    )
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", {
+          name: /^Meus algoritmos: nenhum selecionado/i,
+        }),
+      ).toBeInTheDocument(),
+    )
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /^Meus algoritmos: nenhum selecionado/i,
+      }),
+    )
+    fireEvent.click(
+      screen.getByRole("button", { name: /Meu algoritmo salvo/i }),
+    )
+
+    await waitFor(() =>
+      expect(screen.getByLabelText(/nome do algoritmo/i)).toHaveValue(
+        "Meu algoritmo salvo",
+      ),
     )
   })
 })
