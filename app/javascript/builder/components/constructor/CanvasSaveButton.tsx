@@ -59,7 +59,7 @@ export function CanvasSaveButton() {
         onClick={handleSave}
         disabled={!canSave}
         title={isReadOnly ? "Exemplos não podem ser alterados" : undefined}
-        className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[12px] font-medium text-shadow-card-foreground transition-colors hover:border-primary/40 disabled:hover:border-none hover:bg-muted/50 disabled:opacity-80 hover:cursor-pointer disabled:cursor-not-allowed"
+        className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-sm font-medium text-shadow-card-foreground transition-colors hover:border-primary/40 disabled:hover:border-none hover:bg-muted/50 disabled:opacity-80 hover:cursor-pointer disabled:cursor-not-allowed"
       >
         <Save className="h-3 w-3" />
         {saving ? "Salvando..." : label}

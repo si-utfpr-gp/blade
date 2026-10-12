@@ -61,7 +61,7 @@ export function traceInstruction(step: IExecutionStep): string {
 }
 
 export function finishedSummaryClassName(): string {
-  return "text-[10px] text-emerald-700 dark:text-emerald-400 mt-1";
+  return "text-xs text-emerald-700 dark:text-emerald-400 mt-1";
 }
 
 export default function SimulatorTrace() {
@@ -110,7 +110,7 @@ export default function SimulatorTrace() {
   return (
       <div className="p-2 space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Histórico — Passo {currentStepNumber}/{mainStepCount(steps)}
           </span>
           <Tooltip>
@@ -130,7 +130,7 @@ export default function SimulatorTrace() {
         </div>
 
         <div className="overflow-x-auto border border-border rounded-lg">
-          <table className="w-full text-[11px]">
+          <table className="w-full text-xs">
             <thead>
               <tr className="bg-muted/50">
                 <th className="text-left py-1.5 px-2 text-muted-foreground font-semibold border-r border-border sticky left-0 bg-muted/50 z-10">
@@ -184,7 +184,7 @@ export default function SimulatorTrace() {
                             side="bottom"
                             className="max-w-70"
                           >
-                            <p className="text-[11px] font-semibold mb-1">
+                            <p className="text-xs font-semibold mb-1">
                               {nodeTypeLabel(step.nodeType)}
                             </p>
                             <p className="text-xs">{step.explanation}</p>
@@ -193,7 +193,7 @@ export default function SimulatorTrace() {
                                 {step.changes.map((c, ci) => (
                                   <li
                                     key={ci}
-                                    className="text-[11px] font-mono text-primary"
+                                    className="text-xs font-mono text-primary"
                                   >
                                     → {c}
                                   </li>
@@ -239,12 +239,12 @@ export default function SimulatorTrace() {
           <div className="flex items-center justify-between mb-1.5">
             <div className="flex items-center gap-1.5">
               <VarIcon className="w-3.5 h-3.5 text-accent" />
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Estado da Variável
               </span>
             </div>
             {currentVars.length > 0 && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent font-semibold">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent font-semibold">
                 {currentVars.length} variáve
                 {currentVars.length === 1 ? "l" : "is"}
               </span>
@@ -252,7 +252,7 @@ export default function SimulatorTrace() {
           </div>
           {currentVars.length === 0 ? (
             <div className="rounded-lg border border-border bg-muted/20 p-3 text-center">
-              <p className="text-[11px] text-muted-foreground italic">
+              <p className="text-xs text-muted-foreground italic">
                 Nenhuma variável declarada ainda. Variáveis são criadas no bloco
                 de Memória.
               </p>
@@ -273,16 +273,16 @@ export default function SimulatorTrace() {
                       <span className="text-xs font-mono font-bold text-foreground truncate">
                         {v.name}
                       </span>
-                      <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-semibold">
+                      <span className="text-xs uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-semibold">
                         {v.type}
                       </span>
                     </div>
                     <div className="flex items-baseline gap-1.5">
-                      <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
+                      <span className="text-xs text-muted-foreground uppercase tracking-wider">
                         valor
                       </span>
                       <span
-                        className={`text-[11px] font-mono ${isNull ? "text-muted-foreground/60 italic" : "text-primary font-semibold"} truncate`}
+                        className={`text-xs font-mono ${isNull ? "text-muted-foreground/60 italic" : "text-primary font-semibold"} truncate`}
                       >
                         {isNull ? "null" : v.value}
                       </span>
@@ -297,13 +297,13 @@ export default function SimulatorTrace() {
         <div>
           <div className="flex items-center gap-1.5 mb-1.5">
             <Monitor className="w-3.5 h-3.5 text-primary" />
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Saída do Algoritmo
             </span>
           </div>
           <div className="bg-slate-950 rounded-lg p-3 min-h-15 font-mono border border-slate-800">
             {outputs.length === 0 ? (
-              <p className="text-[11px] text-slate-400 italic">
+              <p className="text-xs text-slate-400 italic">
                 Aguardando saída...
               </p>
             ) : (

@@ -61,7 +61,7 @@ export default function JsonHarness() {
         onChange={(e) => setJson(e.target.value)}
         placeholder='{ "nodes": [...], "edges": [...], "subroutines": [...] }'
         spellCheck={false}
-        className="flex-1 min-h-0 w-full resize-none rounded-lg border border-border bg-muted/10 p-3 text-[11px] font-mono leading-relaxed text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+        className="flex-1 min-h-0 w-full resize-none rounded-lg border border-border bg-muted/10 p-3 text-xs font-mono leading-relaxed text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
       />
 
       <div className="mt-3 flex items-center gap-2">
@@ -93,7 +93,7 @@ export default function JsonHarness() {
 
                 return (
                   <li key={category} className="py-1">
-                    <h3 className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    <h3 className="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       {category}
                     </h3>
                     <ul>
@@ -105,7 +105,7 @@ export default function JsonHarness() {
                             className="w-full rounded-md px-2 py-1.5 text-left text-xs text-foreground hover:bg-muted"
                           >
                             <span className="block font-medium">{example.title}</span>
-                            <span className="block text-[11px] text-muted-foreground">{example.description}</span>
+                            <span className="block text-xs text-muted-foreground">{example.description}</span>
                           </button>
                         </li>
                       ))}

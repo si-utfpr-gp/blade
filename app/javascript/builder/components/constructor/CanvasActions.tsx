@@ -29,7 +29,7 @@ export function CanvasActions() {
   return (
     <div className="space-y-2 border-t border-border p-2">
       {error && (
-        <p className="text-[10px] text-destructive" role="alert">
+        <p className="text-xs text-destructive" role="alert">
           {error}
         </p>
       )}

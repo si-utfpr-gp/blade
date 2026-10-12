@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ChevronDown, LogOut, FolderOpen } from "lucide-react"
+import { ChevronDown, LogOut, FolderOpen, Menu } from "lucide-react"
 
 interface IHeaderProps {
   title: string
@@ -7,6 +7,8 @@ interface IHeaderProps {
   algorithmName?: string
   onAlgorithmNameChange?: (name: string) => void
   isNameLocked?: boolean
+  onMenuClick?: () => void
+  drawerOpen?: boolean
 }
 
 export default function Header({
@@ -15,12 +17,26 @@ export default function Header({
   algorithmName = "",
   onAlgorithmNameChange,
   isNameLocked = false,
+  onMenuClick,
+  drawerOpen = false,
 }: IHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
     <header className="flex items-center justify-between h-12 px-4 border-b bg-white relative">
       <div className="flex items-center gap-2">
+        {onMenuClick && (
+          <button
+            type="button"
+            onClick={onMenuClick}
+            aria-label="Abrir menu de blocos"
+            aria-expanded={drawerOpen}
+            aria-controls="workspace-sidebar"
+            className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted md:hidden"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        )}
         <svg
           className="w-5 h-5 text-blue-600"
           fill="none"
@@ -63,7 +79,7 @@ export default function Header({
           aria-label={`Conta de ${userName ?? "usuário"}`}
           className="flex items-center gap-1.5 rounded-full px-2 py-1 text-xs text-gray-600 hover:bg-gray-100"
         >
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
             {userName?.charAt(0).toUpperCase() ?? "?"}
           </span>
           <span className="max-w-24 truncate">{userName ?? "Usuário"}</span>

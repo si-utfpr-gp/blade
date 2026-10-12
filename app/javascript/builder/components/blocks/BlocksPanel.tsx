@@ -15,10 +15,10 @@ export default function BlocksPanel({ errors }: IBlocksPanelProps) {
   return (
     <div className="flex h-full flex-col bg-card">
       <div className="border-b border-border p-3">
-        <h2 className="mb-1 text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           Blocos de Algoritmo
         </h2>
-        <p className="mb-2 text-[12px] text-gray-700">
+        <p className="mb-2 text-sm text-gray-700">
           Arraste itens para a tela
         </p>
         <div data-testid="blocks-grid" className="grid grid-cols-2 gap-2">
@@ -44,7 +44,7 @@ export default function BlocksPanel({ errors }: IBlocksPanelProps) {
                 variant={block.variant}
                 compact
               />
-              <span className="w-full truncate text-center text-[9px] font-medium leading-tight text-muted-foreground">
+              <span className="w-full truncate text-center text-xs font-medium leading-tight text-muted-foreground">
                 {block.label}
               </span>
             </div>
@@ -60,17 +60,17 @@ export default function BlocksPanel({ errors }: IBlocksPanelProps) {
 
       {errors.length > 0 && (
         <div className="mx-2 mb-2 rounded-lg border border-destructive/30 bg-destructive/5 p-2">
-          <h3 className="mb-0.5 text-[10px] font-semibold text-destructive">
+          <h3 className="mb-0.5 text-xs font-semibold text-destructive">
             ⚠ Validação
           </h3>
           <ul className="space-y-0.5">
             {errors.slice(0, 3).map((error) => (
-              <li key={error} className="text-[10px] text-destructive/80">
+              <li key={error} className="text-xs text-destructive/80">
                 {error}
               </li>
             ))}
             {errors.length > 3 && (
-              <li className="text-[10px] text-destructive/60">
+              <li className="text-xs text-destructive/60">
                 +{errors.length - 3} mais...
               </li>
             )}

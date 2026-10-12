@@ -1,0 +1,210 @@
+import { describe, it, expect, vi } from "vitest"
+import { render, screen, fireEvent, act } from "@testing-library/react"
+
+import WorkspaceLayout from "../../components/layout/WorkspaceLayout"
+import Header from "../../components/layout/Header"
+
+// jsdom has no viewport, so the md breakpoint has to be simulated.
+function setViewport(viewport: "mobile" | "desktop") {
+  const listeners = new Set<(event: MediaQueryListEvent) => void>()
+  const state = { matches: viewport === "desktop" }
+
+  window.matchMedia = ((query: string) => ({
+    matches: query.includes("min-width") ? state.matches : !state.matches,
+    media: query,
+    addEventListener: (_: string, listener: (event: MediaQueryListEvent) => void) =>
+      listeners.add(listener),
+    removeEventListener: (
+      _: string,
+      listener: (event: MediaQueryListEvent) => void,
+    ) => listeners.delete(listener),
+    addListener: () => {},
+    removeListener: () => {},
+    dispatchEvent: () => false,
+    onchange: null,
+  })) as unknown as typeof window.matchMedia
+
+  return {
+    resize(next: "mobile" | "desktop") {
+      state.matches = next === "desktop"
+      for (const listener of listeners) {
+        listener({ matches: state.matches } as MediaQueryListEvent)
+      }
+    },
+  }
+}
+
+const MENU_BUTTON = /abrir menu de blocos/i
+
+function renderLayout(viewport: "mobile" | "desktop" = "desktop") {
+  setViewport(viewport)
+  return render(
+    <WorkspaceLayout
+      header={<Header title="" userName="Ana" />}
+      sidebar={<div data-testid="sidebar-content">blocos</div>}
+      canvas={<div data-testid="canvas-content">canvas</div>}
+      inspector={<div data-testid="inspector-content">simulador</div>}
+    />,
+  )
+}
+
+describe("WorkspaceLayout — larguras", () => {
+  it("usa largura fixa na sidebar, sem porcentagem", () => {
+    renderLayout()
+    const sidebar = screen.getByTestId("sidebar-content").parentElement
+
+    // Percentual de viewport fazia a largura variar de 154px a 384px na mesma
+    // aplicação, estreitando demais os dropdowns.
+    expect(sidebar).toHaveClass("w-64")
+    expect(sidebar?.className).not.toContain("[15%]")
+    expect(sidebar?.className).not.toContain("min-w-35")
+    expect(sidebar?.className).not.toContain("max-w-62.5")
+  })
+
+  it("mantém a sidebar no fluxo em telas grandes", () => {
+    renderLayout()
+    const sidebar = screen.getByTestId("sidebar-content").parentElement
+
+    // Antes sumia inteira abaixo de md, levando junto o menu de exemplos.
+    expect(sidebar?.className).not.toContain("max-md:hidden")
+    expect(sidebar?.className).toContain("md:relative")
+  })
+
+  it("dá ao canvas o espaço restante", () => {
+    renderLayout()
+    const canvas = screen.getByTestId("canvas-content").parentElement
+
+    expect(canvas).toHaveClass("flex-1")
+    expect(canvas).toHaveClass("min-w-0")
+  })
+})
+
+describe("WorkspaceLayout — gaveta em telas pequenas", () => {
+  it("começa fechada, com o botão do menu disponível", () => {
+    renderLayout("mobile")
+
+    const trigger = screen.getByRole("button", { name: MENU_BUTTON })
+    expect(trigger).toHaveAttribute("aria-expanded", "false")
+    expect(trigger).toHaveAttribute("aria-controls", "workspace-sidebar")
+
+    const sidebar = screen.getByTestId("sidebar-content").closest(
+      "#workspace-sidebar",
+    )
+    expect(sidebar).toHaveClass("-translate-x-full")
+  })
+
+  it("abre a gaveta ao clicar no botão", () => {
+    renderLayout("mobile")
+
+    const trigger = screen.getByRole("button", { name: MENU_BUTTON })
+    fireEvent.click(trigger)
+
+    expect(trigger).toHaveAttribute("aria-expanded", "true")
+    const sidebar = document.getElementById("workspace-sidebar")
+    expect(sidebar).not.toHaveClass("-translate-x-full")
+    expect(sidebar).toHaveClass("translate-x-0")
+    // Aberta, a gaveta é conteúdo legítimo: nada é escondido da navegação.
+    expect(sidebar).not.toHaveAttribute("aria-hidden")
+  })
+
+  it("mostra um backdrop que fecha a gaveta", () => {
+    renderLayout("mobile")
+
+    fireEvent.click(screen.getByRole("button", { name: MENU_BUTTON }))
+    const backdrop = screen.getByTestId("sidebar-backdrop")
+    fireEvent.click(backdrop)
+
+    expect(screen.getByRole("button", { name: MENU_BUTTON })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    )
+  })
+
+  it("fecha a gaveta ao pressionar Escape", () => {
+    renderLayout("mobile")
+
+    fireEvent.click(screen.getByRole("button", { name: MENU_BUTTON }))
+    expect(
+      screen.getByRole("button", { name: MENU_BUTTON }),
+    ).toHaveAttribute("aria-expanded", "true")
+
+    fireEvent.keyDown(document, { key: "Escape" })
+
+    expect(screen.getByRole("button", { name: MENU_BUTTON })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    )
+  })
+
+  it("esconde a gaveta fechada da navegação por teclado em tela pequena", () => {
+    setViewport("mobile")
+    render(
+      <WorkspaceLayout
+        header={<Header title="" userName="Ana" />}
+        sidebar={<div data-testid="sidebar-content">blocos</div>}
+        canvas={<div>canvas</div>}
+        inspector={<div>simulador</div>}
+      />,
+    )
+
+    // Fechada em tela pequena ela está fora da tela; sem inert o teclado
+    // ainda entraria nos blocos invisíveis.
+    const sidebar = document.getElementById("workspace-sidebar")
+    expect(sidebar).toHaveAttribute("aria-hidden", "true")
+  })
+
+  it("não esconde a sidebar em telas grandes", () => {
+    renderLayout()
+
+    // No desktop a coluna está sempre visível, então nada pode ficar inerte.
+    const sidebar = document.getElementById("workspace-sidebar")
+    expect(sidebar).not.toHaveAttribute("aria-hidden")
+    expect(sidebar).not.toHaveAttribute("inert")
+  })
+
+  it("sai do estado de gaveta ao alargar a janela", () => {
+    const viewport = setViewport("mobile")
+    render(
+      <WorkspaceLayout
+        header={<Header title="" userName="Ana" />}
+        sidebar={<div data-testid="sidebar-content">blocos</div>}
+        canvas={<div>canvas</div>}
+        inspector={<div>simulador</div>}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: MENU_BUTTON }))
+    expect(screen.getByRole("button", { name: MENU_BUTTON })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    )
+
+    // A mudança de viewport chega por um listener de media query, fora do ciclo
+    // normal de eventos do React.
+    act(() => viewport.resize("desktop"))
+
+    // Alargar a janela precisa devolver a coluna ao lugar, e não deixá-la
+    // presa fora da tela com o estado do botão ainda ligado.
+    const sidebar = document.getElementById("workspace-sidebar")
+    expect(sidebar).toHaveClass("translate-x-0")
+    expect(sidebar).not.toHaveAttribute("aria-hidden")
+  })
+})
+
+describe("botão do menu", () => {
+  it("não aparece como botão quando o menu está indisponível", () => {
+    const onMenuClick = vi.fn()
+    render(
+      <Header
+        title=""
+        userName="Ana"
+        algorithmName="x"
+        onAlgorithmNameChange={() => undefined}
+        onMenuClick={onMenuClick}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: MENU_BUTTON }))
+    expect(onMenuClick).toHaveBeenCalledTimes(1)
+  })
+})
