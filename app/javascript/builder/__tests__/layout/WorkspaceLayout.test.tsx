@@ -80,6 +80,14 @@ describe("WorkspaceLayout — larguras", () => {
 })
 
 describe("WorkspaceLayout — gaveta em telas pequenas", () => {
+  it("mantém o simulador abaixo do header no mobile", () => {
+    renderLayout("mobile")
+
+    const inspector = screen.getByTestId("inspector-content").parentElement
+    expect(inspector).toHaveClass("max-md:top-12", "max-md:bottom-0")
+    expect(inspector).not.toHaveClass("max-md:inset-y-0")
+  })
+
   it("começa fechada, com o botão do menu disponível", () => {
     renderLayout("mobile")
 

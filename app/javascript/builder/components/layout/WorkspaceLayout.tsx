@@ -55,7 +55,9 @@ export default function WorkspaceLayout({
     ? "w-14 min-w-14 max-w-14"
     : // Below md the panel floats over the canvas. As a column it took 90vw and
       // left a 34px canvas on a 338px phone.
-      "w-[40%] min-w-[240px] max-w-[900px] max-md:fixed max-md:inset-y-0 max-md:right-0 max-md:z-40 max-md:w-[min(90vw,420px)] max-md:shadow-xl"
+      // Keep the floating simulator below the 3rem mobile header instead of
+      // covering it with `inset-y-0`.
+      "w-[40%] min-w-[240px] max-w-[900px] max-md:fixed max-md:top-12 max-md:bottom-0 max-md:right-0 max-md:z-40 max-md:w-[min(90vw,420px)] max-md:shadow-xl"
 
   return (
     <DrawerProvider value={drawer}>
