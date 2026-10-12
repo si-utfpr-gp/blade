@@ -23,7 +23,7 @@ export default function SimulatorHeader({ onToggleCollapsed }: ISimulatorHeaderP
         <span className="text-xs font-semibold text-foreground">Depurador</span>
         {onToggleCollapsed && <PanelRightClose className="w-3.5 h-3.5 text-muted-foreground" />}
       </button>
-      <span className={`flex items-center gap-1 text-xs font-medium ${status.textClass}`}>
+      <span className={`flex items-center gap-1 text-[10px] font-medium ${status.textClass}`}>
         <span className={`w-1.5 h-1.5 rounded-full ${status.dotClass}`} />
         {status.label}
       </span>

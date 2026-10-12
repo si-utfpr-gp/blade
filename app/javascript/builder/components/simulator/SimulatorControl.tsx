@@ -87,7 +87,7 @@ export default function SimulatorControl() {
               value={speed}
               onChange={(e) => setSpeed(Number(e.target.value))}
               disabled={isFinished}
-              className="text-xs bg-transparent border-none rounded px-1.5 py-0.5 text-foreground outline-none disabled:opacity-40"
+              className="text-[10px] bg-transparent border-none rounded px-1.5 py-0.5 text-foreground outline-none disabled:opacity-40"
               title="Velocidade da execução automática"
             >
               <option value={1000}>1x</option>

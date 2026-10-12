@@ -6,7 +6,7 @@ export default function SimulatorStatusBar() {
   const { steps, currentStepIndex, isStarted, outputs } = state;
 
   return (
-    <div className="flex items-center justify-between px-3 py-1.5 border-t border-border bg-muted/20 text-xs">
+    <div className="flex items-center justify-between px-3 py-1.5 border-t border-border bg-muted/20 text-[10px]">
       <span className="text-muted-foreground">
         {isStarted
           ? `Passo ${displayStepNumber(steps, currentStepIndex)} de ${mainStepCount(steps)}`

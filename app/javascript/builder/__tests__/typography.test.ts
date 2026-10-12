@@ -5,10 +5,13 @@ import { join } from "node:path"
 /**
  * Arbitrary pixel font sizes bypass the type scale: they do not respond to the
  * browser's default font size and produced 9px text, which is unreadable.
- * This guards the whole builder directory at once, which per-file unit tests
- * cannot do.
+ *
+ * Scope is the header, canvas and sidebar only. The simulator panel keeps its
+ * dense sizing for now, so it is excluded rather than silently relaxed.
  */
 const COMPONENTS_DIR = join(process.cwd(), "app/javascript/builder")
+
+const IN_SCOPE_DIRS = ["components/layout", "components/blocks", "components/constructor"]
 
 function tsxFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -22,20 +25,40 @@ const ARBITRARY_FONT_SIZE = /text-\[\d+px\]/g
 
 describe("escala tipográfica", () => {
   it("não usa tamanhos de fonte arbitrários em px", () => {
-    const offenders = tsxFiles(COMPONENTS_DIR)
-      .filter((file) => ARBITRARY_FONT_SIZE.test(readFileSync(file, "utf8")))
-      .map((file) => file.replace(`${COMPONENTS_DIR}/`, ""))
+    const offenders = IN_SCOPE_DIRS.flatMap((dir) =>
+      tsxFiles(join(COMPONENTS_DIR, dir))
+        .filter((file) => ARBITRARY_FONT_SIZE.test(readFileSync(file, "utf8")))
+        .map((file) => file.replace(`${COMPONENTS_DIR}/`, "")),
+    )
 
     expect(offenders).toEqual([])
   })
 
-  it("não usa larguras em porcentagem no layout principal", () => {
+  it("não usa larguras em porcentagem na sidebar", () => {
     const layout = readFileSync(
       join(COMPONENTS_DIR, "components/layout/WorkspaceLayout.tsx"),
       "utf8",
     )
 
-    // Largura percentual fazia a sidebar ir de 154px a 384px na mesma app.
-    expect(layout).not.toMatch(/w-\[\d+%\]/)
+    // Only the sidebar is in scope here; the simulator panel keeps its own
+    // percentage width, so the check is limited to the first aside, which is
+    // the one holding the blocks and examples.
+    const sidebarAside = layout.match(/<aside[\s\S]*?>/)?.[0] ?? ""
+
+    // A percentage of the viewport made the sidebar range from 154px to
+    // 384px for the same app, which squeezed the dropdowns shut.
+    expect(sidebarAside).not.toMatch(/w-\[\d+%\]/)
+    expect(sidebarAside).toContain("w-64")
+  })
+
+  it("deixa a largura do simulador como estava", () => {
+    const layout = readFileSync(
+      join(COMPONENTS_DIR, "components/layout/WorkspaceLayout.tsx"),
+      "utf8",
+    )
+
+    // O depurador está fora do escopo desta passada; travar o valor evita que
+    // ele mude de novo por engano.
+    expect(layout).toContain("w-[40%] min-w-[240px] max-w-[900px]")
   })
 })

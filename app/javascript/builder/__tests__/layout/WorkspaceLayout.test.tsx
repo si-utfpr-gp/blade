@@ -208,3 +208,44 @@ describe("botão do menu", () => {
     expect(onMenuClick).toHaveBeenCalledTimes(1)
   })
 })
+
+describe("header em telas estreitas", () => {
+  it("tira o campo do nome do posicionamento absoluto abaixo de sm", () => {
+    renderHeaderWithName()
+
+    const nameWrapper = screen.getByLabelText("Nome do algoritmo")
+      .parentElement
+
+    // Com w-64 fixo e centralizado a 50%, o campo cobria a logo e o menu de
+    // conta em telas com menos de ~640px.
+    expect(nameWrapper).toHaveClass("sm:absolute")
+    expect(nameWrapper).not.toHaveClass("absolute")
+    // No fluxo flex ele encolhe em vez de transbordar.
+    expect(nameWrapper).toHaveClass("flex-1", "min-w-0")
+    expect(nameWrapper).not.toHaveClass("w-64")
+  })
+
+  it("mantém o campo com largura total apenas nas telas grandes", () => {
+    renderHeaderWithName()
+
+    expect(screen.getByLabelText("Nome do algoritmo")).toHaveClass("sm:w-64")
+  })
+
+  it("encolhe o nome do usuário antes de quebrar o header", () => {
+    renderHeaderWithName()
+
+    // A conta ocupa o mínimo possível para o campo do nome ter espaço.
+    expect(screen.getByText("Ana")).toHaveClass("hidden", "sm:inline")
+  })
+})
+
+function renderHeaderWithName() {
+  return render(
+    <Header
+      title=""
+      userName="Ana"
+      algorithmName="Contador"
+      onAlgorithmNameChange={() => undefined}
+    />,
+  )
+}

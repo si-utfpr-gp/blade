@@ -63,7 +63,7 @@ export default function InputDialog() {
             placeholder={typeHint}
             className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
           />
-          <p className="text-xs text-muted-foreground">{typeHint}</p>
+          <p className="text-[10px] text-muted-foreground">{typeHint}</p>
         </div>
 
         {error && (

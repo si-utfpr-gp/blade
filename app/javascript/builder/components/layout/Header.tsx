@@ -50,7 +50,9 @@ export default function Header({
         <span className="font-bold text-2xl">Blade</span>
       </div>
 
-      <div className="absolute left-1/2 -translate-x-1/2">
+      {/* Narrow screens keep the field in the flex flow so it shrinks with the
+          available width; from sm up it is centred over the canvas. */}
+      <div className="flex-1 min-w-0 px-2 sm:flex-none sm:absolute sm:left-1/2 sm:-translate-x-1/2 sm:px-0">
         {onAlgorithmNameChange ? (
           <input
             type="text"
@@ -64,7 +66,7 @@ export default function Header({
                 : undefined
             }
             onChange={(event) => onAlgorithmNameChange(event.target.value)}
-            className="w-64 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none"
+            className="w-full min-w-0 sm:w-64 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none"
           />
         ) : (
           title && <span className="text-xs text-gray-500">{title}</span>
@@ -82,7 +84,7 @@ export default function Header({
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
             {userName?.charAt(0).toUpperCase() ?? "?"}
           </span>
-          <span className="max-w-24 truncate">{userName ?? "Usuário"}</span>
+          <span className="hidden max-w-24 truncate sm:inline">{userName ?? "Usuário"}</span>
           <ChevronDown className={`h-3 w-3 transition-transform ${menuOpen ? "rotate-180" : ""}`} />
         </button>
 

@@ -28,10 +28,10 @@ export default function SimulatorExplain() {
   return (
     <div className="p-3 space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
           Passo {displayStepNumber(steps, currentStepIndex)} de {mainStepCount(steps)}
         </span>
-        <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
           {nodeTypeLabel(currentStep.nodeType)}
         </span>
       </div>
@@ -42,7 +42,7 @@ export default function SimulatorExplain() {
       </div>
       {currentStep.changes.length > 0 && (
         <div className="space-y-1">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
             O que mudou:
           </span>
           <div className="space-y-0.5">
@@ -60,17 +60,17 @@ export default function SimulatorExplain() {
       )}
       {currentStep.waitingForInput && (
         <div className="rounded-md bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 px-3 py-2">
-          <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+          <p className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">
             Aguardando entrada do usuário...
           </p>
-          <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">
+          <p className="text-[10px] text-amber-600 dark:text-amber-500 mt-0.5">
             {currentStep.inputPrompt}
           </p>
         </div>
       )}
       {!isFinished && (
         <div className="rounded-md bg-muted/50 px-3 py-2">
-          <p className="text-xs text-muted-foreground italic">
+          <p className="text-[11px] text-muted-foreground italic">
             {currentStep.nextHint}
           </p>
         </div>

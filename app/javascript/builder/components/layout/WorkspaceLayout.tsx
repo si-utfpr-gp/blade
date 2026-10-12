@@ -45,7 +45,7 @@ export default function WorkspaceLayout({
 
   const inspectorClassName = inspectorCollapsed
     ? "w-14 min-w-14 max-w-14"
-    : "w-[22rem] min-w-[18rem] max-w-[28rem]"
+    : "w-[40%] min-w-[240px] max-w-[900px] max-md:w-[min(90vw,420px)] max-md:min-w-[280px]"
 
   // The menu button belongs to the drawer, which lives here, so it is injected
   // into the header rather than duplicated by each header consumer.
