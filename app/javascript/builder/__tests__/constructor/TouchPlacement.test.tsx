@@ -173,3 +173,41 @@ describe("paleta mantém os blocos existentes", () => {
     }
   })
 })
+describe("aviso de posicionamento em tela estreita", () => {
+  function armBlock() {
+    render(
+      <BuilderProviders>
+        <PlacementHint />
+        <BlocksPanel errors={[]} />
+      </BuilderProviders>,
+    )
+    fireEvent.click(screen.getByTestId("block-tile-process"))
+  }
+
+  it("fica embaixo em telas pequenas, longe dos botões salvar e executar", () => {
+    armBlock()
+
+    const hint = screen.getByText(/toque no canvas/i)
+
+    // Salvar e executar ficam em top-3, um de cada lado. Centralizado no topo
+    // o aviso ficava atrás deles em canvas estreito.
+    expect(hint.className).toContain("max-md:top-auto")
+    expect(hint.className).toContain("max-md:bottom-4")
+  })
+
+  it("continua centralizado no topo a partir de md", () => {
+    armBlock()
+
+    const hint = screen.getByText(/toque no canvas/i)
+
+    expect(hint.className).toContain("top-3")
+    expect(hint.className).toContain("left-1/2")
+  })
+
+  it("não é clicável, para o toque ir para o canvas", () => {
+    armBlock()
+
+    const hint = screen.getByText(/toque no canvas/i)
+    expect(hint).toHaveClass("pointer-events-none")
+  })
+})
