@@ -8,8 +8,8 @@ import { serializeDiagramForSave } from "./serializeDiagram"
 export function CanvasSaveButton() {
   const { nodes, edges } = useConstructor()
   const { saveAlgorithm, updateAlgorithm, status, error } = useAlgorithms()
-  const { origin, isReadOnly } = useDiagramOrigin()
-  const { algorithmName, clearAlgorithmName } = useAlgorithmNameField()
+  const { origin, isReadOnly, markSaved } = useDiagramOrigin()
+  const { algorithmName } = useAlgorithmNameField()
 
   const handleSave = async () => {
     const trimmed = algorithmName.trim()
@@ -19,12 +19,14 @@ export function CanvasSaveButton() {
 
     // A selected saved algorithm is updated in place; anything else is a new
     // record, so repeated saves never pile up duplicates.
-    const saved =
-      origin.kind === "saved"
-        ? await updateAlgorithm(origin.id, trimmed, diagram)
-        : await saveAlgorithm(trimmed, diagram)
-
-    if (saved) clearAlgorithmName()
+    // The name stays in the field after saving: emptying it made the save look
+    // like it had failed, and the diagram on screen is still that algorithm.
+    if (origin.kind === "saved") {
+      await updateAlgorithm(origin.id, trimmed, diagram)
+    } else {
+      const saved = await saveAlgorithm(trimmed, diagram)
+      if (saved) markSaved(saved.id)
+    }
   }
 
   const saving = status === "saving"

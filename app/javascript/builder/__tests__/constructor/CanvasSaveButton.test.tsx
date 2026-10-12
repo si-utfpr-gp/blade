@@ -109,8 +109,8 @@ describe("CanvasSaveButton — salvar algoritmo", () => {
     expect(payload.diagram.edges).toEqual([])
   })
 
-  it("limpa o nome depois de salvar", async () => {
-    mockFetch(
+  it("mantém o nome no campo depois de salvar", async () => {
+    const fetchMock = mockFetch(
       jsonResponse([]),
       jsonResponse(
         {
@@ -133,8 +133,14 @@ describe("CanvasSaveButton — salvar algoritmo", () => {
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
 
-    await waitFor(() =>
-      expect(screen.getByLabelText(/nome do algoritmo/i)).toHaveValue(""),
+    // Wait for the POST to resolve, otherwise the assertion below would match
+    // the value still present before the save handler runs.
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+
+    // Clearing the field made the name vanish right after saving, which reads
+    // as the save having failed.
+    expect(screen.getByLabelText(/nome do algoritmo/i)).toHaveValue(
+      "Meu algoritmo",
     )
   })
 
@@ -188,6 +194,7 @@ describe("CanvasActions — novo algoritmo", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /novo algoritmo/i }))
 
+    // A new algorithm starts unnamed, unlike saving which must keep the name.
     await waitFor(() =>
       expect(screen.getByLabelText(/nome do algoritmo/i)).toHaveValue(""),
     )

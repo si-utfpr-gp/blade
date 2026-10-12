@@ -263,3 +263,71 @@ describe("salvar atualiza o algoritmo selecionado", () => {
     )
   })
 })
+describe("salvar duas vezes não duplica", () => {
+  it("cria no primeiro clique e atualiza no segundo", async () => {
+    const savedDiagram = {
+      nodes: [
+        {
+          id: "s1",
+          type: "startEnd",
+          position: { x: 10, y: 20 },
+          data: { label: "Início", variant: "start" },
+        },
+      ],
+      edges: [],
+    }
+    const fetchMock = mockFetch(
+      jsonResponse([]),
+      jsonResponse({
+        id: 9,
+        name: "Contador",
+        diagram: savedDiagram,
+        created_at: "2026-10-07",
+      }),
+      jsonResponse({
+        id: 9,
+        name: "Contador",
+        diagram: savedDiagram,
+        created_at: "2026-10-07",
+      }),
+    )
+
+    renderBuilder()
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", {
+          name: /^Exemplos: nenhum selecionado/i,
+        }),
+      ).toBeInTheDocument(),
+    )
+
+    fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
+      target: { value: "Contador" },
+    })
+
+    fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(([, init]) => init?.method === "POST"),
+      ).toBe(true),
+    )
+
+    // After the first save the algorithm is known, so the button updates it.
+    const updateButton = await screen.findByRole("button", {
+      name: /atualizar algoritmo/i,
+    })
+    expect(screen.getByLabelText(/nome do algoritmo/i)).toHaveValue("Contador")
+
+    fireEvent.click(updateButton)
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(([, init]) => init?.method === "PATCH"),
+      ).toBe(true),
+    )
+
+    // Still exactly one POST: the second click never created a new record.
+    expect(
+      fetchMock.mock.calls.filter(([, init]) => init?.method === "POST"),
+    ).toHaveLength(1)
+  })
+})
