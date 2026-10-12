@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest"
+import { describe, it, expect } from "vitest"
 import { render, screen, fireEvent, act } from "@testing-library/react"
 
 import WorkspaceLayout from "../../components/layout/WorkspaceLayout"
@@ -192,20 +192,20 @@ describe("WorkspaceLayout — gaveta em telas pequenas", () => {
 })
 
 describe("botão do menu", () => {
-  it("não aparece como botão quando o menu está indisponível", () => {
-    const onMenuClick = vi.fn()
+  it("não aparece quando o header está fora do WorkspaceLayout", () => {
+    // Sem gaveta para controlar, o botão não teria efeito nenhum.
     render(
       <Header
         title=""
         userName="Ana"
         algorithmName="x"
         onAlgorithmNameChange={() => undefined}
-        onMenuClick={onMenuClick}
       />,
     )
 
-    fireEvent.click(screen.getByRole("button", { name: MENU_BUTTON }))
-    expect(onMenuClick).toHaveBeenCalledTimes(1)
+    expect(
+      screen.queryByRole("button", { name: MENU_BUTTON }),
+    ).not.toBeInTheDocument()
   })
 })
 
@@ -249,3 +249,37 @@ function renderHeaderWithName() {
     />,
   )
 }
+/**
+ * The real builder renders its header through a wrapper component that pulls
+ * the name state from context. The menu button must survive that indirection,
+ * otherwise it only exists in tests that mount Header directly.
+ */
+function WrappedHeader() {
+  return (
+    <Header title="" userName="Ana" algorithmName="x" onAlgorithmNameChange={() => undefined} />
+  )
+}
+
+describe("botão do menu com header embrulhado", () => {
+  it("aparece e abre a gaveta mesmo através de um componente intermediário", () => {
+    setViewport("mobile")
+    render(
+      <WorkspaceLayout
+        header={<WrappedHeader />}
+        sidebar={<div data-testid="sidebar-content">blocos</div>}
+        canvas={<div>canvas</div>}
+        inspector={<div>simulador</div>}
+      />,
+    )
+
+    const trigger = screen.getByRole("button", { name: MENU_BUTTON })
+    expect(trigger).toHaveAttribute("aria-expanded", "false")
+
+    fireEvent.click(trigger)
+
+    expect(trigger).toHaveAttribute("aria-expanded", "true")
+    expect(document.getElementById("workspace-sidebar")).toHaveClass(
+      "translate-x-0",
+    )
+  })
+})

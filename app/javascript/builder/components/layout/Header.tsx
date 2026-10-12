@@ -1,14 +1,14 @@
 import { useState } from "react"
 import { ChevronDown, LogOut, FolderOpen, Menu } from "lucide-react"
 
+import { useDrawer } from "./DrawerContext"
+
 interface IHeaderProps {
   title: string
   userName?: string | null
   algorithmName?: string
   onAlgorithmNameChange?: (name: string) => void
   isNameLocked?: boolean
-  onMenuClick?: () => void
-  drawerOpen?: boolean
 }
 
 export default function Header({
@@ -17,20 +17,21 @@ export default function Header({
   algorithmName = "",
   onAlgorithmNameChange,
   isNameLocked = false,
-  onMenuClick,
-  drawerOpen = false,
 }: IHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
+  // Null when the header is rendered outside WorkspaceLayout, in which case
+  // there is no drawer to open and the button has nothing to control.
+  const drawer = useDrawer()
 
   return (
     <header className="flex items-center justify-between h-12 px-4 border-b bg-white relative">
       <div className="flex items-center gap-2">
-        {onMenuClick && (
+        {drawer && (
           <button
             type="button"
-            onClick={onMenuClick}
+            onClick={drawer.toggle}
             aria-label="Abrir menu de blocos"
-            aria-expanded={drawerOpen}
+            aria-expanded={drawer.isOpen}
             aria-controls="workspace-sidebar"
             className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted md:hidden"
           >
