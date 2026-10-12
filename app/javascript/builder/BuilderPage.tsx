@@ -15,6 +15,7 @@ import {
   useAlgorithmNameField,
 } from "./components/constructor/AlgorithmNameProvider"
 import { DiagramOriginProvider } from "./components/constructor/DiagramOrigin"
+import { BlockPlacementProvider } from "./components/constructor/BlockPlacement"
 import { ToastProvider } from "./components/ui/Toast"
 
 function BuilderHeader({ userName }: { userName: string | null }) {
@@ -43,8 +44,9 @@ export default function BuilderPage({
       <SimulatorProvider>
       <AlgorithmsProvider>
         <AlgorithmNameProvider>
-          <DiagramOriginProvider>
-            <ConstructorProvider>
+<DiagramOriginProvider>
+              <BlockPlacementProvider>
+                <ConstructorProvider>
             <WorkspaceLayout
               header={<BuilderHeader userName={userName} />}
               sidebar={<BlocksPanel errors={[]} />}
@@ -59,8 +61,9 @@ export default function BuilderPage({
               }
               inspectorCollapsed={debuggerCollapsed}
             />
-            </ConstructorProvider>
-          </DiagramOriginProvider>
+                </ConstructorProvider>
+              </BlockPlacementProvider>
+            </DiagramOriginProvider>
         </AlgorithmNameProvider>
       </AlgorithmsProvider>
       </SimulatorProvider>

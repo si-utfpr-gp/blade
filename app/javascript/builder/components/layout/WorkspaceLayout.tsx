@@ -43,7 +43,11 @@ export default function WorkspaceLayout({
   }, [drawerOpen])
 
   const drawer = useMemo(
-    () => ({ isOpen: drawerVisible, toggle: () => setDrawerOpen((open) => !open) }),
+    () => ({
+      isOpen: drawerVisible,
+      toggle: () => setDrawerOpen((open) => !open),
+      close: () => setDrawerOpen(false),
+    }),
     [drawerVisible],
   )
 

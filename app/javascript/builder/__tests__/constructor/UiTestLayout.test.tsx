@@ -1,20 +1,13 @@
+import { BuilderProviders } from "../test-utils"
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { useState, type ReactNode } from "react"
+import { useAlgorithmNameField } from "../../components/constructor/AlgorithmNameProvider"
 
-import { ToastProvider } from "../../components/ui/Toast"
 import Header from "../../components/layout/Header"
 import BlocksPanel from "../../components/blocks/BlocksPanel"
-import { ConstructorProvider } from "../../components/constructor/ConstructorProvider"
-import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvider"
-import {
-  AlgorithmNameProvider,
-  useAlgorithmNameField,
-} from "../../components/constructor/AlgorithmNameProvider"
-import { DiagramOriginProvider } from "../../components/constructor/DiagramOrigin"
 import { CanvasSaveButton } from "../../components/constructor/CanvasSaveButton"
-import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
 
 function renderHeader(props: Parameters<typeof Header>[0]) {
   return render(
@@ -55,19 +48,7 @@ function CanvasNameInput() {
 }
 
 function wrap(ui: ReactNode) {
-  return (
-    <SimulatorProvider>
-      <ToastProvider>
-        <AlgorithmsProvider>
-          <DiagramOriginProvider>
-            <AlgorithmNameProvider>
-              <ConstructorProvider>{ui}</ConstructorProvider>
-            </AlgorithmNameProvider>
-          </DiagramOriginProvider>
-        </AlgorithmsProvider>
-      </ToastProvider>
-    </SimulatorProvider>
-  )
+  return <BuilderProviders>{ui}</BuilderProviders>
 }
 
 describe("UI test layout", () => {

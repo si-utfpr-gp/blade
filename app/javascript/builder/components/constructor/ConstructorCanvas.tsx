@@ -19,6 +19,8 @@ import {
 import ContextMenu from "./ContextMenu"
 import { RunDiagramButton } from "./RunDiagramButton"
 import { CanvasSaveButton } from "./CanvasSaveButton"
+import { usePanePlacement } from "./usePanePlacement"
+import { PlacementHint } from "./PlacementHint"
 import { useDiagramOrigin } from "./DiagramOrigin"
 
 interface IConstructorCanvasProps {
@@ -45,6 +47,7 @@ export default function ConstructorCanvas({
   } = useConstructor()
 
   const { screenToFlowPosition, getNode, setCenter } = useReactFlow()
+  const placeAt = usePanePlacement()
   const { state: simulatorState } = useSimulator()
 
   const { isReadOnly } = useDiagramOrigin()
@@ -184,6 +187,7 @@ export default function ConstructorCanvas({
       </div>
 
       <ReactFlow
+        onPaneClick={(event) => placeAt(screenToFlowPosition({ x: event.clientX, y: event.clientY }))}
         nodes={displayNodes}
         edges={edges}
         onNodesChange={onNodesChange}
@@ -205,6 +209,7 @@ export default function ConstructorCanvas({
         nodeTypes={nodeTypes}
         fitView
       >
+        <PlacementHint />
         <Background />
         <Controls />
       </ReactFlow>

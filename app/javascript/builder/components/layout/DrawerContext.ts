@@ -12,6 +12,7 @@ import { createContext, useContext } from "react"
 export interface IDrawerContextValue {
   isOpen: boolean
   toggle: () => void
+  close: () => void
 }
 
 const DrawerContext = createContext<IDrawerContextValue | null>(null)

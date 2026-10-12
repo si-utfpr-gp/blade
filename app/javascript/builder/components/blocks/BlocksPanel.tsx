@@ -3,7 +3,11 @@ import {
   DRAG_DATA_KEY,
   DRAG_VARIANT_KEY,
 } from "../blocks/blockDefinitions"
+import { useRef } from "react"
+
 import BlockShapePreview from "./BlockShapePreview"
+import { useBlockPlacement } from "../constructor/BlockPlacement"
+import { useDrawer } from "../layout/DrawerContext"
 import { ExamplesSection } from "../constructor/ExamplesSection"
 import { CanvasActions } from "../constructor/CanvasActions"
 
@@ -12,6 +16,12 @@ interface IBlocksPanelProps {
 }
 
 export default function BlocksPanel({ errors }: IBlocksPanelProps) {
+  const { pendingBlock, arm } = useBlockPlacement()
+  const drawer = useDrawer()
+  // A mouse drag ends with a click event too; without this flag a drag would
+  // also arm the block and the next tap would drop a second copy.
+  const draggedRef = useRef(false)
+
   return (
     <div className="flex h-full flex-col bg-card">
       <div className="border-b border-border p-3">
@@ -30,14 +40,38 @@ export default function BlocksPanel({ errors }: IBlocksPanelProps) {
               data-testid={`block-tile-${block.type}${block.variant ? `-${block.variant}` : ""}`}
               draggable
               onDragStart={(event) => {
+                draggedRef.current = true
                 event.dataTransfer.setData(DRAG_DATA_KEY, block.type)
                 if (block.variant) {
                   event.dataTransfer.setData(DRAG_VARIANT_KEY, block.variant)
                 }
                 event.dataTransfer.effectAllowed = "move"
               }}
+              onDragEnd={() => {
+                // Reset after the click that the browser fires post-drag.
+                setTimeout(() => {
+                  draggedRef.current = false
+                })
+              }}
+              role="button"
+              aria-pressed={
+                pendingBlock?.type === block.type &&
+                pendingBlock?.variant === block.variant
+              }
+              onClick={() => {
+                if (draggedRef.current) return
+                arm(block.type, block.variant)
+                // The drawer covers the canvas, so the block would land
+                // behind it if the menu stayed open.
+                if (drawer?.isOpen) drawer.close()
+              }}
               title={`${block.label} — ${block.description}`}
-              className="flex cursor-grab flex-col items-center gap-1 rounded-lg border border-border bg-background p-2 transition-all hover:border-primary/30 hover:shadow-sm active:cursor-grabbing"
+              className={`flex cursor-grab flex-col items-center gap-1 rounded-lg border bg-background p-2 transition-all hover:border-primary/30 hover:shadow-sm active:cursor-grabbing ${
+                pendingBlock?.type === block.type &&
+                pendingBlock?.variant === block.variant
+                  ? "border-primary ring-2 ring-primary/30"
+                  : "border-border"
+              }`}
             >
               <BlockShapePreview
                 type={block.type}
