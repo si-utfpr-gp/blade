@@ -9,26 +9,23 @@ interface IRunDiagramButtonProps {
 
 export function RunDiagramButton({ onDiagramLoaded }: IRunDiagramButtonProps) {
   const { nodes, edges } = useConstructor()
-  const { loadDiagram, reset } = useSimulator()
+  const { loadAndStartDiagram } = useSimulator()
   const [status, setStatus] = useState<{ ok: boolean; message: string } | null>(
     null,
   )
 
   const handleRun = () => {
-    reset()
     const { nodes: normalizedNodes, edges: normalizedEdges } = normalizeDiagram(
       nodes,
       edges,
     )
-    const result = loadDiagram(normalizedNodes, normalizedEdges)
+    const result = loadAndStartDiagram(normalizedNodes, normalizedEdges)
     if (result.ok) {
       setStatus({ ok: true, message: "Diagrama carregado no simulador." })
-      console.log(status?.message)
 
       onDiagramLoaded?.()
     } else {
       setStatus({ ok: false, message: result.error })
-      console.error(status?.message)
     }
   }
 

@@ -1,7 +1,11 @@
 import { Play, StepBack, StepForward, Square } from "lucide-react"
 import { useSimulator } from "./SimulatorContext"
 
-export default function SimulatorControl() {
+interface SimulatorControlProps {
+  onStart?: () => void
+}
+
+export default function SimulatorControl({ onStart }: SimulatorControlProps) {
   const {
     state,
     canStepBack,
@@ -22,7 +26,7 @@ export default function SimulatorControl() {
     <div className="flex items-center gap-1.5 px-3 py-2 border-b border-border flex-wrap">
       {!isStarted ? (
         <button
-          onClick={start}
+          onClick={onStart ?? start}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity"
         >
           <Play className="w-3.5 h-3.5" />

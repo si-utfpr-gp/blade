@@ -33,8 +33,9 @@ describe("BuilderPage", () => {
     render(<BuilderPage />)
     fireEvent.click(screen.getByRole("button", { name: /executar/i }))
     expect(
-      screen.getByRole("button", { name: /iniciar execução/i }),
+      screen.getByRole("button", { name: /próximo passo/i }),
     ).toBeInTheDocument()
+    expect(screen.getByText(/Histórico — Passo 1/)).toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: /mostrar depurador/i }),
     ).not.toBeInTheDocument()

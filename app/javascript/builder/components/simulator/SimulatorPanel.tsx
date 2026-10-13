@@ -1,6 +1,8 @@
 import { Terminal } from "lucide-react";
 import { TooltipProvider } from "../ui/tooltip";
 import { useSimulator } from "./SimulatorContext";
+import { useConstructor } from "../constructor/ConstructorProvider";
+import { normalizeDiagram } from "../constructor/normalizeDiagram";
 import SimulatorHeader from "./SimulatorHeader";
 import SimulatorControl from "./SimulatorControl";
 import SimulatorTabs from "./SimulatorTabs";
@@ -17,7 +19,13 @@ interface ISimulatorPanelProps {
 }
 
 export default function SimulatorPanel({ collapsed = false, onToggleCollapsed }: ISimulatorPanelProps) {
-  const { state } = useSimulator();
+  const { state, loadAndStartDiagram } = useSimulator();
+  const { nodes, edges } = useConstructor();
+
+  const startCurrentDiagram = () => {
+    const normalized = normalizeDiagram(nodes, edges);
+    loadAndStartDiagram(normalized.nodes, normalized.edges);
+  };
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -27,7 +35,7 @@ export default function SimulatorPanel({ collapsed = false, onToggleCollapsed }:
       ) : (
         <div className="flex flex-col h-full bg-card border-l border-border">
           <SimulatorHeader onToggleCollapsed={onToggleCollapsed} />
-          <SimulatorControl />
+          <SimulatorControl onStart={startCurrentDiagram} />
           <SimulatorTabs />
           <SimulatorPanelContent />
           <SimulatorStatusBar />

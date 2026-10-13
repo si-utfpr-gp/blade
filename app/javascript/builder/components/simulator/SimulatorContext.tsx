@@ -50,6 +50,11 @@ interface ISimulatorContextValue {
     edges: IParserInputEdge[],
     options?: { subroutines?: IRawSubroutineDefinition[] },
   ) => { ok: true } | { ok: false; error: string }
+  loadAndStartDiagram: (
+    nodes: IParserInputNode[],
+    edges: IParserInputEdge[],
+    options?: { subroutines?: IRawSubroutineDefinition[] },
+  ) => { ok: true } | { ok: false; error: string }
 }
 
 const SimulatorContext = createContext<ISimulatorContextValue | null>(null)
@@ -236,6 +241,25 @@ export function SimulatorProvider({
     callbacks?.onReset?.()
   }, [callbacks])
 
+  const loadAndStartDiagram = useCallback(
+    (
+      nodes: IParserInputNode[],
+      edges: IParserInputEdge[],
+      options?: { subroutines?: IRawSubroutineDefinition[] },
+    ) => {
+      reset()
+      const result = loadDiagram(nodes, edges, options)
+      if (!result.ok) {
+        dispatch({ type: "SET_ERROR", error: result.error })
+        return result
+      }
+
+      start()
+      return result
+    },
+    [loadDiagram, reset, start],
+  )
+
   const setSpeed = useCallback((speed: number) => {
     dispatch({ type: "SET_SPEED", speed })
   }, [])
@@ -293,6 +317,7 @@ export function SimulatorProvider({
         cancelInput,
         setEngine,
         loadDiagram,
+        loadAndStartDiagram,
       }}
     >
       {children}

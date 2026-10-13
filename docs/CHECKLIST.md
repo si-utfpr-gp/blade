@@ -61,6 +61,9 @@
 | 9 | [#59](https://github.com/si-utfpr-gp/blade/issues/59) | User Input During Execution (input block) | ✅ Feito |
 | 10 | [#60](https://github.com/si-utfpr-gp/blade/issues/60) | Navigate to Specific Step in History | ✅ Feito |
 | 11 | [#61](https://github.com/si-utfpr-gp/blade/issues/61) | Builder ↔ Simulator Integration | ✅ Feito |
+<!-- Mantido como referência, mas oculto do checklist ativo:
+| — | [#62](https://github.com/si-utfpr-gp/blade/issues/62) | Custom Hooks (useExecutionEngine, useParser, useCodeGeneration) | ⬜ Pendente |
+-->
 | 12 | — | Aceitar JSON de execução sem `position` nos nós | ✅ Feito |
 | 13 | — | Gerar código JS/TS com inputs tipados, operadores Portugol e `while` para loops simples | ✅ Feito |
 | 14 | — | Avaliador seguro e erros estruturados: `ExprEvaluator` interpreta apenas a AST interna permitida, sem `eval` ou `new Function`; `ExecutionError` preserva `{ type, message, blockId }` até a `ExecutionEngine`. Chamadas, propriedades e payloads de construtor fora da gramática são rejeitados. | ✅ Feito |

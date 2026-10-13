@@ -46,14 +46,14 @@ describe("RunDiagramButton", () => {
     // The status message is no longer rendered on the button; loading the
     // diagram is observed through the callback it triggers.
     expect(onDiagramLoaded).toHaveBeenCalledTimes(1)
+    expect(screen.getByTestId("sim-steps").textContent).toBe("1")
   })
 
   it("limpa a execução anterior ao executar novamente", () => {
     renderIntegration(<TestHarness />)
     fireEvent.click(screen.getByRole("button", { name: /executar/i }))
-    fireEvent.click(screen.getByRole("button", { name: /start-exec/i }))
     expect(screen.getByTestId("sim-steps").textContent).toBe("1")
     fireEvent.click(screen.getByRole("button", { name: /executar/i }))
-    expect(screen.getByTestId("sim-steps").textContent).toBe("0")
+    expect(screen.getByTestId("sim-steps").textContent).toBe("1")
   })
 })
