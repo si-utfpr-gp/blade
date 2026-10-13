@@ -9,7 +9,7 @@ class AlgorithmsAuthorizationTest < ActionController::TestCase
     get :index, as: :json
 
     assert_response :unauthorized
-    assert_equal "não autenticado", response.parsed_body["error"]
+    assert_equal "acesso não autorizado", response.parsed_body["error"]
   end
 end
 # update is a write path, so it must sit behind the same auth gate as create.
@@ -22,6 +22,6 @@ class AlgorithmsUpdateAuthorizationTest < ActionController::TestCase
     patch :update, params: { id: 1, name: "X" }, as: :json
 
     assert_response :unauthorized
-    assert_equal "não autenticado", response.parsed_body["error"]
+    assert_equal "acesso não autorizado", response.parsed_body["error"]
   end
 end
