@@ -10,7 +10,7 @@ export function CanvasActions() {
   const { reset } = useSimulator()
   const { error } = useAlgorithms()
   const { clearAlgorithmName } = useAlgorithmNameField()
-  const { markBlank } = useDiagramOrigin()
+  const { markBlank, origin } = useDiagramOrigin()
 
   const handleNew = () => {
     resetCanvas()
@@ -19,11 +19,17 @@ export function CanvasActions() {
     markBlank()
   }
 
+  // Erase the blocks, keep everything that says which algorithm this is. Saving
+  // afterwards empties that same algorithm, which is what the student asked
+  // for by erasing rather than by starting over.
+  //
+  // An example is the exception: it is read only content shipped with the app,
+  // not work belonging to a saved algorithm, so erasing it has to leave an
+  // editable canvas behind rather than a locked empty one.
   const handleClear = () => {
     clearCanvas()
     reset()
-    clearAlgorithmName()
-    markBlank()
+    if (origin.kind !== "saved") markBlank()
   }
 
   return (
