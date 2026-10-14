@@ -4,9 +4,9 @@ class ApplicationController < ActionController::Base
 
   private
 
-  # Authentication seam. Today this resolves to a development user so the
-  # builder works without an LDAP server; when the university LDAP is wired in,
-  # only current_user_from_fallback changes and callers keep working.
+  # Authentication seam. It resolves to a development user so the builder works
+  # without Google configured; when a real sign in is needed only
+  # current_user_from_fallback changes and callers keep working.
   # Current.user lets tests and background jobs bypass the session lookup.
   def current_user
     Current.user ||= User.find_by(id: session[:user_id]) ||
@@ -17,9 +17,21 @@ class ApplicationController < ActionController::Base
     User.dev_user
   end
 
+  # HTML is sent to the login page; the API keeps answering 401 JSON.
+  def require_login
+    return if current_user
+
+    respond_to do |format|
+      format.html { redirect_to login_path }
+      format.json { render json: { error: NOT_AUTHENTICATED }, status: :unauthorized }
+    end
+  end
+
   def authenticate_user!
     return if current_user
 
-    render json: { error: "" }, status: :unauthorized
+    render json: { error: NOT_AUTHENTICATED }, status: :unauthorized
   end
+
+  NOT_AUTHENTICATED = "acesso não autorizado".freeze
 end

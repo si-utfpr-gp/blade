@@ -1,0 +1,46 @@
+class SessionsController < ApplicationController
+  # The callback and the login page must stay reachable without a session.
+  skip_before_action :verify_authenticity_token, only: :create
+
+  def new
+    return redirect_to builder_index_path if current_user
+
+    @error = flash[:alert]
+  end
+
+  def create
+    auth = request.env["omniauth.auth"]
+
+    if auth.blank?
+      redirect_to login_path, alert: "Não foi possível falar com o Google. Tente novamente."
+      return
+    end
+
+    user = User.from_google(auth)
+    sign_in(user)
+    redirect_to builder_index_path
+  rescue User::EmailRequired, User::EmailNotVerified, User::DomainNotAllowed => e
+    redirect_to login_path, alert: e.message
+  rescue ActiveRecord::RecordInvalid
+    redirect_to login_path,
+                alert: "Não foi possível criar seu acesso. Fale com o suporte."
+  end
+
+  def destroy
+    sign_out
+    redirect_to login_path
+  end
+
+  private
+
+  # A brand new session id on sign in prevents session fixation, where an id
+  # planted by an attacker before login would stay valid afterwards.
+  def sign_in(user)
+    reset_session
+    session[:user_id] = user.id
+  end
+
+  def sign_out
+    reset_session
+  end
+end
