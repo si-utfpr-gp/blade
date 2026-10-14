@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react"
+import { csrfToken } from "../../lib/csrf"
 import type { SerializedDiagram } from "./serializeDiagram"
 
 export interface SavedAlgorithm {
@@ -30,13 +31,6 @@ interface IAlgorithmsContextValue {
 }
 
 const AlgorithmsContext = createContext<IAlgorithmsContextValue | null>(null)
-
-function csrfToken(): string {
-  return (
-    document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
-      ?.content ?? ""
-  )
-}
 
 async function readErrors(response: Response): Promise<string> {
   try {

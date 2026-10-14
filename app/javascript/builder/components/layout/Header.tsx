@@ -2,6 +2,7 @@ import { useState } from "react"
 import { ChevronDown, LogOut, FolderOpen, Menu } from "lucide-react"
 
 import { useDrawer } from "./DrawerContext"
+import { csrfToken } from "../../lib/csrf"
 
 interface IHeaderProps {
   title: string
@@ -94,24 +95,39 @@ export default function Header({
             role="menu"
             className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-border bg-card p-1 shadow-lg"
           >
-            <button
-              type="button"
+            <a
               role="menuitem"
+              href="/"
               onClick={() => setMenuOpen(false)}
               className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted/50"
             >
               <FolderOpen className="h-3.5 w-3.5" />
               Meus algoritmos
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => setMenuOpen(false)}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-destructive hover:bg-muted/50"
+            </a>
+
+            {/* A real form, not a button: Rails needs a POST carrying the CSRF
+                token to end the session, and data-turbo="false" keeps Turbo
+                from intercepting the submission. */}
+            <form
+              action="/logout"
+              method="post"
+              data-turbo="false"
+              onSubmit={() => setMenuOpen(false)}
             >
-              <LogOut className="h-3.5 w-3.5" />
-              Sair
-            </button>
+              <input
+                type="hidden"
+                name="authenticity_token"
+                value={csrfToken()}
+              />
+              <button
+                type="submit"
+                role="menuitem"
+                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-destructive hover:bg-muted/50"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Sair
+              </button>
+            </form>
           </div>
         )}
       </div>
