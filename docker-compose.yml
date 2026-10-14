@@ -24,6 +24,16 @@ services:
       DATABASE_PASSWORD: postgres
       DATABASE_NAME: blade_development
 
+      # Google OAuth. Values come from a .env file, which docker compose reads
+      # automatically and which is already gitignored.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      # Comma separated. Empty accepts any Google account.
+      GOOGLE_ALLOWED_DOMAINS: ${GOOGLE_ALLOWED_DOMAINS:-}
+      # Set to true to exercise the real login screen on localhost instead of
+      # the automatic development user.
+      FORCE_GOOGLE_LOGIN: ${FORCE_GOOGLE_LOGIN:-}
+
     depends_on:
       postgres:
         condition: service_healthy

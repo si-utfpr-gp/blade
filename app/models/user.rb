@@ -82,11 +82,20 @@ class User < ApplicationRecord
 
   # Development and test fallback so the builder is usable without Google.
   # Returns nil in production, where a real sign in is required.
+  #
+  # FORCE_GOOGLE_LOGIN disables it during development so the real login screen
+  # and the real handshake can be tried on localhost before deploying.
   def self.dev_user
     return nil unless Rails.env.development? || Rails.env.test?
+    return nil if force_google_login?
 
     find_or_create_by!(login: DEV_LOGIN) do |user|
       user.name = DEV_NAME
     end
+  end
+
+  def self.force_google_login?
+    value = ENV["FORCE_GOOGLE_LOGIN"].to_s.strip.downcase
+    !value.empty? && !%w[0 no off false].include?(value)
   end
 end
