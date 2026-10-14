@@ -186,7 +186,7 @@ describe("diagrama de exemplo é somente leitura", () => {
       ).toBeInTheDocument(),
     )
 
-    await pickSaved(/Meu algoritmo salvo/i)
+    await pickSaved("Meu algoritmo salvo")
 
     await waitFor(() =>
       expect(screen.getByLabelText(/nome do algoritmo/i)).toHaveValue(
@@ -244,7 +244,7 @@ describe("salvar atualiza o algoritmo selecionado", () => {
       ).toBeInTheDocument(),
     )
 
-    await pickSaved(/Meu algoritmo salvo/i)
+    await pickSaved("Meu algoritmo salvo")
     await waitFor(() =>
       expect(screen.getByLabelText(/nome do algoritmo/i)).toHaveValue(
         "Meu algoritmo salvo",
@@ -413,7 +413,7 @@ describe("aviso ao salvar", () => {
       ).toBeInTheDocument(),
     )
 
-    await pickSaved(/Meu algoritmo salvo/i)
+    await pickSaved("Meu algoritmo salvo")
     await waitFor(() =>
       expect(screen.getByLabelText(/nome do algoritmo/i)).toHaveValue(
         "Meu algoritmo salvo",

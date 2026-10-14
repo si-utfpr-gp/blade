@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { BookOpen, FolderOpen, ChevronDown, ChevronRight } from "lucide-react"
+import { BookOpen, FolderOpen, ChevronDown, ChevronRight, Trash2 } from "lucide-react"
 import { useConstructor } from "./ConstructorProvider"
 import { useSimulator } from "../simulator/SimulatorContext"
 import {
@@ -11,6 +11,8 @@ import { HardDrive } from "lucide-react"
 import { useAlgorithms } from "./AlgorithmsProvider"
 import { useLocalAlgorithms } from "./LocalAlgorithmsProvider"
 import { useAlgorithmNameField } from "./AlgorithmNameProvider"
+import { useToast } from "../ui/Toast"
+import { ConfirmDialog } from "../ui/ConfirmDialog"
 import { useDiagramOrigin } from "./DiagramOrigin"
 
 const CATEGORY_COLOR: Record<string, string> = {
@@ -48,6 +50,9 @@ interface ISidebarDropdownProps {
   selectedId: string | null
   emptyText: string
   onSelect: (id: string) => void
+  // Left out where the item does not belong to the student, such as the
+  // examples that ship with the app.
+  onDelete?: (id: string) => void
 }
 
 function SidebarDropdown({
@@ -57,6 +62,7 @@ function SidebarDropdown({
   selectedId,
   emptyText,
   onSelect,
+  onDelete,
 }: ISidebarDropdownProps) {
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -123,42 +129,64 @@ function SidebarDropdown({
           {items.map((item) => {
             const isSelected = item.id === selectedId
             return (
-              <button
+              // A container rather than a button, because the delete action is
+              // a button too and nesting one inside another is invalid markup
+              // that browsers are free to render however they like.
+              <div
                 key={item.id}
-                type="button"
-                aria-pressed={isSelected}
-                title={item.description}
-                onClick={() => {
-                  onSelect(item.id)
-                  setOpen(false)
-                }}
-                className={`flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left transition-colors ${
-                  isSelected
-                    ? "bg-primary/5 text-primary"
-                    : "hover:bg-muted/50"
-                }`}
+                className="flex w-full items-center gap-1 rounded-md transition-colors hover:bg-muted/50"
               >
-                <span className="min-w-0 flex-1">
-                  {item.category && (
-                    <span
-                      className="mb-0.5 block w-fit rounded border px-1.5 py-0.5 text-xs font-semibold"
-                      style={categoryStyle(item.category)}
-                    >
-                      {item.category}
-                    </span>
-                  )}
-                  <span className="block truncate text-xs font-medium text-foreground">
-                    {item.title}
-                  </span>
-                </span>
-                <ChevronRight
-                  className={`h-3.5 w-3.5 shrink-0 ${
-                    isSelected
-                      ? "text-primary"
-                      : "text-muted-foreground/50"
+                <button
+                  type="button"
+                  aria-pressed={isSelected}
+                  // The visible row carries the badge and the title, but a
+                  // screen reader is better served by the name first and where
+                  // the diagram lives after it.
+                  aria-label={
+                    item.category ? `${item.title}, ${item.category}` : item.title
+                  }
+                  title={item.description}
+                  onClick={() => {
+                    onSelect(item.id)
+                    setOpen(false)
+                  }}
+                  className={`flex min-w-0 flex-1 items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left ${
+                    isSelected ? "bg-primary/5 text-primary" : ""
                   }`}
-                />
-              </button>
+                >
+                  <span className="min-w-0 flex-1">
+                    {item.category && (
+                      <span
+                        className="mb-0.5 block w-fit rounded border px-1.5 py-0.5 text-xs font-semibold"
+                        style={categoryStyle(item.category)}
+                      >
+                        {item.category}
+                      </span>
+                    )}
+                    <span className="block truncate text-xs font-medium text-foreground">
+                      {item.title}
+                    </span>
+                  </span>
+                  <ChevronRight
+                    className={`h-3.5 w-3.5 shrink-0 ${
+                      isSelected
+                        ? "text-primary"
+                        : "text-muted-foreground/50"
+                    }`}
+                  />
+                </button>
+                {onDelete && (
+                  <button
+                    type="button"
+                    aria-label={`Excluir "${item.title}"`}
+                    title="Excluir"
+                    onClick={() => onDelete(item.id)}
+                    className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
             )
           })}
         </div>
@@ -170,14 +198,22 @@ function SidebarDropdown({
 export function ExamplesSection() {
   const { loadCanvasNodes } = useConstructor()
   const { reset } = useSimulator()
-  const { algorithms, getAlgorithm, signedIn } = useAlgorithms()
-  const { algorithms: localAlgorithms, getAlgorithm: getLocalAlgorithm } =
-    useLocalAlgorithms()
+  const { algorithms, getAlgorithm, signedIn, deleteAlgorithm } = useAlgorithms()
+  const {
+    algorithms: localAlgorithms,
+    getAlgorithm: getLocalAlgorithm,
+    deleteAlgorithm: deleteLocalAlgorithm,
+  } = useLocalAlgorithms()
   const { onAlgorithmNameChange } = useAlgorithmNameField()
   const { markExample, markSaved, markLocal } = useDiagramOrigin()
+  const { notify } = useToast()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
   const [selectedLocalId, setSelectedLocalId] = useState<string | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<{
+    name: string
+    run: () => void
+  } | null>(null)
 
   const examples = DIAGRAM_EXAMPLES.filter(
     (example) => !example.diagram.subroutines?.length,
@@ -212,6 +248,36 @@ export function ExamplesSection() {
     setSelectedLocalId(stored.id)
   }
 
+  // Deleting asks first and says which of the two stores is involved, since
+  // from the student's side the two lists look alike.
+  const confirmDelete = (name: string, run: () => void) =>
+    setPendingDelete(() => ({ name, run }))
+
+  const handleDeleteSaved = (id: string) => {
+    const algorithm = algorithms.find((item) => item.id.toString() === id)
+    if (!algorithm) return
+    confirmDelete(algorithm.name, async () => {
+      const removed = await deleteAlgorithm(algorithm.id)
+      notify(
+        removed
+          ? `Algoritmo "${algorithm.name}" excluído.`
+          : "Não foi possível excluir o algoritmo.",
+        removed ? "success" : "error",
+      )
+      if (removed) setSelectedUserId(null)
+    })
+  }
+
+  const handleDeleteLocal = (id: string) => {
+    const algorithm = localAlgorithms.find((item) => item.id === id)
+    if (!algorithm) return
+    confirmDelete(algorithm.name, () => {
+      const removed = deleteLocalAlgorithm(id)
+      if (!removed) return
+      setSelectedLocalId(null)
+    })
+  }
+
   return (
     <div className="flex-1 space-y-2 overflow-y-auto p-3">
       <SidebarDropdown
@@ -226,6 +292,7 @@ export function ExamplesSection() {
         selectedId={selectedLocalId}
         emptyText="Nenhum arquivo guardado neste navegador."
         onSelect={handleSelectLocalAlgorithm}
+        onDelete={handleDeleteLocal}
       />
 
       {signedIn && (
@@ -240,6 +307,7 @@ export function ExamplesSection() {
           selectedId={selectedUserId}
           emptyText="Nenhum algoritmo salvo ainda."
           onSelect={(id) => void handleSelectUserAlgorithm(id)}
+          onDelete={handleDeleteSaved}
         />
       )}
 
@@ -258,6 +326,20 @@ export function ExamplesSection() {
           const example = examples.find((item) => item.id === id)
           if (example) handleSelect(example)
         }}
+      />
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title={`Excluir "${pendingDelete?.name ?? ""}"?`}
+        description="Essa ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        destructive
+        onConfirm={() => {
+          const pending = pendingDelete
+          setPendingDelete(null)
+          pending?.run()
+        }}
+        onCancel={() => setPendingDelete(null)}
       />
     </div>
   )

@@ -147,7 +147,7 @@ describe("ExamplesSection — Meus arquivos", () => {
     renderSection(false)
     fireEvent.click(screen.getByRole("button", { name: /meus arquivos/i }))
 
-    expect(screen.getByRole("button", { name: /contador/i })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Contador, Nesta máquina" })).toBeInTheDocument()
   })
 
   it("abre o diagrama com as posições preservadas", () => {
@@ -159,7 +159,7 @@ describe("ExamplesSection — Meus arquivos", () => {
 
     renderSection(false)
     fireEvent.click(screen.getByRole("button", { name: /meus arquivos/i }))
-    fireEvent.click(screen.getByRole("button", { name: /contador/i }))
+    fireEvent.click(screen.getByRole("button", { name: "Contador, Nesta máquina" }))
 
     expect(screen.getByTestId("canvas-nodes").textContent).toBe("1")
     expect(screen.getByTestId("name").textContent).toBe("Contador")
@@ -174,7 +174,7 @@ describe("ExamplesSection — Meus arquivos", () => {
 
     renderSection(false)
     fireEvent.click(screen.getByRole("button", { name: /meus arquivos/i }))
-    fireEvent.click(screen.getByRole("button", { name: /contador/i }))
+    fireEvent.click(screen.getByRole("button", { name: "Contador, Nesta máquina" }))
 
     expect(screen.getByTestId("origin-kind").textContent).toBe("local")
   })
@@ -188,7 +188,7 @@ describe("ExamplesSection — Meus arquivos", () => {
     fireEvent.click(screen.getByRole("button", { name: /meus arquivos/i }))
     await waitFor(() =>
       expect(
-        screen.getByRole("button", { name: /contador/i }),
+        screen.getByRole("button", { name: "Contador, Nesta máquina" }),
       ).toBeInTheDocument(),
     )
   })

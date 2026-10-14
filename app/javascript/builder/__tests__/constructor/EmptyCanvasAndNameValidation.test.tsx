@@ -249,7 +249,7 @@ describe("mensagem da API na recusa", () => {
         name: /^Meus algoritmos: nenhum selecionado/i,
       }),
     )
-    fireEvent.click(await screen.findByRole("button", { name: /Meu algoritmo/i }))
+    fireEvent.click(await screen.findByRole("button", { name: "Meu algoritmo" }))
 
     fireEvent.click(
       await screen.findByRole("button", { name: /atualizar algoritmo/i }),

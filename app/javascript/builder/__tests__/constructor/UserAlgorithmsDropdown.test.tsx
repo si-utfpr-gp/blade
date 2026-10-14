@@ -99,7 +99,7 @@ describe("ExamplesSection — Meus algoritmos", () => {
 
     openUserDropdown()
     expect(
-      screen.getByRole("button", { name: /meu algoritmo/i }),
+      screen.getByRole("button", { name: "Meu algoritmo" }),
     ).toBeInTheDocument()
   })
 
@@ -115,7 +115,7 @@ describe("ExamplesSection — Meus algoritmos", () => {
       openUserDropdown()
     })
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /meu algoritmo/i }))
+      fireEvent.click(screen.getByRole("button", { name: "Meu algoritmo" }))
     })
 
     await waitFor(() => {
@@ -139,7 +139,7 @@ describe("ExamplesSection — Meus algoritmos", () => {
       openUserDropdown()
     })
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /meu algoritmo/i }))
+      fireEvent.click(screen.getByRole("button", { name: "Meu algoritmo" }))
     })
 
     await waitFor(() => {

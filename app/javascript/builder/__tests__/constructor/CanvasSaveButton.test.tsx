@@ -301,7 +301,7 @@ describe("nome do algoritmo acompanha o diagrama carregado", () => {
       }),
     )
     fireEvent.click(
-      screen.getByRole("button", { name: /Meu algoritmo salvo/i }),
+      screen.getByRole("button", { name: "Meu algoritmo salvo" }),
     )
 
     await waitFor(() =>
@@ -420,7 +420,7 @@ describe("CanvasSaveButton — somente ícone", () => {
       screen.getByRole("button", { name: /^Meus algoritmos: nenhum selecionado/i }),
     )
     // A lista chega por fetch, então o item precisa ser esperado.
-    fireEvent.click(await screen.findByRole("button", { name: /Meu algoritmo/i }))
+    fireEvent.click(await screen.findByRole("button", { name: "Meu algoritmo" }))
 
     const button = await screen.findByRole("button", { name: /atualizar algoritmo/i })
     // Sem texto visível, o nome acessível precisa distinguir salvar de atualizar.
