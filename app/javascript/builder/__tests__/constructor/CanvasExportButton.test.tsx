@@ -70,6 +70,13 @@ function renderExport() {
 
 const originalCreateElement = document.createElement
 
+// The export asks before downloading, so the tests that care about the file
+// itself confirm and then assert on what came out.
+function exportar() {
+  fireEvent.click(screen.getByRole("button", { name: /exportar/i }))
+  fireEvent.click(screen.getByRole("button", { name: /baixar/i }))
+}
+
 describe("CanvasExportButton", () => {
   let createObjectURL: ReturnType<typeof vi.fn>
   let revokeObjectURL: ReturnType<typeof vi.fn>
@@ -96,7 +103,7 @@ describe("CanvasExportButton", () => {
 
   it("baixa um arquivo JSON", () => {
     renderExport()
-    fireEvent.click(screen.getByRole("button", { name: /exportar/i }))
+    exportar()
 
     expect(createObjectURL).toHaveBeenCalled()
   })
@@ -111,7 +118,7 @@ describe("CanvasExportButton", () => {
 
     renderExport()
     fireEvent.click(screen.getByRole("button", { name: "add" }))
-    fireEvent.click(screen.getByRole("button", { name: /exportar/i }))
+    exportar()
 
     expect(JSON.parse(payload).nodes[0].position).toEqual({ x: 12, y: 34 })
   })
@@ -126,7 +133,7 @@ describe("CanvasExportButton", () => {
 
     renderExport()
     fireEvent.click(screen.getByRole("button", { name: "add" }))
-    fireEvent.click(screen.getByRole("button", { name: /exportar/i }))
+    exportar()
 
     const node = JSON.parse(payload).nodes[0]
     expect(node.selected).toBeUndefined()
@@ -140,7 +147,7 @@ describe("CanvasExportButton", () => {
     fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
       target: { value: "Contador" },
     })
-    fireEvent.click(screen.getByRole("button", { name: /exportar/i }))
+    exportar()
 
     expect(downloads.map((link) => link.download)).toEqual([ "Contador.json" ])
   })
@@ -149,7 +156,7 @@ describe("CanvasExportButton", () => {
     const downloads = captureDownloads()
 
     renderExport()
-    fireEvent.click(screen.getByRole("button", { name: /exportar/i }))
+    exportar()
 
     expect(downloads.map((link) => link.download)).toEqual([
       "blade-algoritmo.json",
@@ -163,15 +170,98 @@ describe("CanvasExportButton", () => {
     fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
       target: { value: "a/b:c" },
     })
-    fireEvent.click(screen.getByRole("button", { name: /exportar/i }))
+    exportar()
 
     expect(downloads.map((link) => link.download)).toEqual([ "abc.json" ])
   })
 
   it("libera o blob depois de baixar, para não segurar memória", () => {
     renderExport()
-    fireEvent.click(screen.getByRole("button", { name: /exportar/i }))
+    exportar()
 
     expect(revokeObjectURL).toHaveBeenCalledWith("blob:algoritmo")
+  })
+})
+describe("CanvasExportButton — confirmação antes de baixar", () => {
+  let createObjectURL: ReturnType<typeof vi.fn>
+  let revokeObjectURL: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    createObjectURL = vi.fn(() => "blob:algoritmo")
+    revokeObjectURL = vi.fn()
+    vi.stubGlobal("URL", { ...URL, createObjectURL, revokeObjectURL })
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => [] }),
+    )
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it("pergunta antes de baixar", () => {
+    renderExport()
+
+    fireEvent.click(screen.getByRole("button", { name: /exportar/i }))
+
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument()
+  })
+
+  it("nomeia o arquivo que vai ser baixado", () => {
+    renderExport()
+    fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
+      target: { value: "Contador" },
+    })
+
+    fireEvent.click(screen.getByRole("button", { name: /exportar/i }))
+
+    expect(screen.getByText(/Contador\.json/)).toBeInTheDocument()
+  })
+
+  it("não baixa nada enquanto a pergunta está aberta", () => {
+    renderExport()
+
+    fireEvent.click(screen.getByRole("button", { name: /exportar/i }))
+
+    expect(createObjectURL).not.toHaveBeenCalled()
+  })
+
+  it("baixa quando o aluno confirma", () => {
+    renderExport()
+
+    fireEvent.click(screen.getByRole("button", { name: /exportar/i }))
+    fireEvent.click(screen.getByRole("button", { name: /baixar/i }))
+
+    expect(createObjectURL).toHaveBeenCalled()
+  })
+
+  it("não baixa quando o aluno cancela", () => {
+    renderExport()
+
+    fireEvent.click(screen.getByRole("button", { name: /exportar/i }))
+    fireEvent.click(screen.getByRole("button", { name: /cancelar/i }))
+
+    expect(createObjectURL).not.toHaveBeenCalled()
+  })
+
+  it("pergunta de novo na segunda tentativa, porque cancelar não é responder", () => {
+    renderExport()
+
+    fireEvent.click(screen.getByRole("button", { name: /exportar/i }))
+    fireEvent.click(screen.getByRole("button", { name: /cancelar/i }))
+    fireEvent.click(screen.getByRole("button", { name: /exportar/i }))
+
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument()
+  })
+
+  it("avisa que o download foi concluído", () => {
+    renderExport()
+
+    fireEvent.click(screen.getByRole("button", { name: /exportar/i }))
+    fireEvent.click(screen.getByRole("button", { name: /baixar/i }))
+
+    expect(screen.getByRole("status")).toHaveTextContent(/exportado/i)
   })
 })
