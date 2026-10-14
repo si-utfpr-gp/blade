@@ -174,7 +174,9 @@ export default function ConstructorCanvas({
           lands on the wrong one. */}
       <div
         data-testid="canvas-toolbar-save"
-        className="absolute left-3 top-3 z-10 rounded-lg border border-border bg-card/95 px-2 py-1.5 shadow-md backdrop-blur"
+        // The padding follows the button: the touch target is taller on small
+        // screens, and a fixed padding would clip it.
+        className="absolute left-3 top-3 z-10 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
       >
         <CanvasSaveButton />
       </div>

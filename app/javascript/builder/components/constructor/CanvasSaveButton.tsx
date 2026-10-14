@@ -52,17 +52,27 @@ export function CanvasSaveButton() {
       ? "Atualizar algoritmo"
       : "Salvar algoritmo"
 
+  const hint = isReadOnly
+    ? "Exemplos não podem ser alterados"
+    : origin.kind === "saved"
+      ? "Atualizar o algoritmo atual"
+      : "Salvar o algoritmo na sua conta"
+
+  // Icon only, to leave room on small screens. With no visible text the
+  // accessible name and the title carry the whole meaning: screen readers get
+  // aria-label, and the desktop tooltip gets title. Touch has no hover, so
+  // the label is also what explains a disabled button.
   return (
     <div className="flex items-center gap-1.5">
       <button
         type="button"
         onClick={handleSave}
         disabled={!canSave}
-        title={isReadOnly ? "Exemplos não podem ser alterados" : undefined}
-        className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-sm font-medium text-shadow-card-foreground transition-colors hover:border-primary/40 disabled:hover:border-none hover:bg-muted/50 disabled:opacity-80 hover:cursor-pointer disabled:cursor-not-allowed"
+        aria-label={saving ? "Salvando..." : label}
+        title={hint}
+        className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card/95 text-foreground transition-colors hover:border-primary/40 hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-40 sm:h-8 sm:w-8"
       >
-        <Save className="h-3 w-3" />
-        {saving ? "Salvando..." : label}
+        <Save className="h-3.5 w-3.5" aria-hidden="true" />
       </button>
       {error && (
         <span className="sr-only" role="alert">

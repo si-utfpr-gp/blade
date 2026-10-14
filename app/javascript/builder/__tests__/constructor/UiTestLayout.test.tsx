@@ -154,3 +154,18 @@ render(wrap(<BlocksPanel errors={[]} />))
     })
   })
 })
+/**
+ * The save button is taller on small screens, so the toolbar framing it cannot
+ * keep a fixed padding or the touch target gets clipped.
+ */
+describe("toolbar do botão salvar", () => {
+  it("reduz o padding nas telas pequenas e restaura a partir de sm", async () => {
+    const { default: BuilderPage } = await import("../../BuilderPage")
+    render(<BuilderPage />)
+
+    const toolbar = screen.getByTestId("canvas-toolbar-save")
+
+    expect(toolbar).toHaveClass("px-1.5", "py-1")
+    expect(toolbar).toHaveClass("sm:px-2", "sm:py-1.5")
+  })
+})
