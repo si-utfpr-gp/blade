@@ -311,6 +311,7 @@ describe("salvar duas vezes não duplica", () => {
     })
 
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
     await waitFor(() =>
       expect(
         fetchMock.mock.calls.some(([, init]) => init?.method === "POST"),
@@ -324,6 +325,7 @@ describe("salvar duas vezes não duplica", () => {
     expect(screen.getByLabelText(/nome do algoritmo/i)).toHaveValue("Contador")
 
     fireEvent.click(updateButton)
+    fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
     await waitFor(() =>
       expect(
         fetchMock.mock.calls.some(([, init]) => init?.method === "PATCH"),
@@ -368,6 +370,7 @@ describe("aviso ao salvar", () => {
       target: { value: "Contador" },
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
     expect(
       await screen.findByText(/algoritmo "contador" salvo/i),
     ).toBeInTheDocument()
@@ -415,6 +418,7 @@ describe("aviso ao salvar", () => {
     )
 
     fireEvent.click(screen.getByRole("button", { name: /atualizar algoritmo/i }))
+    fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
     // The notice is only raised once the PATCH resolves, so waiting for it
     // also proves the request completed rather than merely being fired.
     expect(
@@ -442,6 +446,7 @@ describe("aviso ao salvar", () => {
       target: { value: "x" },
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
 
     // The API message is surfaced instead of a generic failure, so the student
     // knows what to change.

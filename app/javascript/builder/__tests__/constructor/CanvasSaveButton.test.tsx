@@ -8,7 +8,7 @@ import {
   AlgorithmNameProvider,
   useAlgorithmNameField,
 } from "../../components/constructor/AlgorithmNameProvider"
-import { DiagramOriginProvider } from "../../components/constructor/DiagramOrigin"
+import { DiagramOriginProvider, useDiagramOrigin } from "../../components/constructor/DiagramOrigin"
 import { CanvasSaveButton } from "../../components/constructor/CanvasSaveButton"
 import { CanvasActions } from "../../components/constructor/CanvasActions"
 import { ExamplesSection } from "../../components/constructor/ExamplesSection"
@@ -104,6 +104,7 @@ describe("CanvasSaveButton — salvar algoritmo", () => {
       target: { value: "Meu algoritmo" },
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
 
@@ -141,6 +142,7 @@ describe("CanvasSaveButton — salvar algoritmo", () => {
       target: { value: "Meu algoritmo" },
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
 
     // Wait for the POST to resolve, otherwise the assertion below would match
     // the value still present before the save handler runs.
@@ -168,6 +170,7 @@ describe("CanvasSaveButton — salvar algoritmo", () => {
       target: { value: "x" },
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
 
     // Scoped to the toast, since a screen reader only element carries the same
     // text for assistive tech.
@@ -569,3 +572,179 @@ describe("CanvasSaveButton — estado sujo depois de salvar", () => {
     expect(screen.getByTestId("dirty").textContent).toBe("true")
   })
 })
+
+function EmptyCanvasProbe() {
+  const { nodes } = useConstructor()
+  const { origin, markSaved } = useDiagramOrigin()
+  return (
+    <div>
+      <span data-testid="node-count">{nodes.length}</span>
+      <span data-testid="origin-kind">{origin.kind}</span>
+      <button type="button" onClick={() => markSaved(3)}>
+        marcar-salvo
+      </button>
+    </div>
+  )
+}
+
+function renderSaveWithProbe() {
+  return render(
+    <SimulatorProvider>
+      <ToastProvider>
+      <AlgorithmsProvider signedIn>
+        <DiagramOriginProvider><AlgorithmNameProvider>
+          <ConstructorProvider>
+            <HeaderNameInput />
+            <CanvasSaveButton />
+            <EmptyCanvasProbe />
+          </ConstructorProvider>
+        </AlgorithmNameProvider></DiagramOriginProvider>
+      </AlgorithmsProvider>
+    </ToastProvider>
+    </SimulatorProvider>,
+  )
+}
+
+describe("CanvasSaveButton — canvas vazio", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("não salva sozinho um algoritmo sem nenhum bloco", async () => {
+    const fetchMock = mockFetch(jsonResponse([]))
+
+    renderSaveWithProbe()
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+
+    fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
+      target: { value: "Meu algoritmo" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument()
+    // Only the initial list request; nothing was written.
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("avisa que o diagrama guardado será substituído por um vazio", async () => {
+    mockFetch(jsonResponse([]))
+
+    renderSaveWithProbe()
+    await waitFor(() => expect(screen.getByTestId("origin-kind")).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole("button", { name: "marcar-salvo" }))
+    fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
+      target: { value: "Contador" },
+    })
+    // On a saved algorithm the button reads "Atualizar", which is what the
+    // overwrite would actually do.
+    fireEvent.click(screen.getByRole("button", { name: /atualizar algoritmo/i }))
+
+    expect(screen.getByText(/guardado em "Contador" será substituído/i)).toBeInTheDocument()
+  })
+
+  it("avisa que um algoritmo novo ficaria sem nenhum bloco", async () => {
+    mockFetch(jsonResponse([]))
+
+    renderSaveWithProbe()
+    await waitFor(() => expect(screen.getByTestId("origin-kind")).toBeInTheDocument())
+
+    fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
+      target: { value: "Contador" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+
+    expect(screen.getByText(/não terá nenhum bloco/i)).toBeInTheDocument()
+  })
+
+  it("salva assim mesmo quando o aluno confirma", async () => {
+    const fetchMock = mockFetch(
+      jsonResponse([]),
+      jsonResponse(
+        { id: 9, name: "Meu algoritmo", diagram: { nodes: [], edges: [] }, created_at: "2026-10-07" },
+        201,
+      ),
+    )
+
+    renderSaveWithProbe()
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+
+    fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
+      target: { value: "Meu algoritmo" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+  })
+
+  it("não grava nada quando o aluno cancela", async () => {
+    const fetchMock = mockFetch(jsonResponse([]))
+
+    renderSaveWithProbe()
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+
+    fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
+      target: { value: "Meu algoritmo" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    fireEvent.click(screen.getByRole("button", { name: /cancelar/i }))
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("pergunta de novo na próxima tentativa, porque a resposta não foi dada", async () => {
+    const fetchMock = mockFetch(jsonResponse([]))
+
+    renderSaveWithProbe()
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+
+    fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
+      target: { value: "Meu algoritmo" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    fireEvent.click(screen.getByRole("button", { name: /cancelar/i }))
+    fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument()
+  })
+
+  it("não pergunta quando o diagrama tem blocos", async () => {
+    const fetchMock = mockFetch(jsonResponse([]), jsonResponse([]))
+
+    render(
+      <SimulatorProvider>
+      <ToastProvider>
+        <AlgorithmsProvider signedIn>
+          <DiagramOriginProvider><AlgorithmNameProvider>
+            <ConstructorProvider>
+              <HeaderNameInput />
+              <CanvasSaveButton />
+              <WithNode />
+            </ConstructorProvider>
+          </AlgorithmNameProvider></DiagramOriginProvider>
+        </AlgorithmsProvider>
+      </ToastProvider>
+      </SimulatorProvider>,
+    )
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole("button", { name: "add-node" }))
+    fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
+      target: { value: "Meu algoritmo" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument()
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+  })
+})
+
+function WithNode() {
+  const { addNode } = useConstructor()
+  return (
+    <button type="button" onClick={() => addNode("process", { x: 0, y: 0 })}>
+      add-node
+    </button>
+  )
+}

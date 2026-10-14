@@ -166,6 +166,7 @@ describe("nome obrigatório", () => {
       target: { value: "Contador" },
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
 
     await waitFor(() =>
       expect(
@@ -220,6 +221,7 @@ describe("mensagem da API na recusa", () => {
       target: { value: "Contador" },
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
 
     // Scoped to the toast: a screen reader only element carries the same text
     // and would make this pass without the student ever seeing it.
@@ -247,6 +249,7 @@ describe("mensagem da API na recusa", () => {
     fireEvent.click(
       await screen.findByRole("button", { name: /atualizar algoritmo/i }),
     )
+    fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
 
     const toast = await screen.findByRole("status")
     expect(toast).toHaveTextContent(/já existe um algoritmo com esse nome/i)
@@ -259,6 +262,7 @@ describe("mensagem da API na recusa", () => {
       target: { value: "Contador" },
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
 
     // The provider substitutes a message when the body carries none, so the
     // student still sees something instead of silence.

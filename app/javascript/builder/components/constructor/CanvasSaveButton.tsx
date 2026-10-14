@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { Save } from "lucide-react"
 import { useToast } from "../ui/Toast"
 import { useConstructor } from "./ConstructorProvider"
@@ -5,6 +6,7 @@ import { useAlgorithms } from "./AlgorithmsProvider"
 import { useDiagramOrigin } from "./DiagramOrigin"
 import { useAlgorithmNameField } from "./AlgorithmNameProvider"
 import { serializeDiagramForSave } from "./serializeDiagram"
+import { ConfirmDialog } from "../ui/ConfirmDialog"
 
 export function CanvasSaveButton() {
   const { nodes, edges, markClean } = useConstructor()
@@ -12,20 +14,13 @@ export function CanvasSaveButton() {
   const { origin, isReadOnly, markSaved } = useDiagramOrigin()
   const { algorithmName, flagMissingName } = useAlgorithmNameField()
   const { notify } = useToast()
+  const [emptyWarning, setEmptyWarning] = useState(false)
 
-  const handleSave = async () => {
-    if (isReadOnly) return
-
+  // Saving an empty canvas is almost never the intent: on a saved algorithm it
+  // would overwrite good work with nothing, and a new one would store an
+  // algorithm that cannot do anything. Still allowed, but only on purpose.
+  const save = async () => {
     const trimmed = algorithmName.trim()
-
-    if (!trimmed) {
-      // The button stays enabled on purpose: a disabled one only shows a grey
-      // square with no explanation. Pointing at the field is what explains it.
-      notify("Informe um nome para o algoritmo antes de salvar.", "error")
-      flagMissingName()
-      return
-    }
-
     const diagram = serializeDiagramForSave(nodes, edges)
 
     // A selected saved algorithm is updated in place; anything else is a new
@@ -58,6 +53,26 @@ export function CanvasSaveButton() {
     } else {
       notify(result.message, "error")
     }
+  }
+
+  const handleSave = () => {
+    if (isReadOnly) return
+
+    if (!algorithmName.trim()) {
+      // The button stays enabled on purpose: a disabled one only shows a grey
+      // square with no explanation. Pointing at the field is what explains it.
+      // Checked before the empty canvas, since a name is the part the student
+      // can act on right now.
+      notify("Informe um nome para o algoritmo antes de salvar.", "error")
+      flagMissingName()
+      return
+    }
+
+    if (nodes.length === 0 && !emptyWarning) {
+      setEmptyWarning(true)
+      return
+    }
+    void save()
   }
 
   const saving = status === "saving"
@@ -95,6 +110,22 @@ export function CanvasSaveButton() {
           {error}
         </span>
       )}
+      <ConfirmDialog
+        open={emptyWarning}
+        title="Salvar sem nenhum bloco?"
+        description={
+          origin.kind === "saved"
+            ? `O diagrama guardado em "${algorithmName.trim()}" será substituído por um vazio.`
+            : "O algoritmo não terá nenhum bloco e não poderá ser executado."
+        }
+        confirmLabel="Salvar mesmo assim"
+        destructive={origin.kind === "saved"}
+        onConfirm={() => {
+          setEmptyWarning(false)
+          void save()
+        }}
+        onCancel={() => setEmptyWarning(false)}
+      />
     </div>
   )
 }

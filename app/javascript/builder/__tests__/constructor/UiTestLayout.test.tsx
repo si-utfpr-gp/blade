@@ -141,6 +141,8 @@ render(wrap(<BlocksPanel errors={[]} />))
       const fetchMock = vi.mocked(globalThis.fetch)
       await user.type(screen.getByLabelText("Nome do algoritmo"), "Media")
       await user.click(button)
+      // The canvas has no blocks, so saving asks first.
+      await user.click(screen.getByRole("button", { name: /salvar mesmo/i }))
       await waitFor(() => expect(fetchMock).toHaveBeenCalled())
 
       const [url, init] = fetchMock.mock.calls.at(-1) as [string, RequestInit]
