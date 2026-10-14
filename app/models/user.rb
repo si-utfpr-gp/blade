@@ -8,6 +8,7 @@ class User < ApplicationRecord
   # happened rather than showing a generic failure.
   class EmailRequired < StandardError; end
   class EmailNotVerified < StandardError; end
+  class DomainNotAllowed < StandardError; end
 
   has_many :algorithms, dependent: :destroy
 
@@ -38,6 +39,12 @@ class User < ApplicationRecord
 
     unless google_email_verified?(auth)
       raise EmailNotVerified, "O email da conta do Google não está verificado."
+    end
+
+    unless AllowedEmailDomains.allowed?(email)
+      # Deliberately does not echo the address back: the message is rendered on
+      # the login screen.
+      raise DomainNotAllowed, "Use uma conta institucional para entrar."
     end
 
     uid = auth["uid"].to_s
