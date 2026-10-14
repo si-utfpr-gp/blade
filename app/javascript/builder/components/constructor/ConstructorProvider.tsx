@@ -31,6 +31,7 @@ import {
   decisionBranchLabel,
   type ConnectionRejection,
 } from "./connectionRules"
+import { diagramSignature } from "./diagramSignature"
 
 export interface MemoryRow {
   type: string
@@ -103,6 +104,13 @@ interface ConstructorContextValue {
 
   clearCanvas: () => void
 
+  // Whether the canvas holds edits that no save or load has accounted for.
+  // Guards the actions that throw work away ask on this before proceeding.
+  isDirty: boolean
+
+  // Called once a save is confirmed, so the current state becomes the baseline.
+  markClean: () => void
+
   // Incremented whenever a whole diagram is loaded, cleared or reset, so the
   // canvas can tell a new diagram apart from ordinary editing.
   diagramLoadCount: number
@@ -127,6 +135,23 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
 
   const [connectionError, setConnectionError] = useState<string | null>(null)
   const edgeReconnectSuccessful = useRef(true)
+
+  // The dirty check compares the current diagram against the state it had when
+  // it was loaded or last saved. Comparing fingerprints instead of toggling a
+  // flag on each edit means undoing back to the saved state reads as clean
+  // again, which a flag could never do on its own.
+  const currentSignature = useMemo(
+    () => diagramSignature(nodes, edges),
+    [nodes, edges],
+  )
+  const [cleanSignature, setCleanSignature] = useState(() =>
+    diagramSignature(initialNodes, initialEdges),
+  )
+  const isDirty = currentSignature !== cleanSignature
+  const markClean = useCallback(
+    () => setCleanSignature(currentSignature),
+    [currentSignature],
+  )
 
   const reportRejection = useCallback((reason: ConnectionRejection) => {
     setConnectionError(CONNECTION_REJECTION_MESSAGE[reason])
@@ -348,6 +373,9 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       setNodes(nextNodes)
       setEdges(nextEdges)
       setSelectedNodeId(null)
+      // What lands on the canvas is the new point of comparison, so opening an
+      // algorithm never reads as an edit the student has to confirm losing.
+      setCleanSignature(diagramSignature(nextNodes, nextEdges))
       setDiagramLoadCount((count) => count + 1)
     },
     [setNodes, setEdges],
@@ -357,6 +385,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
     setNodes(initialNodes)
     setEdges(initialEdges)
     setSelectedNodeId(null)
+    setCleanSignature(diagramSignature(initialNodes, initialEdges))
     setDiagramLoadCount((count) => count + 1)
   }, [setNodes, setEdges])
 
@@ -364,6 +393,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
     setNodes([])
     setEdges([])
     setSelectedNodeId(null)
+    setCleanSignature(diagramSignature([], []))
     setDiagramLoadCount((count) => count + 1)
   }, [setNodes, setEdges])
 
@@ -388,6 +418,8 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       loadCanvasNodes,
       resetCanvas,
       clearCanvas,
+      isDirty,
+      markClean,
       diagramLoadCount,
     }),
     [
@@ -409,6 +441,8 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       loadCanvasNodes,
       resetCanvas,
       clearCanvas,
+      isDirty,
+      markClean,
       diagramLoadCount,
     ],
   )

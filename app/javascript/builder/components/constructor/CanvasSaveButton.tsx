@@ -7,7 +7,7 @@ import { useAlgorithmNameField } from "./AlgorithmNameProvider"
 import { serializeDiagramForSave } from "./serializeDiagram"
 
 export function CanvasSaveButton() {
-  const { nodes, edges } = useConstructor()
+  const { nodes, edges, markClean } = useConstructor()
   const { saveAlgorithm, updateAlgorithm, status, error } = useAlgorithms()
   const { origin, isReadOnly, markSaved } = useDiagramOrigin()
   const { algorithmName, flagMissingName } = useAlgorithmNameField()
@@ -43,6 +43,9 @@ export function CanvasSaveButton() {
           : result.message,
         result.ok ? "success" : "error",
       )
+      // Only a confirmed save becomes the new baseline: a rejection leaves the
+      // edits counted as unsaved, which is what they still are.
+      if (result.ok) markClean()
       return
     }
 
@@ -50,6 +53,7 @@ export function CanvasSaveButton() {
 
     if (result.ok) {
       markSaved(result.algorithm.id)
+      markClean()
       notify(`Algoritmo "${result.algorithm.name}" salvo.`, "success")
     } else {
       notify(result.message, "error")

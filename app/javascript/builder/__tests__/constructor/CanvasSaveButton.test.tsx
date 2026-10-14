@@ -2,7 +2,7 @@ import { ToastProvider } from "../../components/ui/Toast"
 import { describe, it, expect } from "vitest"
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
-import { ConstructorProvider } from "../../components/constructor/ConstructorProvider"
+import { ConstructorProvider, useConstructor } from "../../components/constructor/ConstructorProvider"
 import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvider"
 import {
   AlgorithmNameProvider,
@@ -488,5 +488,84 @@ describe("CanvasSaveButton — alvo de toque por tamanho de tela", () => {
     const baseHeight = className.match(/(?:^|\s)h-(\d+)/)?.[1]
     const baseWidth = className.match(/(?:^|\s)w-(\d+)/)?.[1]
     expect(baseHeight).toBe(baseWidth)
+  })
+})
+
+function DirtyProbe() {
+  const { isDirty, addNode } = useConstructor()
+  return (
+    <div>
+      <span data-testid="dirty">{String(isDirty)}</span>
+      <button type="button" onClick={() => addNode("process", { x: 0, y: 0 })}>
+        sujar
+      </button>
+    </div>
+  )
+}
+
+function renderSaveWithDirtyProbe() {
+  return render(
+    <SimulatorProvider>
+      <ToastProvider>
+      <AlgorithmsProvider signedIn>
+        <DiagramOriginProvider><AlgorithmNameProvider>
+          <ConstructorProvider>
+            <HeaderNameInput />
+            <CanvasSaveButton />
+            <DirtyProbe />
+          </ConstructorProvider>
+        </AlgorithmNameProvider></DiagramOriginProvider>
+      </AlgorithmsProvider>
+    </ToastProvider>
+    </SimulatorProvider>,
+  )
+}
+
+describe("CanvasSaveButton — estado sujo depois de salvar", () => {
+  it("deixa de contar como alteração depois de salvar", async () => {
+    const fetchMock = mockFetch(
+      jsonResponse([]),
+      jsonResponse(
+        { id: 5, name: "Meu algoritmo", diagram: { nodes: [], edges: [] }, created_at: "2026-10-07" },
+        201,
+      ),
+    )
+
+    renderSaveWithDirtyProbe()
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole("button", { name: "sujar" }))
+    expect(screen.getByTestId("dirty").textContent).toBe("true")
+
+    fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
+      target: { value: "Meu algoritmo" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+
+    await waitFor(() =>
+      expect(screen.getByTestId("dirty").textContent).toBe("false"),
+    )
+  })
+
+  it("continua contando como alteração quando a API recusa", async () => {
+    const fetchMock = mockFetch(
+      jsonResponse([]),
+      jsonResponse({ errors: [ "Nome já utilizado" ] }, 422),
+    )
+
+    renderSaveWithDirtyProbe()
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole("button", { name: "sujar" }))
+    fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
+      target: { value: "Meu algoritmo" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    await waitFor(() =>
+      expect(screen.getAllByText(/nome já utilizado/i).length).toBeGreaterThan(0),
+    )
+    expect(screen.getByTestId("dirty").textContent).toBe("true")
   })
 })
