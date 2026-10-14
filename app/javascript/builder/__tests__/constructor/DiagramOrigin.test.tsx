@@ -443,8 +443,9 @@ describe("aviso ao salvar", () => {
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
 
-    expect(
-      await screen.findByText(/não foi possível salvar/i),
-    ).toBeInTheDocument()
+    // The API message is surfaced instead of a generic failure, so the student
+    // knows what to change.
+    const toast = await screen.findByRole("status")
+    expect(toast).toHaveTextContent(/nome não pode ficar em branco/i)
   })
 })

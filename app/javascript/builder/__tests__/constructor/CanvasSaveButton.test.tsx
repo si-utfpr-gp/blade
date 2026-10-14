@@ -169,11 +169,10 @@ describe("CanvasSaveButton — salvar algoritmo", () => {
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
 
-    await waitFor(() =>
-      expect(
-        screen.getByText(/nome não pode ficar em branco/i),
-      ).toBeInTheDocument(),
-    )
+    // Scoped to the toast, since a screen reader only element carries the same
+    // text for assistive tech.
+    const toast = await screen.findByRole("status")
+    expect(toast).toHaveTextContent(/nome não pode ficar em branco/i)
   })
 })
 describe("CanvasActions — novo algoritmo", () => {

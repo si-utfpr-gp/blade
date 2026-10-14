@@ -10,6 +10,7 @@ import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
 import { ToastProvider } from "../../components/ui/Toast"
 import { CanvasSaveButton } from "../../components/constructor/CanvasSaveButton"
 import { CanvasActions } from "../../components/constructor/CanvasActions"
+import { ExamplesSection } from "../../components/constructor/ExamplesSection"
 import { BuilderHeader } from "../../components/layout/BuilderHeader"
 
 /**
@@ -174,5 +175,94 @@ describe("nome obrigatório", () => {
     expect(
       await screen.findByText(/algoritmo "contador" salvo/i),
     ).toBeInTheDocument()
+  })
+})
+/**
+ * The API explains a refusal, for instance "já existe um algoritmo com esse
+ * nome". Showing a generic "não foi possível salvar" threw that away and left
+ * the student with no idea what to change.
+ */
+describe("mensagem da API na recusa", () => {
+  function renderWithApi(responses: unknown[]) {
+    const fetchMock = vi.fn()
+    for (const response of responses) {
+      fetchMock.mockResolvedValueOnce(
+        typeof response === "function" ? response() : response,
+      )
+    }
+    vi.stubGlobal("fetch", fetchMock)
+    return render(
+      <SimulatorProvider>
+        <ToastProvider>
+          <AlgorithmsProvider>
+            <DiagramOriginProvider>
+              <AlgorithmNameProvider>
+                <ConstructorProvider>
+                  <BuilderHeader />
+                  <ExamplesSection />
+                  <CanvasSaveButton />
+                </ConstructorProvider>
+              </AlgorithmNameProvider>
+            </DiagramOriginProvider>
+          </AlgorithmsProvider>
+        </ToastProvider>
+      </SimulatorProvider>,
+    )
+  }
+
+  it("mostra o motivo devolvido pela API ao criar", async () => {
+    renderWithApi([
+      jsonResponse([]),
+      jsonResponse({ errors: ["Nome já existe um algoritmo com esse nome"] }, 422),
+    ])
+
+    fireEvent.change(screen.getByLabelText("Nome do algoritmo"), {
+      target: { value: "Contador" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+
+    // Scoped to the toast: a screen reader only element carries the same text
+    // and would make this pass without the student ever seeing it.
+    const toast = await screen.findByRole("status")
+    expect(toast).toHaveTextContent(/já existe um algoritmo com esse nome/i)
+  })
+
+  it("mostra o motivo devolvido pela API ao atualizar", async () => {
+    const diagram = { nodes: [], edges: [] }
+    renderWithApi([
+      jsonResponse([
+        { id: 7, name: "Meu algoritmo", diagram, created_at: "2026-10-14" },
+      ]),
+      jsonResponse({ id: 7, name: "Meu algoritmo", diagram, created_at: "2026-10-14" }),
+      jsonResponse({ errors: ["Nome já existe um algoritmo com esse nome"] }, 422),
+    ])
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: /^Meus algoritmos: nenhum selecionado/i,
+      }),
+    )
+    fireEvent.click(await screen.findByRole("button", { name: /Meu algoritmo/i }))
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: /atualizar algoritmo/i }),
+    )
+
+    const toast = await screen.findByRole("status")
+    expect(toast).toHaveTextContent(/já existe um algoritmo com esse nome/i)
+  })
+
+  it("mostra o motivo genérico quando a API não devolve nada", async () => {
+    renderWithApi([jsonResponse([]), { ok: false, status: 500, json: async () => ({}) }])
+
+    fireEvent.change(screen.getByLabelText("Nome do algoritmo"), {
+      target: { value: "Contador" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+
+    // The provider substitutes a message when the body carries none, so the
+    // student still sees something instead of silence.
+    const toast = await screen.findByRole("status")
+    expect(toast).toHaveTextContent(/falha na requisição/i)
   })
 })

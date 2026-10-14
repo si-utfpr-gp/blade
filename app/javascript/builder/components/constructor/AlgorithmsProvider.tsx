@@ -19,13 +19,19 @@ export interface SavedAlgorithm {
 
 export type AlgorithmsStatus = "idle" | "loading" | "saving" | "deleting" | "error"
 
+// The reason a write failed travels with the result: reading it back from the
+// provider state inside the caller is too late, React has not re-rendered yet.
+export type WriteResult =
+  | { ok: true; algorithm: SavedAlgorithm }
+  | { ok: false; message: string }
+
 interface IAlgorithmsContextValue {
   algorithms: SavedAlgorithm[]
   status: AlgorithmsStatus
   error: string | null
   loadAlgorithms: () => Promise<void>
-  saveAlgorithm: (name: string, diagram: SerializedDiagram) => Promise<SavedAlgorithm | null>
-  updateAlgorithm: (id: number, name: string, diagram: SerializedDiagram) => Promise<SavedAlgorithm | null>
+  saveAlgorithm: (name: string, diagram: SerializedDiagram) => Promise<WriteResult>
+  updateAlgorithm: (id: number, name: string, diagram: SerializedDiagram) => Promise<WriteResult>
   deleteAlgorithm: (id: number) => Promise<boolean>
   getAlgorithm: (id: number) => Promise<SavedAlgorithm | null>
 }
@@ -93,11 +99,13 @@ export function AlgorithmsProvider({ children }: { children: ReactNode }) {
           ...current.filter((item) => item.id !== saved.id),
         ])
         setStatus("idle")
-        return saved
+        return { ok: true, algorithm: saved }
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "Falha ao salvar.")
+        const message =
+          cause instanceof Error ? cause.message : "Falha ao salvar."
+        setError(message)
         setStatus("error")
-        return null
+        return { ok: false, message }
       }
     },
     [],
@@ -123,13 +131,13 @@ export function AlgorithmsProvider({ children }: { children: ReactNode }) {
           current.map((item) => (item.id === id ? updated : item)),
         )
         setStatus("idle")
-        return updated
+        return { ok: true, algorithm: updated }
       } catch (cause) {
-        setError(
-          cause instanceof Error ? cause.message : "Falha ao atualizar.",
-        )
+        const message =
+          cause instanceof Error ? cause.message : "Falha ao atualizar."
+        setError(message)
         setStatus("error")
-        return null
+        return { ok: false, message }
       }
     },
     [],

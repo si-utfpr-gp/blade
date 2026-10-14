@@ -33,22 +33,26 @@ export function CanvasSaveButton() {
     // The name stays in the field after saving: emptying it made the save look
     // like it had failed, and the diagram on screen is still that algorithm.
     if (origin.kind === "saved") {
-      const updated = await updateAlgorithm(origin.id, trimmed, diagram)
-      if (updated) {
-        notify(`Algoritmo "${updated.name}" atualizado.`, "success")
-      } else {
-        notify("Não foi possível atualizar o algoritmo.", "error")
-      }
+      const result = await updateAlgorithm(origin.id, trimmed, diagram)
+
+      // The API says why, for instance that the name is taken. A generic
+      // message left the student with nothing to act on.
+      notify(
+        result.ok
+          ? `Algoritmo "${result.algorithm.name}" atualizado.`
+          : result.message,
+        result.ok ? "success" : "error",
+      )
       return
     }
 
-    const saved = await saveAlgorithm(trimmed, diagram)
-    if (saved) {
-      markSaved(saved.id)
-      notify(`Algoritmo "${saved.name}" salvo.`, "success")
+    const result = await saveAlgorithm(trimmed, diagram)
+
+    if (result.ok) {
+      markSaved(result.algorithm.id)
+      notify(`Algoritmo "${result.algorithm.name}" salvo.`, "success")
     } else {
-      // saveAlgorithm already stored the API message on `error`.
-      notify("Não foi possível salvar o algoritmo.", "error")
+      notify(result.message, "error")
     }
   }
 
