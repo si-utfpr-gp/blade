@@ -14,6 +14,9 @@ export type DiagramOrigin =
   | { kind: "blank" }
   | { kind: "example"; id: string }
   | { kind: "saved"; id: number }
+  // Kept in the browser rather than on a server. Saving one onto an account
+  // moves it, which is why the id is a string.
+  | { kind: "local"; id: string }
 
 interface IDiagramOriginContextValue {
   origin: DiagramOrigin
@@ -23,6 +26,7 @@ interface IDiagramOriginContextValue {
   markBlank: () => void
   markExample: (id: string) => void
   markSaved: (id: number) => void
+  markLocal: (id: string) => void
 }
 
 const DiagramOriginContext = createContext<IDiagramOriginContextValue | null>(
@@ -41,6 +45,10 @@ export function DiagramOriginProvider({ children }: { children: ReactNode }) {
     (id: number) => setOrigin({ kind: "saved", id }),
     [],
   )
+  const markLocal = useCallback(
+    (id: string) => setOrigin({ kind: "local", id }),
+    [],
+  )
 
   const value = useMemo<IDiagramOriginContextValue>(
     () => ({
@@ -49,8 +57,9 @@ export function DiagramOriginProvider({ children }: { children: ReactNode }) {
       markBlank,
       markExample,
       markSaved,
+      markLocal,
     }),
-    [origin, markBlank, markExample, markSaved],
+    [origin, markBlank, markExample, markSaved, markLocal],
   )
 
   return (
