@@ -22,10 +22,11 @@ export function RunDiagramButton({ onDiagramLoaded }: IRunDiagramButtonProps) {
     const result = loadAndStartDiagram(normalizedNodes, normalizedEdges)
     if (result.ok) {
       setStatus({ ok: true, message: "Diagrama carregado no simulador." })
-
+      console.log(status?.message)
       onDiagramLoaded?.()
     } else {
       setStatus({ ok: false, message: result.error })
+      console.error(status?.message)
     }
   }
 
