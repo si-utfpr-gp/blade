@@ -346,7 +346,11 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
         .map((node) => ({
           id: node.id,
           type: node.type,
-          position: node.position,
+          // Diagrams arrive from saved records, bundled examples and imported
+          // files, and only the first two are guaranteed to carry geometry.
+          // Falling back to the origin keeps a missing position from placing a
+          // block nowhere, which the signature below would trip over too.
+          position: node.position ?? { x: 0, y: 0 },
           data: {
             blockType: node.type as BlockType,
             label: (node.data.label as string | undefined) ?? "",

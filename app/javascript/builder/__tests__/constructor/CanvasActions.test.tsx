@@ -56,6 +56,9 @@ describe("CanvasActions", () => {
     expect(screen.getByTestId("canvas-nodes").textContent).toBe("1")
     expect(screen.getByTestId("sim-steps").textContent).toBe("1")
     fireEvent.click(screen.getByRole("button", { name: /novo algoritmo/i }))
+    // The setup added a block, so there is work to lose and the guard asks
+    // first. This test is about what the action does once it is allowed.
+    fireEvent.click(screen.getByRole("button", { name: /descartar/i }))
     // The canvas opens empty, so a new algorithm starts from nothing.
     expect(screen.getByTestId("canvas-nodes").textContent).toBe("0")
     expect(screen.getByTestId("sim-steps").textContent).toBe("0")
@@ -65,6 +68,7 @@ describe("CanvasActions", () => {
     renderActions()
     fireEvent.click(screen.getByRole("button", { name: /setup-run/i }))
     fireEvent.click(screen.getByRole("button", { name: /^limpar/i }))
+    fireEvent.click(screen.getByRole("button", { name: /descartar/i }))
     expect(screen.getByTestId("canvas-nodes").textContent).toBe("0")
     expect(screen.getByTestId("sim-steps").textContent).toBe("0")
   })

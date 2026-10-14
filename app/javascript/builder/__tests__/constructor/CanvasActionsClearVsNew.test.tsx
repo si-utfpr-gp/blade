@@ -31,7 +31,7 @@ function HeaderNameInput() {
 // Stands in for a saved algorithm being opened: blocks on the canvas, a name
 // in the field and an identity that later saves would update in place.
 function Probe() {
-  const { nodes, loadCanvasNodes } = useConstructor()
+  const { nodes, loadCanvasNodes, addNode } = useConstructor()
   const { origin, markSaved, markExample } = useDiagramOrigin()
   return (
     <div>
@@ -57,6 +57,12 @@ function Probe() {
       </button>
       <button type="button" onClick={() => markSaved(7)}>
         marcar-salvo
+      </button>
+      <button
+        type="button"
+        onClick={() => addNode("process", { x: 0, y: 0 })}
+      >
+        sujar
       </button>
       <button type="button" onClick={() => markExample("contador")}>
         marcar-exemplo
@@ -187,5 +193,82 @@ describe("CanvasActions — Limpar sobre um exemplo", () => {
     fireEvent.click(screen.getByRole("button", { name: /^limpar$/i }))
 
     expect(screen.getByTestId("origin-kind").textContent).toBe("blank")
+  })
+})
+
+describe("CanvasActions — não descarta trabalho sem perguntar", () => {
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse([])))
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  function setup() {
+    renderActions()
+    fireEvent.click(screen.getByRole("button", { name: "abrir-salvo" }))
+  }
+
+  it("não pergunta quando nada foi alterado", () => {
+    setup()
+
+    fireEvent.click(screen.getByRole("button", { name: /^limpar$/i }))
+
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument()
+    expect(screen.getByTestId("node-count").textContent).toBe("0")
+  })
+
+  it("pergunta antes de limpar um diagrama alterado", () => {
+    setup()
+    fireEvent.click(screen.getByRole("button", { name: "sujar" }))
+
+    fireEvent.click(screen.getByRole("button", { name: /^limpar$/i }))
+
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument()
+    // Still there: the question has been asked, not answered.
+    expect(screen.getByTestId("node-count").textContent).toBe("2")
+  })
+
+  it("descarta quando o aluno confirma", () => {
+    setup()
+    fireEvent.click(screen.getByRole("button", { name: "sujar" }))
+    fireEvent.click(screen.getByRole("button", { name: /^limpar$/i }))
+
+    fireEvent.click(screen.getByRole("button", { name: /descartar/i }))
+
+    expect(screen.getByTestId("node-count").textContent).toBe("0")
+  })
+
+  it("mantém tudo quando o aluno cancela", () => {
+    setup()
+    fireEvent.click(screen.getByRole("button", { name: "sujar" }))
+    fireEvent.click(screen.getByRole("button", { name: /^limpar$/i }))
+
+    fireEvent.click(screen.getByRole("button", { name: /cancelar/i }))
+
+    expect(screen.getByTestId("node-count").textContent).toBe("2")
+  })
+
+  it("pergunta antes de começar outro algoritmo", () => {
+    setup()
+    fireEvent.click(screen.getByRole("button", { name: "sujar" }))
+
+    fireEvent.click(screen.getByRole("button", { name: /novo algoritmo/i }))
+
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument()
+    expect(screen.getByTestId("node-count").textContent).toBe("2")
+  })
+
+  it("nomeia o que está em risco, para o aluno saber o que vai perder", () => {
+    setup()
+    fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
+      target: { value: "Contador" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "sujar" }))
+
+    fireEvent.click(screen.getByRole("button", { name: /^limpar$/i }))
+
+    expect(screen.getByText(/Contador/)).toBeInTheDocument()
   })
 })
