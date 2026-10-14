@@ -102,6 +102,10 @@ interface ConstructorContextValue {
   resetCanvas: () => void
 
   clearCanvas: () => void
+
+  // Incremented whenever a whole diagram is loaded, cleared or reset, so the
+  // canvas can tell a new diagram apart from ordinary editing.
+  diagramLoadCount: number
 }
 
 const ConstructorContext = createContext<ConstructorContextValue | null>(null)
@@ -115,6 +119,7 @@ const initialEdges: Edge[] = []
 
 export function ConstructorProvider({ children }: { children: ReactNode }) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
+  const [diagramLoadCount, setDiagramLoadCount] = useState(0)
 
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
 
@@ -343,6 +348,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       setNodes(nextNodes)
       setEdges(nextEdges)
       setSelectedNodeId(null)
+      setDiagramLoadCount((count) => count + 1)
     },
     [setNodes, setEdges],
   )
@@ -351,12 +357,14 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
     setNodes(initialNodes)
     setEdges(initialEdges)
     setSelectedNodeId(null)
+    setDiagramLoadCount((count) => count + 1)
   }, [setNodes, setEdges])
 
   const clearCanvas = useCallback(() => {
     setNodes([])
     setEdges([])
     setSelectedNodeId(null)
+    setDiagramLoadCount((count) => count + 1)
   }, [setNodes, setEdges])
 
   const value = useMemo(
@@ -380,6 +388,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       loadCanvasNodes,
       resetCanvas,
       clearCanvas,
+      diagramLoadCount,
     }),
     [
       nodes,
@@ -400,6 +409,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       loadCanvasNodes,
       resetCanvas,
       clearCanvas,
+      diagramLoadCount,
     ],
   )
 

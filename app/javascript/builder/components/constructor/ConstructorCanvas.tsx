@@ -19,6 +19,7 @@ import {
 import ContextMenu from "./ContextMenu"
 import { RunDiagramButton } from "./RunDiagramButton"
 import { CanvasSaveButton } from "./CanvasSaveButton"
+import { useFitOnDiagramLoad } from "./useFitOnDiagramLoad"
 import { usePanePlacement } from "./usePanePlacement"
 import { PlacementHint } from "./PlacementHint"
 import { useDiagramOrigin } from "./DiagramOrigin"
@@ -44,10 +45,12 @@ export default function ConstructorCanvas({
     addNode,
     setSelectedNodeId,
     removeNode,
+    diagramLoadCount,
   } = useConstructor()
 
   const { screenToFlowPosition, getNode, setCenter } = useReactFlow()
   const placeAt = usePanePlacement()
+  useFitOnDiagramLoad(diagramLoadCount)
   const { state: simulatorState } = useSimulator()
 
   const { isReadOnly } = useDiagramOrigin()
