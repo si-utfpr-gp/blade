@@ -7,12 +7,14 @@ import { useDiagramOrigin } from "./DiagramOrigin"
 import { useAlgorithmNameField } from "./AlgorithmNameProvider"
 import { serializeDiagramForSave } from "./serializeDiagram"
 import { ConfirmDialog } from "../ui/ConfirmDialog"
+import { useLocalAlgorithms } from "./LocalAlgorithmsProvider"
 
 export function CanvasSaveButton() {
   const { nodes, edges, markClean } = useConstructor()
   const { saveAlgorithm, updateAlgorithm, status, error } = useAlgorithms()
   const { origin, isReadOnly, markSaved } = useDiagramOrigin()
   const { algorithmName, flagMissingName } = useAlgorithmNameField()
+  const { deleteAlgorithm: deleteLocalAlgorithm } = useLocalAlgorithms()
   const { notify } = useToast()
   const [emptyWarning, setEmptyWarning] = useState(false)
 
@@ -46,13 +48,19 @@ export function CanvasSaveButton() {
 
     const result = await saveAlgorithm(trimmed, diagram)
 
-    if (result.ok) {
-      markSaved(result.algorithm.id)
-      markClean()
-      notify(`Algoritmo "${result.algorithm.name}" salvo.`, "success")
-    } else {
+    if (!result.ok) {
       notify(result.message, "error")
+      return
     }
+
+    // A diagram that came from this browser now lives on an account. Leaving
+    // the local copy behind would put the same algorithm in two lists and let
+    // the student edit one and lose the other, so the move is the point.
+    if (origin.kind === "local") deleteLocalAlgorithm(origin.id)
+
+    markSaved(result.algorithm.id)
+    markClean()
+    notify(`Algoritmo "${result.algorithm.name}" salvo.`, "success")
   }
 
   const handleSave = () => {

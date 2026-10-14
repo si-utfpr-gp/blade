@@ -1,10 +1,10 @@
 import { ToastProvider } from "../../components/ui/Toast"
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
 import { ConstructorProvider, useConstructor } from "../../components/constructor/ConstructorProvider"
+import { LocalAlgorithmsProvider, useLocalAlgorithms } from "../../components/constructor/LocalAlgorithmsProvider"
 import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvider"
-import { LocalAlgorithmsProvider } from "../../components/constructor/LocalAlgorithmsProvider"
 import {
   AlgorithmNameProvider,
   useAlgorithmNameField,
@@ -771,3 +771,136 @@ function WithNode() {
     </button>
   )
 }
+
+function LocalOriginProbe() {
+  const { origin, markLocal } = useDiagramOrigin()
+  const { saveDiagram } = useLocalAlgorithms()
+  return (
+    <div>
+      <span data-testid="origin-kind">{origin.kind}</span>
+      <button
+        type="button"
+        onClick={() => {
+          // The real id, since that is what the save has to look up. Marking
+          // an invented one would never match anything in the store.
+          saveDiagram("Contador", { nodes: [], edges: [] })
+        }}
+      >
+        guardar-local
+      </button>
+      <button type="button" onClick={() => markLocal(localId)}>
+        marcar-local
+      </button>
+    </div>
+  )
+}
+
+// Filled in by the stubbed store on the next write, so the test can point the
+// origin at the record that actually exists.
+let localId = ""
+
+let localCount = 0
+
+function renderSaveWithLocal() {
+  return render(
+    <SimulatorProvider>
+      <ToastProvider>
+        <AlgorithmsProvider signedIn>
+          <LocalAlgorithmsProvider>
+            <DiagramOriginProvider>
+              <AlgorithmNameProvider>
+                <ConstructorProvider>
+                  <HeaderNameInput />
+                  <CanvasSaveButton />
+                  <LocalOriginProbe />
+                </ConstructorProvider>
+              </AlgorithmNameProvider>
+            </DiagramOriginProvider>
+          </LocalAlgorithmsProvider>
+        </AlgorithmsProvider>
+      </ToastProvider>
+    </SimulatorProvider>,
+  )
+}
+
+describe("CanvasSaveButton — mover um algoritmo do navegador para a conta", () => {
+  beforeEach(() => {
+    localCount = 0
+    let value = "[]"
+    vi.stubGlobal("localStorage", {
+      getItem: () => value,
+      setItem: (_: string, next: string) => {
+        value = next
+        localCount = JSON.parse(next).length
+        localId = JSON.parse(next)[0]?.id ?? ""
+      },
+      removeItem: vi.fn(),
+    })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  async function setup() {
+    const fetchMock = mockFetch(
+      jsonResponse([]),
+      jsonResponse(
+        { id: 5, name: "Contador", diagram: { nodes: [], edges: [] }, created_at: "2026-10-07" },
+        201,
+      ),
+    )
+    renderSaveWithLocal()
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole("button", { name: "guardar-local" }))
+    fireEvent.click(screen.getByRole("button", { name: "marcar-local" }))
+    fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
+      target: { value: "Contador" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
+    return fetchMock
+  }
+
+  it("cria o registro na conta", async () => {
+    const fetchMock = await setup()
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    expect(fetchMock.mock.calls[1][0]).toBe("/algorithms")
+  })
+
+  it("some do navegador, para o mesmo diagrama não ficar em dois lugares", async () => {
+    const fetchMock = await setup()
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    expect(localCount).toBe(0)
+  })
+
+  it("passa a apontar para o algoritmo da conta", async () => {
+    await setup()
+
+    await waitFor(() =>
+      expect(screen.getByTestId("origin-kind").textContent).toBe("saved"),
+    )
+  })
+
+  it("mantém o local quando a conta recusa, para nada se perder", async () => {
+    const fetchMock = mockFetch(jsonResponse([]), jsonResponse({ errors: [ "Nome já utilizado" ] }, 422))
+
+    renderSaveWithLocal()
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole("button", { name: "guardar-local" }))
+    fireEvent.click(screen.getByRole("button", { name: "marcar-local" }))
+    fireEvent.change(screen.getByLabelText(/nome do algoritmo/i), {
+      target: { value: "Contador" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    expect(localCount).toBe(1)
+    expect(screen.getByTestId("origin-kind").textContent).toBe("local")
+  })
+})
