@@ -71,7 +71,7 @@ function renderCanvas() {
   return render(
     <SimulatorProvider>
       <ToastProvider>
-        <AlgorithmsProvider>
+        <AlgorithmsProvider signedIn>
           <AlgorithmNameProvider>
             <DiagramOriginProvider>
               <BlockPlacementProvider>

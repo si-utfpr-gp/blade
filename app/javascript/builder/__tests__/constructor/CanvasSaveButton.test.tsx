@@ -49,7 +49,7 @@ function renderSave() {
   return render(
     <SimulatorProvider>
       <ToastProvider>
-      <AlgorithmsProvider>
+      <AlgorithmsProvider signedIn>
         <DiagramOriginProvider><AlgorithmNameProvider>
           <ConstructorProvider>
             <HeaderNameInput />
@@ -182,7 +182,7 @@ describe("CanvasActions — novo algoritmo", () => {
     render(
       <SimulatorProvider>
       <ToastProvider>
-        <AlgorithmsProvider>
+        <AlgorithmsProvider signedIn>
           <DiagramOriginProvider><AlgorithmNameProvider>
             <ConstructorProvider>
               <HeaderNameInput />
@@ -218,7 +218,7 @@ describe("nome do algoritmo acompanha o diagrama carregado", () => {
     render(
       <SimulatorProvider>
       <ToastProvider>
-        <AlgorithmsProvider>
+        <AlgorithmsProvider signedIn>
           <DiagramOriginProvider><AlgorithmNameProvider>
             <ConstructorProvider>
               <HeaderNameInput />
@@ -264,7 +264,7 @@ describe("nome do algoritmo acompanha o diagrama carregado", () => {
     render(
       <SimulatorProvider>
       <ToastProvider>
-        <AlgorithmsProvider>
+        <AlgorithmsProvider signedIn>
           <DiagramOriginProvider><AlgorithmNameProvider>
             <ConstructorProvider>
               <HeaderNameInput />
@@ -311,7 +311,7 @@ describe("CanvasSaveButton — somente ícone", () => {
     return render(
       <SimulatorProvider>
         <ToastProvider>
-          <AlgorithmsProvider>
+          <AlgorithmsProvider signedIn>
             <DiagramOriginProvider>
               <AlgorithmNameProvider>
                 <ConstructorProvider>
@@ -332,7 +332,7 @@ describe("CanvasSaveButton — somente ícone", () => {
     return render(
       <SimulatorProvider>
         <ToastProvider>
-          <AlgorithmsProvider>
+          <AlgorithmsProvider signedIn>
             <DiagramOriginProvider>
               <AlgorithmNameProvider>
                 <ConstructorProvider>
@@ -383,7 +383,7 @@ describe("CanvasSaveButton — somente ícone", () => {
     render(
       <SimulatorProvider>
         <ToastProvider>
-          <AlgorithmsProvider>
+          <AlgorithmsProvider signedIn>
             <DiagramOriginProvider>
               <AlgorithmNameProvider>
                 <ConstructorProvider>
@@ -439,7 +439,7 @@ describe("CanvasSaveButton — alvo de toque por tamanho de tela", () => {
     return render(
       <SimulatorProvider>
         <ToastProvider>
-          <AlgorithmsProvider>
+          <AlgorithmsProvider signedIn>
             <DiagramOriginProvider>
               <AlgorithmNameProvider>
                 <ConstructorProvider>

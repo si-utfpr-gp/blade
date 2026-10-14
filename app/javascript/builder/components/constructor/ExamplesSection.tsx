@@ -164,7 +164,7 @@ function SidebarDropdown({
 export function ExamplesSection() {
   const { loadCanvasNodes } = useConstructor()
   const { reset } = useSimulator()
-  const { algorithms, getAlgorithm } = useAlgorithms()
+  const { algorithms, getAlgorithm, signedIn } = useAlgorithms()
   const { onAlgorithmNameChange } = useAlgorithmNameField()
   const { markExample, markSaved } = useDiagramOrigin()
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -195,18 +195,20 @@ export function ExamplesSection() {
 
   return (
     <div className="flex-1 space-y-2 overflow-y-auto p-3">
-      <SidebarDropdown
-        icon={<FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-        label="Meus algoritmos"
-        items={algorithms.map((algorithm) => ({
-          id: algorithm.id.toString(),
-          title: algorithm.name,
-          description: `Salvo em ${algorithm.created_at}`,
-        }))}
-        selectedId={selectedUserId}
-        emptyText="Nenhum algoritmo salvo ainda."
-        onSelect={(id) => void handleSelectUserAlgorithm(id)}
-      />
+      {signedIn && (
+        <SidebarDropdown
+          icon={<FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+          label="Meus algoritmos"
+          items={algorithms.map((algorithm) => ({
+            id: algorithm.id.toString(),
+            title: algorithm.name,
+            description: `Salvo em ${algorithm.created_at}`,
+          }))}
+          selectedId={selectedUserId}
+          emptyText="Nenhum algoritmo salvo ainda."
+          onSelect={(id) => void handleSelectUserAlgorithm(id)}
+        />
+      )}
 
       <SidebarDropdown
         icon={<BookOpen className="h-3.5 w-3.5 shrink-0 text-primary" />}

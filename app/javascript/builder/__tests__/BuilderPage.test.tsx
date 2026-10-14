@@ -82,7 +82,7 @@ describe("BuilderPage — menu de blocos no celular", () => {
   })
 
   it("abre os blocos e os exemplos ao clicar no botão", () => {
-    render(<BuilderPage />)
+    render(<BuilderPage signedIn />)
 
     fireEvent.click(
       screen.getByRole("button", { name: /abrir menu de blocos/i }),

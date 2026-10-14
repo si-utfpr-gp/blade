@@ -33,7 +33,7 @@ function renderIntegration(ui: ReactNode) {
   return render(
     <SimulatorProvider>
       <ToastProvider>
-      <AlgorithmsProvider>
+      <AlgorithmsProvider signedIn>
         <ConstructorProvider>{ui}</ConstructorProvider>
       </AlgorithmsProvider>
     </ToastProvider>

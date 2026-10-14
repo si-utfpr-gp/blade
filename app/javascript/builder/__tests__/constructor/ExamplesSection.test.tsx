@@ -25,7 +25,7 @@ function Probe() {
 function renderSection() {
   return render(
     <SimulatorProvider>
-      <AlgorithmsProvider>
+      <AlgorithmsProvider signedIn>
         <DiagramOriginProvider><AlgorithmNameProvider>
           <ConstructorProvider>
           <ExamplesSection />

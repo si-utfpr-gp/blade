@@ -21,10 +21,10 @@ function Probe() {
   )
 }
 
-function renderSection() {
+function renderSection(signedIn = true) {
   return render(
     <SimulatorProvider>
-      <AlgorithmsProvider>
+      <AlgorithmsProvider signedIn={signedIn}>
         <DiagramOriginProvider><AlgorithmNameProvider>
           <ConstructorProvider>
           <ExamplesSection />
@@ -138,6 +138,24 @@ describe("ExamplesSection — Meus algoritmos", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("sim-steps").textContent).toBe("0")
+    })
+  })
+
+  describe("sem sessão", () => {
+    it("esconde a seção, em vez de mostrar uma lista vazia", () => {
+      renderSection(false)
+
+      expect(
+        screen.queryByRole("button", { name: /meus algoritmos/i }),
+      ).not.toBeInTheDocument()
+    })
+
+    it("mantém os exemplos disponíveis para quem não entrou", () => {
+      renderSection(false)
+
+      expect(
+        screen.getByRole("button", { name: /exemplos/i }),
+      ).toBeInTheDocument()
     })
   })
 })

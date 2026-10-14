@@ -27,6 +27,9 @@ export type WriteResult =
 
 interface IAlgorithmsContextValue {
   algorithms: SavedAlgorithm[]
+  // Lets the sidebar hide the whole section instead of showing an empty list
+  // that would only invite a visitor to sign in.
+  signedIn: boolean
   status: AlgorithmsStatus
   error: string | null
   loadAlgorithms: () => Promise<void>
@@ -51,7 +54,13 @@ async function readErrors(response: Response): Promise<string> {
   return `Falha na requisição (${response.status}).`
 }
 
-export function AlgorithmsProvider({ children }: { children: ReactNode }) {
+export function AlgorithmsProvider({
+  children,
+  signedIn = false,
+}: {
+  children: ReactNode
+  signedIn?: boolean
+}) {
   const [algorithms, setAlgorithms] = useState<SavedAlgorithm[]>([])
   const [status, setStatus] = useState<AlgorithmsStatus>("idle")
   const [error, setError] = useState<string | null>(null)
@@ -176,15 +185,20 @@ export function AlgorithmsProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
+    // Without an account there is nothing to list, and asking anyway would
+    // only earn a 401 and an error toast on a page that works for a visitor.
+    if (!signedIn) return
+
     // Data fetching on mount. Every setState inside fetchAlgorithms runs after
     // an awaited response, so no render is cascaded synchronously here.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchAlgorithms()
-  }, [fetchAlgorithms])
+  }, [fetchAlgorithms, signedIn])
 
   const value = useMemo<IAlgorithmsContextValue>(
     () => ({
-      algorithms,
+      algorithms: signedIn ? algorithms : [],
+      signedIn,
       status,
       error,
       loadAlgorithms,
@@ -195,6 +209,7 @@ export function AlgorithmsProvider({ children }: { children: ReactNode }) {
     }),
     [
       algorithms,
+      signedIn,
       status,
       error,
       loadAlgorithms,

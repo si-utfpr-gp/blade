@@ -37,7 +37,7 @@ function Probe() {
 function renderActions() {
   return render(
     <SimulatorProvider>
-      <AlgorithmsProvider>
+      <AlgorithmsProvider signedIn>
         <DiagramOriginProvider><AlgorithmNameProvider>
           <ConstructorProvider>
           <CanvasActions />

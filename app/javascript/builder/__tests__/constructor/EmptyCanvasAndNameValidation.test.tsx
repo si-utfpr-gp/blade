@@ -34,7 +34,7 @@ function renderBuilder({ withFetch = true } = {}) {
   return render(
     <SimulatorProvider>
       <ToastProvider>
-        <AlgorithmsProvider>
+        <AlgorithmsProvider signedIn>
           <AlgorithmNameProvider>
             <DiagramOriginProvider>
               <BlockPlacementProvider>
@@ -194,7 +194,7 @@ describe("mensagem da API na recusa", () => {
     return render(
       <SimulatorProvider>
         <ToastProvider>
-          <AlgorithmsProvider>
+          <AlgorithmsProvider signedIn>
             <DiagramOriginProvider>
               <AlgorithmNameProvider>
                 <ConstructorProvider>

@@ -24,14 +24,16 @@ export function renderWithSimulator(ui: ReactNode, callbacks?: ISimulatorCallbac
 export function BuilderProviders({
   children,
   callbacks,
+  signedIn = true,
 }: {
   children: ReactNode
   callbacks?: ISimulatorCallbacks
+  signedIn?: boolean
 }) {
   return (
     <SimulatorProvider callbacks={callbacks}>
       <ToastProvider>
-        <AlgorithmsProvider>
+        <AlgorithmsProvider signedIn={signedIn}>
           <AlgorithmNameProvider>
             <DiagramOriginProvider>
               <BlockPlacementProvider>

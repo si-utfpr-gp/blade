@@ -44,7 +44,7 @@ function renderBuilder() {
   return render(
     <SimulatorProvider>
       <ToastProvider>
-      <AlgorithmsProvider>
+      <AlgorithmsProvider signedIn>
         <DiagramOriginProvider>
           <AlgorithmNameProvider>
             <ConstructorProvider>
