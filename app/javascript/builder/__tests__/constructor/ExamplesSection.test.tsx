@@ -92,7 +92,8 @@ describe("ExamplesSection", () => {
   it("carrega o exemplo no canvas e marca como selecionado", () => {
     renderSection()
     openExamplesDropdown()
-    expect(screen.getByTestId("canvas-nodes").textContent).toBe("1")
+    // The canvas opens empty now, so the example brings all of its own nodes.
+    expect(screen.getByTestId("canvas-nodes").textContent).toBe("0")
     const button = screen.getByRole("button", { name: /soma de dois valores/i })
     expect(button).toHaveAttribute("aria-pressed", "false")
     fireEvent.click(button)

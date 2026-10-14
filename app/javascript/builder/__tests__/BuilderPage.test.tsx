@@ -2,6 +2,16 @@ import { describe, it, expect, beforeEach } from "vitest"
 import { render, screen, fireEvent, within } from "@testing-library/react"
 import BuilderPage from "../BuilderPage"
 
+/**
+ * The canvas opens empty, so tests that need something to work with place the
+ * start block the way a student does: tap the tile, then tap the canvas.
+ */
+function placeStartBlock(container: HTMLElement) {
+  fireEvent.click(screen.getByTestId("block-tile-startEnd-start"))
+  const canvas = container.querySelector(".react-flow__pane") as Element
+  fireEvent.click(canvas, { clientX: 200, clientY: 200 })
+}
+
 describe("BuilderPage", () => {
   it("inicia com o painel do simulador fechado", () => {
     render(<BuilderPage />)
@@ -21,6 +31,7 @@ describe("BuilderPage", () => {
 
   it("abre o menu de contexto junto ao ponto clicado no bloco", () => {
     const { container } = render(<BuilderPage />)
+    placeStartBlock(container)
     const nodeEl = container.querySelector(".react-flow__node")
     expect(nodeEl).not.toBeNull()
     fireEvent.contextMenu(nodeEl as Element, { clientX: 120, clientY: 150 })
@@ -30,7 +41,8 @@ describe("BuilderPage", () => {
   })
 
   it("abre o painel do simulador ao clicar em Executar", () => {
-    render(<BuilderPage />)
+    const { container } = render(<BuilderPage />)
+    placeStartBlock(container)
     fireEvent.click(screen.getByRole("button", { name: /executar/i }))
     expect(
       screen.getByRole("button", { name: /próximo passo/i }),

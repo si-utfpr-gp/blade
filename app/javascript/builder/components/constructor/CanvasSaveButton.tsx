@@ -10,12 +10,21 @@ export function CanvasSaveButton() {
   const { nodes, edges } = useConstructor()
   const { saveAlgorithm, updateAlgorithm, status, error } = useAlgorithms()
   const { origin, isReadOnly, markSaved } = useDiagramOrigin()
-  const { algorithmName } = useAlgorithmNameField()
+  const { algorithmName, flagMissingName } = useAlgorithmNameField()
   const { notify } = useToast()
 
   const handleSave = async () => {
+    if (isReadOnly) return
+
     const trimmed = algorithmName.trim()
-    if (!trimmed || isReadOnly) return
+
+    if (!trimmed) {
+      // The button stays enabled on purpose: a disabled one only shows a grey
+      // square with no explanation. Pointing at the field is what explains it.
+      notify("Informe um nome para o algoritmo antes de salvar.", "error")
+      flagMissingName()
+      return
+    }
 
     const diagram = serializeDiagramForSave(nodes, edges)
 
@@ -44,7 +53,6 @@ export function CanvasSaveButton() {
   }
 
   const saving = status === "saving"
-  const canSave = algorithmName.trim().length > 0 && !saving && !isReadOnly
 
   const label = isReadOnly
     ? "Exemplo não pode ser salvo"
@@ -67,12 +75,12 @@ export function CanvasSaveButton() {
       <button
         type="button"
         onClick={handleSave}
-        disabled={!canSave}
+        disabled={saving || isReadOnly}
         aria-label={saving ? "Salvando..." : label}
         title={hint}
-        className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card/95 text-foreground transition-colors hover:border-primary/40 hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-40 sm:h-8 sm:w-8"
+        className="flex h-20 w-20 items-center justify-center rounded-lg border border-border bg-card/95 text-foreground transition-colors hover:border-primary/40 hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-40 sm:h-8 sm:w-8"
       >
-        <Save className="h-3.5 w-3.5" aria-hidden="true" />
+        <Save className="h-5 w-5" aria-hidden="true" />
       </button>
       {error && (
         <span className="sr-only" role="alert">

@@ -10,6 +10,7 @@ interface IHeaderProps {
   algorithmName?: string
   onAlgorithmNameChange?: (name: string) => void
   isNameLocked?: boolean
+  isNameMissing?: boolean
 }
 
 export default function Header({
@@ -18,6 +19,7 @@ export default function Header({
   algorithmName = "",
   onAlgorithmNameChange,
   isNameLocked = false,
+  isNameMissing = false,
 }: IHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   // Null when the header is rendered outside WorkspaceLayout, in which case
@@ -62,16 +64,29 @@ export default function Header({
             value={algorithmName}
             placeholder="Sem título"
             disabled={isNameLocked}
+            aria-invalid={isNameMissing || undefined}
+            aria-describedby={isNameMissing ? "algorithm-name-error" : undefined}
             title={
               isNameLocked
                 ? "O nome de um exemplo não pode ser alterado"
                 : undefined
             }
             onChange={(event) => onAlgorithmNameChange(event.target.value)}
-            className="w-full min-w-0 sm:w-64 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none"
+            className={`w-full min-w-0 rounded-lg border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none sm:w-64 ${
+              // Highlight on attempt only, so an untouched empty field does not
+              // look like an error.
+              isNameMissing
+                ? "border-destructive focus:border-destructive"
+                : "border-border focus:border-primary"
+            }`}
           />
         ) : (
           title && <span className="text-xs text-gray-500">{title}</span>
+        )}
+        {isNameMissing && (
+          <p id="algorithm-name-error" role="alert" className="sr-only">
+            Nome do algoritmo obrigatório.
+          </p>
         )}
       </div>
 

@@ -50,13 +50,14 @@ function renderActions() {
 }
 
 describe("CanvasActions", () => {
-  it("Novo Algoritmo volta ao bloco inicial e limpa a execução", () => {
+  it("Novo Algoritmo esvazia o canvas e limpa a execução", () => {
     renderActions()
     fireEvent.click(screen.getByRole("button", { name: /setup-run/i }))
-    expect(screen.getByTestId("canvas-nodes").textContent).toBe("2")
+    expect(screen.getByTestId("canvas-nodes").textContent).toBe("1")
     expect(screen.getByTestId("sim-steps").textContent).toBe("1")
     fireEvent.click(screen.getByRole("button", { name: /novo algoritmo/i }))
-    expect(screen.getByTestId("canvas-nodes").textContent).toBe("1")
+    // The canvas opens empty, so a new algorithm starts from nothing.
+    expect(screen.getByTestId("canvas-nodes").textContent).toBe("0")
     expect(screen.getByTestId("sim-steps").textContent).toBe("0")
   })
 

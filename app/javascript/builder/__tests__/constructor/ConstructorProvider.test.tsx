@@ -56,19 +56,27 @@ function renderProvider() {
 }
 
 describe("ConstructorProvider addNode", () => {
-  it("inicia com o bloco de início", () => {
+  it("inicia sem nenhum bloco", () => {
     renderProvider()
-    expect(screen.getByTestId("variants").textContent).toBe("start")
+    // A seeded start block made the first screen look like work in progress,
+    // and a student cannot save an unnamed algorithm anyway.
+    expect(screen.getByTestId("variants").textContent).toBe("")
   })
 
   it("aceita variante explícita ao adicionar startEnd", () => {
     renderProvider()
+    // The harness only exposes the end variant explicitly, so this covers the
+    // half that the auto-variant test cannot: an explicit choice is respected.
     fireEvent.click(screen.getByRole("button", { name: "add-end" }))
-    expect(screen.getByTestId("variants").textContent).toBe("start,end")
+    expect(screen.getByTestId("variants").textContent).toBe("end")
   })
 
   it("mantém a variante automática quando não informada", () => {
     renderProvider()
+    // Without an explicit variant the first startEnd is the start and the next
+    // one becomes the end, chosen from what is already on the canvas.
+    fireEvent.click(screen.getByRole("button", { name: "add-auto" }))
+    expect(screen.getByTestId("variants").textContent).toBe("start")
     fireEvent.click(screen.getByRole("button", { name: "add-auto" }))
     expect(screen.getByTestId("variants").textContent).toBe("start,end")
   })

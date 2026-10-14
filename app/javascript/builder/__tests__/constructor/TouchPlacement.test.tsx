@@ -78,7 +78,7 @@ describe("adicionar bloco tocando", () => {
     fireEvent.click(screen.getByTestId("block-tile-process"))
 
     // First tap arms; the second one decides where it lands.
-    expect(screen.getByTestId("nodes").children).toHaveLength(1)
+    expect(screen.getByTestId("nodes").children).toHaveLength(0)
     expect(screen.getByTestId("armed")).toHaveTextContent("process:-")
   })
 
@@ -89,7 +89,7 @@ describe("adicionar bloco tocando", () => {
     tapCanvas()
 
     const nodes = screen.getByTestId("nodes").children
-    expect(nodes).toHaveLength(2)
+    expect(nodes).toHaveLength(1)
     // The flow position is the one tapped, offset so the block is centred.
     expect(screen.getByTestId("nodes")).toHaveTextContent("process: 155,152")
     expect(screen.getByTestId("armed")).toHaveTextContent("")
@@ -102,7 +102,7 @@ describe("adicionar bloco tocando", () => {
     expect(screen.getByTestId("armed")).toHaveTextContent("startEnd:end")
 
     tapCanvas()
-    expect(screen.getByTestId("nodes").children).toHaveLength(2)
+    expect(screen.getByTestId("nodes").children).toHaveLength(1)
   })
 
   it("cancelar com Escape descarta o bloco armado", () => {
@@ -115,7 +115,7 @@ describe("adicionar bloco tocando", () => {
 
     expect(screen.getByTestId("armed")).toHaveTextContent("")
     tapCanvas()
-    expect(screen.getByTestId("nodes").children).toHaveLength(1)
+    expect(screen.getByTestId("nodes").children).toHaveLength(0)
   })
 
   it("não arma nada ao terminar um arrasto vindo do mouse", () => {

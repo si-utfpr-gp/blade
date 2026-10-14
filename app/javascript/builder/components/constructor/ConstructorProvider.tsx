@@ -106,18 +106,10 @@ interface ConstructorContextValue {
 
 const ConstructorContext = createContext<ConstructorContextValue | null>(null)
 
-const initialNodes: AlgorithmNode[] = [
-  {
-    id: "start-1",
-    type: "startEnd",
-    position: { x: 300, y: 80 },
-    data: {
-      blockType: "startEnd",
-      label: "Início",
-      variant: "start",
-    },
-  },
-]
+// The canvas opens empty: a seeded start block made the first screen look like
+// work already in progress, and a student cannot save an unnamed algorithm
+// anyway. The start block is one tap away in the palette.
+const initialNodes: AlgorithmNode[] = []
 
 const initialEdges: Edge[] = []
 

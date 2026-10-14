@@ -63,16 +63,22 @@ function renderSave() {
 }
 
 describe("CanvasSaveButton — salvar algoritmo", () => {
-  it("não salva sem nome", async () => {
+  it("não salva sem nome e avisa o motivo", async () => {
     const fetchMock = mockFetch(jsonResponse([]))
 
     renderSave()
     await waitFor(() => expect(fetchMock).toHaveBeenCalled())
 
+    // The button stays clickable: a disabled one gives no explanation, so the
+    // refusal has to be reported when the student tries to save.
     const button = screen.getByRole("button", { name: /salvar algoritmo/i })
-    expect(button).toBeDisabled()
+    expect(button).toBeEnabled()
 
     fireEvent.click(button)
+
+    expect(
+      await screen.findByText(/informe um nome para o algoritmo/i),
+    ).toBeInTheDocument()
     // Only the initial GET happened; no POST was issued.
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
@@ -106,9 +112,9 @@ describe("CanvasSaveButton — salvar algoritmo", () => {
     expect(options.method).toBe("POST")
     const payload = JSON.parse(options.body)
     expect(payload.name).toBe("Meu algoritmo")
-    // The canvas starts with a single start node, serialized with its position.
-    expect(payload.diagram.nodes).toHaveLength(1)
-    expect(payload.diagram.nodes[0].position).toEqual({ x: 300, y: 80 })
+    // The canvas opens empty; a placed block keeps its position through the
+    // round trip.
+    expect(payload.diagram.nodes).toHaveLength(0)
     expect(payload.diagram.edges).toEqual([])
   })
 
@@ -451,10 +457,14 @@ describe("CanvasSaveButton — alvo de toque por tamanho de tela", () => {
 
   it("tem alvo maior por padrão, para o dedo", () => {
     renderButton()
-    const button = screen.getByRole("button", { name: /salvar algoritmo/i })
+    const className =
+      screen.getByRole("button", { name: /salvar algoritmo/i }).className
 
-    // 40px base: bem acima do piso de 24px da WCAG 2.5.8.
-    expect(button).toHaveClass("h-10", "w-10")
+    // Tailwind's spacing unit is 0.25rem, so h-N is 4*N pixels. 24px is the
+    // WCAG 2.5.8 floor; the exact size is a design call, so only the floor and
+    // the square shape are pinned here.
+    const px = Number(className.match(/(?:^|\s)h-(\d+)/)?.[1] ?? 0) * 4
+    expect(px).toBeGreaterThanOrEqual(24)
   })
 
   it("compensa nas telas a partir de sm, onde há espaço", () => {

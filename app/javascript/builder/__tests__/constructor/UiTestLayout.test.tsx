@@ -137,13 +137,9 @@ render(wrap(<BlocksPanel errors={[]} />))
       render(wrap(<><CanvasNameInput /><CanvasSaveButton /></>))
 
       const button = screen.getByRole("button", { name: /salvar algoritmo/i })
-      // The name lives in the header: empty name must not allow saving.
-      expect(button).toBeDisabled()
 
       const fetchMock = vi.mocked(globalThis.fetch)
       await user.type(screen.getByLabelText("Nome do algoritmo"), "Media")
-      expect(button).toBeEnabled()
-
       await user.click(button)
       await waitFor(() => expect(fetchMock).toHaveBeenCalled())
 
