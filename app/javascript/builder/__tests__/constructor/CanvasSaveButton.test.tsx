@@ -4,6 +4,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
 import { ConstructorProvider, useConstructor } from "../../components/constructor/ConstructorProvider"
 import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvider"
+import { LocalAlgorithmsProvider } from "../../components/constructor/LocalAlgorithmsProvider"
 import {
   AlgorithmNameProvider,
   useAlgorithmNameField,
@@ -50,13 +51,15 @@ function renderSave() {
     <SimulatorProvider>
       <ToastProvider>
       <AlgorithmsProvider signedIn>
+<LocalAlgorithmsProvider>
         <DiagramOriginProvider><AlgorithmNameProvider>
           <ConstructorProvider>
             <HeaderNameInput />
             <CanvasSaveButton />
           </ConstructorProvider>
         </AlgorithmNameProvider></DiagramOriginProvider>
-      </AlgorithmsProvider>
+      </LocalAlgorithmsProvider>
+</AlgorithmsProvider>
     </ToastProvider>
     </SimulatorProvider>,
   )
@@ -186,13 +189,15 @@ describe("CanvasActions — novo algoritmo", () => {
       <SimulatorProvider>
       <ToastProvider>
         <AlgorithmsProvider signedIn>
+<LocalAlgorithmsProvider>
           <DiagramOriginProvider><AlgorithmNameProvider>
             <ConstructorProvider>
               <HeaderNameInput />
               <CanvasActions />
             </ConstructorProvider>
           </AlgorithmNameProvider></DiagramOriginProvider>
-        </AlgorithmsProvider>
+        </LocalAlgorithmsProvider>
+</AlgorithmsProvider>
       </ToastProvider>
     </SimulatorProvider>,
     )
@@ -222,13 +227,15 @@ describe("nome do algoritmo acompanha o diagrama carregado", () => {
       <SimulatorProvider>
       <ToastProvider>
         <AlgorithmsProvider signedIn>
+<LocalAlgorithmsProvider>
           <DiagramOriginProvider><AlgorithmNameProvider>
             <ConstructorProvider>
               <HeaderNameInput />
               <ExamplesSection />
             </ConstructorProvider>
           </AlgorithmNameProvider></DiagramOriginProvider>
-        </AlgorithmsProvider>
+        </LocalAlgorithmsProvider>
+</AlgorithmsProvider>
       </ToastProvider>
     </SimulatorProvider>,
     )
@@ -268,13 +275,15 @@ describe("nome do algoritmo acompanha o diagrama carregado", () => {
       <SimulatorProvider>
       <ToastProvider>
         <AlgorithmsProvider signedIn>
+<LocalAlgorithmsProvider>
           <DiagramOriginProvider><AlgorithmNameProvider>
             <ConstructorProvider>
               <HeaderNameInput />
               <ExamplesSection />
             </ConstructorProvider>
           </AlgorithmNameProvider></DiagramOriginProvider>
-        </AlgorithmsProvider>
+        </LocalAlgorithmsProvider>
+</AlgorithmsProvider>
       </ToastProvider>
     </SimulatorProvider>,
     )
@@ -315,6 +324,7 @@ describe("CanvasSaveButton — somente ícone", () => {
       <SimulatorProvider>
         <ToastProvider>
           <AlgorithmsProvider signedIn>
+<LocalAlgorithmsProvider>
             <DiagramOriginProvider>
               <AlgorithmNameProvider>
                 <ConstructorProvider>
@@ -324,7 +334,8 @@ describe("CanvasSaveButton — somente ícone", () => {
                 </ConstructorProvider>
               </AlgorithmNameProvider>
             </DiagramOriginProvider>
-          </AlgorithmsProvider>
+          </LocalAlgorithmsProvider>
+</AlgorithmsProvider>
         </ToastProvider>
       </SimulatorProvider>,
     )
@@ -336,6 +347,7 @@ describe("CanvasSaveButton — somente ícone", () => {
       <SimulatorProvider>
         <ToastProvider>
           <AlgorithmsProvider signedIn>
+<LocalAlgorithmsProvider>
             <DiagramOriginProvider>
               <AlgorithmNameProvider>
                 <ConstructorProvider>
@@ -344,7 +356,8 @@ describe("CanvasSaveButton — somente ícone", () => {
                 </ConstructorProvider>
               </AlgorithmNameProvider>
             </DiagramOriginProvider>
-          </AlgorithmsProvider>
+          </LocalAlgorithmsProvider>
+</AlgorithmsProvider>
         </ToastProvider>
       </SimulatorProvider>,
     )
@@ -387,6 +400,7 @@ describe("CanvasSaveButton — somente ícone", () => {
       <SimulatorProvider>
         <ToastProvider>
           <AlgorithmsProvider signedIn>
+<LocalAlgorithmsProvider>
             <DiagramOriginProvider>
               <AlgorithmNameProvider>
                 <ConstructorProvider>
@@ -396,7 +410,8 @@ describe("CanvasSaveButton — somente ícone", () => {
                 </ConstructorProvider>
               </AlgorithmNameProvider>
             </DiagramOriginProvider>
-          </AlgorithmsProvider>
+          </LocalAlgorithmsProvider>
+</AlgorithmsProvider>
         </ToastProvider>
       </SimulatorProvider>,
     )
@@ -443,6 +458,7 @@ describe("CanvasSaveButton — alvo de toque por tamanho de tela", () => {
       <SimulatorProvider>
         <ToastProvider>
           <AlgorithmsProvider signedIn>
+<LocalAlgorithmsProvider>
             <DiagramOriginProvider>
               <AlgorithmNameProvider>
                 <ConstructorProvider>
@@ -451,7 +467,8 @@ describe("CanvasSaveButton — alvo de toque por tamanho de tela", () => {
                 </ConstructorProvider>
               </AlgorithmNameProvider>
             </DiagramOriginProvider>
-          </AlgorithmsProvider>
+          </LocalAlgorithmsProvider>
+</AlgorithmsProvider>
         </ToastProvider>
       </SimulatorProvider>,
     )
@@ -511,6 +528,7 @@ function renderSaveWithDirtyProbe() {
     <SimulatorProvider>
       <ToastProvider>
       <AlgorithmsProvider signedIn>
+<LocalAlgorithmsProvider>
         <DiagramOriginProvider><AlgorithmNameProvider>
           <ConstructorProvider>
             <HeaderNameInput />
@@ -518,7 +536,8 @@ function renderSaveWithDirtyProbe() {
             <DirtyProbe />
           </ConstructorProvider>
         </AlgorithmNameProvider></DiagramOriginProvider>
-      </AlgorithmsProvider>
+      </LocalAlgorithmsProvider>
+</AlgorithmsProvider>
     </ToastProvider>
     </SimulatorProvider>,
   )
@@ -592,6 +611,7 @@ function renderSaveWithProbe() {
     <SimulatorProvider>
       <ToastProvider>
       <AlgorithmsProvider signedIn>
+<LocalAlgorithmsProvider>
         <DiagramOriginProvider><AlgorithmNameProvider>
           <ConstructorProvider>
             <HeaderNameInput />
@@ -599,7 +619,8 @@ function renderSaveWithProbe() {
             <EmptyCanvasProbe />
           </ConstructorProvider>
         </AlgorithmNameProvider></DiagramOriginProvider>
-      </AlgorithmsProvider>
+      </LocalAlgorithmsProvider>
+</AlgorithmsProvider>
     </ToastProvider>
     </SimulatorProvider>,
   )
@@ -716,6 +737,7 @@ describe("CanvasSaveButton — canvas vazio", () => {
       <SimulatorProvider>
       <ToastProvider>
         <AlgorithmsProvider signedIn>
+<LocalAlgorithmsProvider>
           <DiagramOriginProvider><AlgorithmNameProvider>
             <ConstructorProvider>
               <HeaderNameInput />
@@ -723,7 +745,8 @@ describe("CanvasSaveButton — canvas vazio", () => {
               <WithNode />
             </ConstructorProvider>
           </AlgorithmNameProvider></DiagramOriginProvider>
-        </AlgorithmsProvider>
+        </LocalAlgorithmsProvider>
+</AlgorithmsProvider>
       </ToastProvider>
       </SimulatorProvider>,
     )

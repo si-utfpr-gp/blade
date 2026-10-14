@@ -203,6 +203,27 @@ describe("LocalAlgorithmsProvider", () => {
     await waitFor(() => expect(document.title).toBe("nada"))
   })
 
+  it("não reclama de armazenamento bloqueado ao abrir a tela", async () => {
+    vi.stubGlobal("localStorage", {
+      getItem: () => {
+        throw new Error("SecurityError")
+      },
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    })
+
+    renderProvider()
+
+    await waitFor(() =>
+      expect(screen.getByTestId("count").textContent).toBe("0"),
+    )
+    // The reason comes when a write is attempted, which is when it is
+    // something the student can act on.
+    expect(
+      screen.queryByText(/armazenamento deste navegador/i),
+    ).not.toBeInTheDocument()
+  })
+
   it("guarda sob uma chave versionada, para uma lista antiga não ser lida torta", async () => {
     const storage = useMemoryStorage()
 

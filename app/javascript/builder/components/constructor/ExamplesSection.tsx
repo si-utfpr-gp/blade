@@ -7,7 +7,9 @@ import {
   type IDiagramExample,
 } from "../../interfaces/diagramExamples"
 import { layoutExampleDiagram } from "./layoutExampleDiagram"
+import { HardDrive } from "lucide-react"
 import { useAlgorithms } from "./AlgorithmsProvider"
+import { useLocalAlgorithms } from "./LocalAlgorithmsProvider"
 import { useAlgorithmNameField } from "./AlgorithmNameProvider"
 import { useDiagramOrigin } from "./DiagramOrigin"
 
@@ -17,6 +19,10 @@ const CATEGORY_COLOR: Record<string, string> = {
   "Repetições": "var(--node-memory)",
   Vetores: "var(--node-connector)",
 }
+
+// Not a category like the examples use: this says where the diagram lives,
+// which is the one thing a student cannot tell by looking at the list.
+const LOCAL_CATEGORY = "Nesta máquina"
 
 function categoryStyle(category: string) {
   const token = CATEGORY_COLOR[category]
@@ -165,10 +171,13 @@ export function ExamplesSection() {
   const { loadCanvasNodes } = useConstructor()
   const { reset } = useSimulator()
   const { algorithms, getAlgorithm, signedIn } = useAlgorithms()
+  const { algorithms: localAlgorithms, getAlgorithm: getLocalAlgorithm } =
+    useLocalAlgorithms()
   const { onAlgorithmNameChange } = useAlgorithmNameField()
-  const { markExample, markSaved } = useDiagramOrigin()
+  const { markExample, markSaved, markLocal } = useDiagramOrigin()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const [selectedLocalId, setSelectedLocalId] = useState<string | null>(null)
 
   const examples = DIAGRAM_EXAMPLES.filter(
     (example) => !example.diagram.subroutines?.length,
@@ -193,8 +202,32 @@ export function ExamplesSection() {
     setSelectedUserId(saved.id.toString())
   }
 
+  const handleSelectLocalAlgorithm = (id: string) => {
+    const stored = getLocalAlgorithm(id)
+    if (!stored) return
+    loadCanvasNodes(stored.diagram.nodes, stored.diagram.edges)
+    reset()
+    onAlgorithmNameChange(stored.name)
+    markLocal(stored.id)
+    setSelectedLocalId(stored.id)
+  }
+
   return (
     <div className="flex-1 space-y-2 overflow-y-auto p-3">
+      <SidebarDropdown
+        icon={<HardDrive className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+        label="Meus arquivos"
+        items={localAlgorithms.map((algorithm) => ({
+          id: algorithm.id,
+          title: algorithm.name,
+          description: `Guardado em ${algorithm.created_at}`,
+          category: LOCAL_CATEGORY,
+        }))}
+        selectedId={selectedLocalId}
+        emptyText="Nenhum arquivo guardado neste navegador."
+        onSelect={handleSelectLocalAlgorithm}
+      />
+
       {signedIn && (
         <SidebarDropdown
           icon={<FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}

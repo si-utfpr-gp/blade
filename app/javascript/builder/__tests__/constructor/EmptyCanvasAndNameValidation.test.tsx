@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 
 import { ConstructorProvider, useConstructor } from "../../components/constructor/ConstructorProvider"
 import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvider"
+import { LocalAlgorithmsProvider } from "../../components/constructor/LocalAlgorithmsProvider"
 import { AlgorithmNameProvider } from "../../components/constructor/AlgorithmNameProvider"
 import { DiagramOriginProvider } from "../../components/constructor/DiagramOrigin"
 import { BlockPlacementProvider } from "../../components/constructor/BlockPlacement"
@@ -35,6 +36,7 @@ function renderBuilder({ withFetch = true } = {}) {
     <SimulatorProvider>
       <ToastProvider>
         <AlgorithmsProvider signedIn>
+<LocalAlgorithmsProvider>
           <AlgorithmNameProvider>
             <DiagramOriginProvider>
               <BlockPlacementProvider>
@@ -47,7 +49,8 @@ function renderBuilder({ withFetch = true } = {}) {
               </BlockPlacementProvider>
             </DiagramOriginProvider>
           </AlgorithmNameProvider>
-        </AlgorithmsProvider>
+        </LocalAlgorithmsProvider>
+</AlgorithmsProvider>
       </ToastProvider>
     </SimulatorProvider>,
   )
@@ -196,6 +199,7 @@ describe("mensagem da API na recusa", () => {
       <SimulatorProvider>
         <ToastProvider>
           <AlgorithmsProvider signedIn>
+<LocalAlgorithmsProvider>
             <DiagramOriginProvider>
               <AlgorithmNameProvider>
                 <ConstructorProvider>
@@ -205,7 +209,8 @@ describe("mensagem da API na recusa", () => {
                 </ConstructorProvider>
               </AlgorithmNameProvider>
             </DiagramOriginProvider>
-          </AlgorithmsProvider>
+          </LocalAlgorithmsProvider>
+</AlgorithmsProvider>
         </ToastProvider>
       </SimulatorProvider>,
     )

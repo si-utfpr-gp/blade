@@ -10,6 +10,7 @@ import { SimulatorProvider } from "./components/simulator/SimulatorContext"
 import ConstructorCanvas from "./components/constructor/ConstructorCanvas"
 import { ConstructorProvider } from "./components/constructor/ConstructorProvider"
 import { AlgorithmsProvider } from "./components/constructor/AlgorithmsProvider"
+import { LocalAlgorithmsProvider } from "./components/constructor/LocalAlgorithmsProvider"
 import {
   AlgorithmNameProvider,
   useAlgorithmNameField,
@@ -45,6 +46,7 @@ export default function BuilderPage({
     <ToastProvider>
       <SimulatorProvider>
         <AlgorithmsProvider signedIn={signedIn}>
+          <LocalAlgorithmsProvider>
           <AlgorithmNameProvider>
             <DiagramOriginProvider>
               <BlockPlacementProvider>
@@ -71,6 +73,7 @@ export default function BuilderPage({
               </BlockPlacementProvider>
             </DiagramOriginProvider>
           </AlgorithmNameProvider>
+          </LocalAlgorithmsProvider>
         </AlgorithmsProvider>
       </SimulatorProvider>
     </ToastProvider>

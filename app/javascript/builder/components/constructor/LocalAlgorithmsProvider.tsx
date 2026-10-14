@@ -2,7 +2,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -34,20 +33,15 @@ const LocalAlgorithmsContext = createContext<ILocalAlgorithmsContextValue | null
  */
 export function LocalAlgorithmsProvider({ children }: { children: ReactNode }) {
   // Read once on mount rather than in an effect: the list the student sees on
-  // the first paint is already the one in storage.
+  // the first paint is already the one in storage. A store that cannot be read
+  // is not announced here, because an empty "Meus arquivos" on load would be
+  // alarming over something the student has not tried yet; the reason is given
+  // when a write fails, which is the moment it can be acted on.
   const [algorithms, setAlgorithms] = useState<LocalAlgorithm[]>(() => {
     const stored = readLocalAlgorithms()
     return stored.ok ? stored.value : []
   })
   const { notify } = useToast()
-
-  useEffect(() => {
-    // Nothing is lost by carrying on after a refusal: the sidebar shows an
-    // empty list, and every write below reports the same reason again if the
-    // student tries. Without this the store would look broken with no reason
-    // given, and an empty "Meus arquivos" looks like they have nothing.
-    if (!readLocalAlgorithms().ok) notify(STORAGE_BLOCKED_MESSAGE, "error")
-  }, [notify])
 
   const saveDiagram = useCallback(
     (name: string, diagram: SerializedDiagram) => {

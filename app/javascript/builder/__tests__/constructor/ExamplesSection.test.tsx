@@ -7,6 +7,8 @@ import {
 } from "../../components/constructor/ConstructorProvider"
 import { ExamplesSection } from "../../components/constructor/ExamplesSection"
 import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvider"
+import { LocalAlgorithmsProvider } from "../../components/constructor/LocalAlgorithmsProvider"
+import { ToastProvider } from "../../components/ui/Toast"
 import { AlgorithmNameProvider } from "../../components/constructor/AlgorithmNameProvider"
 import { DiagramOriginProvider } from "../../components/constructor/DiagramOrigin"
 import { DIAGRAM_EXAMPLES } from "../../interfaces/diagramExamples"
@@ -24,16 +26,20 @@ function Probe() {
 
 function renderSection() {
   return render(
-    <SimulatorProvider>
+    <ToastProvider>
+<SimulatorProvider>
       <AlgorithmsProvider signedIn>
+<LocalAlgorithmsProvider>
         <DiagramOriginProvider><AlgorithmNameProvider>
           <ConstructorProvider>
           <ExamplesSection />
           <Probe />
           </ConstructorProvider>
         </AlgorithmNameProvider></DiagramOriginProvider>
-      </AlgorithmsProvider>
-    </SimulatorProvider>,
+      </LocalAlgorithmsProvider>
+</AlgorithmsProvider>
+    </SimulatorProvider>
+</ToastProvider>,
   )
 }
 

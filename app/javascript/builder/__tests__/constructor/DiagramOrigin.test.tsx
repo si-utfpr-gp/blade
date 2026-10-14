@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
 import { ConstructorProvider } from "../../components/constructor/ConstructorProvider"
 import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvider"
+import { LocalAlgorithmsProvider } from "../../components/constructor/LocalAlgorithmsProvider"
 import {
   AlgorithmNameProvider,
   useAlgorithmNameField,
@@ -45,6 +46,7 @@ function renderBuilder() {
     <SimulatorProvider>
       <ToastProvider>
       <AlgorithmsProvider signedIn>
+<LocalAlgorithmsProvider>
         <DiagramOriginProvider>
           <AlgorithmNameProvider>
             <ConstructorProvider>
@@ -56,7 +58,8 @@ function renderBuilder() {
             </ConstructorProvider>
           </AlgorithmNameProvider>
         </DiagramOriginProvider>
-      </AlgorithmsProvider>
+      </LocalAlgorithmsProvider>
+</AlgorithmsProvider>
       </ToastProvider>
     </SimulatorProvider>,
   )

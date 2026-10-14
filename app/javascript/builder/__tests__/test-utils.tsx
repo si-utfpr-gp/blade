@@ -2,6 +2,7 @@ import { type ReactNode } from "react"
 import { SimulatorProvider } from "../components/simulator/SimulatorContext"
 import { ToastProvider } from "../components/ui/Toast"
 import { AlgorithmsProvider } from "../components/constructor/AlgorithmsProvider"
+import { LocalAlgorithmsProvider } from "../components/constructor/LocalAlgorithmsProvider"
 import { AlgorithmNameProvider } from "../components/constructor/AlgorithmNameProvider"
 import { DiagramOriginProvider } from "../components/constructor/DiagramOrigin"
 import { BlockPlacementProvider } from "../components/constructor/BlockPlacement"
@@ -34,6 +35,7 @@ export function BuilderProviders({
     <SimulatorProvider callbacks={callbacks}>
       <ToastProvider>
         <AlgorithmsProvider signedIn={signedIn}>
+          <LocalAlgorithmsProvider>
           <AlgorithmNameProvider>
             <DiagramOriginProvider>
               <BlockPlacementProvider>
@@ -41,6 +43,7 @@ export function BuilderProviders({
               </BlockPlacementProvider>
             </DiagramOriginProvider>
           </AlgorithmNameProvider>
+          </LocalAlgorithmsProvider>
         </AlgorithmsProvider>
       </ToastProvider>
     </SimulatorProvider>
