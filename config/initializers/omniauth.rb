@@ -3,7 +3,7 @@ require "omniauth/rails_csrf_protection"
 
 # OmniAuth 2.0 blocks GET on /auth/:provider, which is the mitigation for
 # CVE-2015-9284. Stating it explicitly keeps a login link from failing quietly.
-OmniAuth.config.allowed_request_methods = [:post]
+OmniAuth.config.allowed_request_methods = [ :post ]
 OmniAuth.config.logger = Rails.logger
 OmniAuth.config.path_prefix = "/auth"
 

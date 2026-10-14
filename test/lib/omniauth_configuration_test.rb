@@ -5,7 +5,7 @@ class OmniauthConfigurationTest < ActiveSupport::TestCase
   # that still points at GET silently fails, so the setting is asserted rather
   # than assumed.
   test "GET is not an allowed request method for the request phase" do
-    assert_equal [:post], OmniAuth.config.allowed_request_methods
+    assert_equal [ :post ], OmniAuth.config.allowed_request_methods
   end
 
   test "GET requests are not silenced away, so misuse stays visible" do
