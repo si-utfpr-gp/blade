@@ -19,6 +19,7 @@ import {
 import ContextMenu from "./ContextMenu"
 import { RunDiagramButton } from "./RunDiagramButton"
 import { CanvasSaveButton } from "./CanvasSaveButton"
+import { CanvasExportButton } from "./CanvasExportButton"
 import { useFitOnDiagramLoad } from "./useFitOnDiagramLoad"
 import { usePanePlacement } from "./usePanePlacement"
 import { PlacementHint } from "./PlacementHint"
@@ -189,6 +190,16 @@ export default function ConstructorCanvas({
         className="absolute right-3 top-3 z-10 rounded-lg border border-border bg-card/95 px-2 py-1.5 shadow-md backdrop-blur"
       >
         <RunDiagramButton onDiagramLoaded={onDiagramLoaded} />
+      </div>
+
+      {/* Bottom right, away from save on the top left, run on the top right and
+          the zoom controls on the bottom left. The error notice holds the
+          bottom centre, so the four corners never crowd each other. */}
+      <div
+        data-testid="canvas-toolbar-export"
+        className="absolute bottom-3 right-3 z-10 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
+      >
+        <CanvasExportButton />
       </div>
 
       <ReactFlow
