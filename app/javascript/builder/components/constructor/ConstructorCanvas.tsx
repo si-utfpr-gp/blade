@@ -20,6 +20,7 @@ import ContextMenu from "./ContextMenu"
 import { RunDiagramButton } from "./RunDiagramButton"
 import { CanvasSaveButton } from "./CanvasSaveButton"
 import { CanvasExportButton } from "./CanvasExportButton"
+import { CanvasHistoryControls } from "./CanvasHistoryControls"
 import { useFitOnDiagramLoad } from "./useFitOnDiagramLoad"
 import { usePanePlacement } from "./usePanePlacement"
 import { PlacementHint } from "./PlacementHint"
@@ -200,6 +201,14 @@ export default function ConstructorCanvas({
         className="absolute bottom-3 right-3 z-10 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
       >
         <CanvasExportButton />
+      </div>
+
+      {/* Bottom left, right of the zoom controls that own the corner. */}
+      <div
+        data-testid="canvas-toolbar-undo"
+        className="absolute bottom-3 left-14 z-10 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
+      >
+        <CanvasHistoryControls locked={locked} />
       </div>
 
       <ReactFlow
