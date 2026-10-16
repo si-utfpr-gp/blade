@@ -10,6 +10,7 @@ import { SimulatorProvider } from "./components/simulator/SimulatorContext"
 import ConstructorCanvas from "./components/constructor/ConstructorCanvas"
 import { ConstructorProvider } from "./components/constructor/ConstructorProvider"
 import { AlgorithmsProvider } from "./components/constructor/AlgorithmsProvider"
+import { LocalAlgorithmsProvider } from "./components/constructor/LocalAlgorithmsProvider"
 import {
   AlgorithmNameProvider,
   useAlgorithmNameField,
@@ -34,38 +35,46 @@ function BuilderHeader({ userName }: { userName: string | null }) {
 
 export default function BuilderPage({
   userName = null,
+  signedIn = false,
 }: {
   userName?: string | null
+  signedIn?: boolean
 }) {
   const [debuggerCollapsed, setDebuggerCollapsed] = useState(true)
 
   return (
     <ToastProvider>
       <SimulatorProvider>
-      <AlgorithmsProvider>
-        <AlgorithmNameProvider>
-<DiagramOriginProvider>
+        <AlgorithmsProvider signedIn={signedIn}>
+          <LocalAlgorithmsProvider>
+          <AlgorithmNameProvider>
+            <DiagramOriginProvider>
               <BlockPlacementProvider>
                 <ConstructorProvider>
-            <WorkspaceLayout
-              header={<BuilderHeader userName={userName} />}
-              sidebar={<BlocksPanel errors={[]} />}
-              canvas={
-                <ConstructorCanvas onDiagramLoaded={() => setDebuggerCollapsed(false)} />
-              }
-              inspector={
-                <SimulatorPanel
-                  collapsed={debuggerCollapsed}
-                  onToggleCollapsed={() => setDebuggerCollapsed((value) => !value)}
-                />
-              }
-              inspectorCollapsed={debuggerCollapsed}
-            />
+                  <WorkspaceLayout
+                    header={<BuilderHeader userName={userName} />}
+                    sidebar={<BlocksPanel errors={[]} />}
+                    canvas={
+                      <ConstructorCanvas
+                        onDiagramLoaded={() => setDebuggerCollapsed(false)}
+                      />
+                    }
+                    inspector={
+                      <SimulatorPanel
+                        collapsed={debuggerCollapsed}
+                        onToggleCollapsed={() =>
+                          setDebuggerCollapsed((value) => !value)
+                        }
+                      />
+                    }
+                    inspectorCollapsed={debuggerCollapsed}
+                  />
                 </ConstructorProvider>
               </BlockPlacementProvider>
             </DiagramOriginProvider>
-        </AlgorithmNameProvider>
-      </AlgorithmsProvider>
+          </AlgorithmNameProvider>
+          </LocalAlgorithmsProvider>
+        </AlgorithmsProvider>
       </SimulatorProvider>
     </ToastProvider>
   )

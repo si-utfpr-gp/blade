@@ -7,6 +7,8 @@ import {
 } from "../../components/constructor/ConstructorProvider"
 import { ExamplesSection } from "../../components/constructor/ExamplesSection"
 import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvider"
+import { LocalAlgorithmsProvider } from "../../components/constructor/LocalAlgorithmsProvider"
+import { ToastProvider } from "../../components/ui/Toast"
 import { AlgorithmNameProvider } from "../../components/constructor/AlgorithmNameProvider"
 import { DiagramOriginProvider } from "../../components/constructor/DiagramOrigin"
 
@@ -21,18 +23,22 @@ function Probe() {
   )
 }
 
-function renderSection() {
+function renderSection(signedIn = true) {
   return render(
-    <SimulatorProvider>
-      <AlgorithmsProvider>
+    <ToastProvider>
+<SimulatorProvider>
+      <AlgorithmsProvider signedIn={signedIn}>
+<LocalAlgorithmsProvider>
         <DiagramOriginProvider><AlgorithmNameProvider>
           <ConstructorProvider>
           <ExamplesSection />
           <Probe />
           </ConstructorProvider>
         </AlgorithmNameProvider></DiagramOriginProvider>
-      </AlgorithmsProvider>
-    </SimulatorProvider>,
+      </LocalAlgorithmsProvider>
+</AlgorithmsProvider>
+    </SimulatorProvider>
+</ToastProvider>,
   )
 }
 
@@ -93,7 +99,7 @@ describe("ExamplesSection — Meus algoritmos", () => {
 
     openUserDropdown()
     expect(
-      screen.getByRole("button", { name: /meu algoritmo/i }),
+      screen.getByRole("button", { name: "Meu algoritmo" }),
     ).toBeInTheDocument()
   })
 
@@ -109,7 +115,7 @@ describe("ExamplesSection — Meus algoritmos", () => {
       openUserDropdown()
     })
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /meu algoritmo/i }))
+      fireEvent.click(screen.getByRole("button", { name: "Meu algoritmo" }))
     })
 
     await waitFor(() => {
@@ -133,11 +139,29 @@ describe("ExamplesSection — Meus algoritmos", () => {
       openUserDropdown()
     })
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /meu algoritmo/i }))
+      fireEvent.click(screen.getByRole("button", { name: "Meu algoritmo" }))
     })
 
     await waitFor(() => {
       expect(screen.getByTestId("sim-steps").textContent).toBe("0")
+    })
+  })
+
+  describe("sem sessão", () => {
+    it("esconde a seção, em vez de mostrar uma lista vazia", () => {
+      renderSection(false)
+
+      expect(
+        screen.queryByRole("button", { name: /meus algoritmos/i }),
+      ).not.toBeInTheDocument()
+    })
+
+    it("mantém os exemplos disponíveis para quem não entrou", () => {
+      renderSection(false)
+
+      expect(
+        screen.getByRole("button", { name: /exemplos/i }),
+      ).toBeInTheDocument()
     })
   })
 })

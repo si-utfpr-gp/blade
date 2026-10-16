@@ -51,3 +51,5 @@
 # Ignore key files for decrypting credentials and more.
 /config/credentials/*.key
 
+# The template carries no secrets and documents the expected variables.
+!/.env.example

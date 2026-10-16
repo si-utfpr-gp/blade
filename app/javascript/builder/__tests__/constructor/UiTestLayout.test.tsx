@@ -137,14 +137,12 @@ render(wrap(<BlocksPanel errors={[]} />))
       render(wrap(<><CanvasNameInput /><CanvasSaveButton /></>))
 
       const button = screen.getByRole("button", { name: /salvar algoritmo/i })
-      // The name lives in the header: empty name must not allow saving.
-      expect(button).toBeDisabled()
 
       const fetchMock = vi.mocked(globalThis.fetch)
       await user.type(screen.getByLabelText("Nome do algoritmo"), "Media")
-      expect(button).toBeEnabled()
-
       await user.click(button)
+      // The canvas has no blocks, so saving asks first.
+      await user.click(screen.getByRole("button", { name: /salvar mesmo/i }))
       await waitFor(() => expect(fetchMock).toHaveBeenCalled())
 
       const [url, init] = fetchMock.mock.calls.at(-1) as [string, RequestInit]
@@ -152,5 +150,20 @@ render(wrap(<BlocksPanel errors={[]} />))
       expect(init.method).toBe("POST")
       expect(JSON.parse(String(init.body))).toMatchObject({ name: "Media" })
     })
+  })
+})
+/**
+ * The save button is taller on small screens, so the toolbar framing it cannot
+ * keep a fixed padding or the touch target gets clipped.
+ */
+describe("toolbar do botão salvar", () => {
+  it("reduz o padding nas telas pequenas e restaura a partir de sm", async () => {
+    const { default: BuilderPage } = await import("../../BuilderPage")
+    render(<BuilderPage />)
+
+    const toolbar = screen.getByTestId("canvas-toolbar-save")
+
+    expect(toolbar).toHaveClass("px-1.5", "py-1")
+    expect(toolbar).toHaveClass("sm:px-2", "sm:py-1.5")
   })
 })

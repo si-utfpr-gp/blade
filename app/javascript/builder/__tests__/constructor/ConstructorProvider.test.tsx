@@ -56,19 +56,27 @@ function renderProvider() {
 }
 
 describe("ConstructorProvider addNode", () => {
-  it("inicia com o bloco de início", () => {
+  it("inicia sem nenhum bloco", () => {
     renderProvider()
-    expect(screen.getByTestId("variants").textContent).toBe("start")
+    // A seeded start block made the first screen look like work in progress,
+    // and a student cannot save an unnamed algorithm anyway.
+    expect(screen.getByTestId("variants").textContent).toBe("")
   })
 
   it("aceita variante explícita ao adicionar startEnd", () => {
     renderProvider()
+    // The harness only exposes the end variant explicitly, so this covers the
+    // half that the auto-variant test cannot: an explicit choice is respected.
     fireEvent.click(screen.getByRole("button", { name: "add-end" }))
-    expect(screen.getByTestId("variants").textContent).toBe("start,end")
+    expect(screen.getByTestId("variants").textContent).toBe("end")
   })
 
   it("mantém a variante automática quando não informada", () => {
     renderProvider()
+    // Without an explicit variant the first startEnd is the start and the next
+    // one becomes the end, chosen from what is already on the canvas.
+    fireEvent.click(screen.getByRole("button", { name: "add-auto" }))
+    expect(screen.getByTestId("variants").textContent).toBe("start")
     fireEvent.click(screen.getByRole("button", { name: "add-auto" }))
     expect(screen.getByTestId("variants").textContent).toBe("start,end")
   })
@@ -84,3 +92,142 @@ describe("ConstructorProvider onConnect", () => {
   })
 })
 
+
+function DirtyProbe() {
+  const { nodes, edges, isDirty, markClean, addNode, removeNode, updateNodeData, loadCanvasNodes, clearCanvas, resetCanvas } =
+    useConstructor()
+  return (
+    <div>
+      <span data-testid="dirty">{String(isDirty)}</span>
+      <span data-testid="node-count">{nodes.length}</span>
+      <span data-testid="edge-count">{edges.length}</span>
+      <button type="button" onClick={() => addNode("process", { x: 0, y: 0 })}>
+        add
+      </button>
+      <button
+        type="button"
+        onClick={() => nodes[0] && removeNode(nodes[0].id)}
+      >
+        remove-first
+      </button>
+      <button type="button" onClick={markClean}>
+        mark-clean
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          loadCanvasNodes(
+            [ { id: "l1", type: "startEnd", position: { x: 5, y: 6 }, data: { label: "x = 1", variant: "start" } } ],
+            [],
+          )
+        }
+      >
+        load
+      </button>
+      <button type="button" onClick={clearCanvas}>
+        clear
+      </button>
+      <button type="button" onClick={resetCanvas}>
+        reset
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          const first = nodes[0]
+          if (!first) return
+          const label = String(first.data.label ?? "")
+          updateNodeData(first.id, { label: label === "x = 2" ? "x = 1" : "x = 2" })
+        }}
+      >
+        rename
+      </button>
+      <span data-testid="edges">{edges.length}</span>
+    </div>
+  )
+}
+
+function renderDirty() {
+  return render(
+    <SimulatorProvider>
+      <ConstructorProvider>
+        <DirtyProbe />
+      </ConstructorProvider>
+    </SimulatorProvider>,
+  )
+}
+
+describe("ConstructorProvider estado sujo", () => {
+  it("começa limpo, com o canvas vazio", () => {
+    renderDirty()
+
+    expect(screen.getByTestId("dirty").textContent).toBe("false")
+  })
+
+  it("fica sujo ao adicionar um bloco", () => {
+    renderDirty()
+
+    fireEvent.click(screen.getByRole("button", { name: "add" }))
+
+    expect(screen.getByTestId("dirty").textContent).toBe("true")
+  })
+
+  it("fica sujo ao remover um bloco", () => {
+    renderDirty()
+
+    fireEvent.click(screen.getByRole("button", { name: "add" }))
+    fireEvent.click(screen.getByRole("button", { name: "mark-clean" }))
+    fireEvent.click(screen.getByRole("button", { name: "remove-first" }))
+
+    expect(screen.getByTestId("dirty").textContent).toBe("true")
+  })
+
+  it("volta a ficar limpo quando o save confirma", () => {
+    renderDirty()
+
+    fireEvent.click(screen.getByRole("button", { name: "add" }))
+    fireEvent.click(screen.getByRole("button", { name: "mark-clean" }))
+
+    expect(screen.getByTestId("dirty").textContent).toBe("false")
+  })
+
+  it("voltar ao estado salvo deixa de contar como alteração", () => {
+    renderDirty()
+
+    fireEvent.click(screen.getByRole("button", { name: "load" }))
+    fireEvent.click(screen.getByRole("button", { name: "rename" }))
+    expect(screen.getByTestId("dirty").textContent).toBe("true")
+
+    // The comparison is against the saved state, not a record of events, so
+    // undoing an edit is enough to look clean again.
+    fireEvent.click(screen.getByRole("button", { name: "rename" }))
+    expect(screen.getByTestId("dirty").textContent).toBe("false")
+  })
+
+  it("carregar um diagrama limpa a referência", () => {
+    renderDirty()
+
+    fireEvent.click(screen.getByRole("button", { name: "add" }))
+    fireEvent.click(screen.getByRole("button", { name: "load" }))
+
+    expect(screen.getByTestId("dirty").textContent).toBe("false")
+  })
+
+  it("limpar o canvas não marca o diagrama como alterado", () => {
+    renderDirty()
+
+    fireEvent.click(screen.getByRole("button", { name: "load" }))
+    fireEvent.click(screen.getByRole("button", { name: "clear" }))
+
+    expect(screen.getByTestId("node-count").textContent).toBe("0")
+    expect(screen.getByTestId("dirty").textContent).toBe("false")
+  })
+
+  it("resetar o canvas não marca o diagrama como alterado", () => {
+    renderDirty()
+
+    fireEvent.click(screen.getByRole("button", { name: "add" }))
+    fireEvent.click(screen.getByRole("button", { name: "reset" }))
+
+    expect(screen.getByTestId("dirty").textContent).toBe("false")
+  })
+})

@@ -7,6 +7,8 @@ import {
 } from "../../components/constructor/ConstructorProvider"
 import { ExamplesSection } from "../../components/constructor/ExamplesSection"
 import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvider"
+import { LocalAlgorithmsProvider } from "../../components/constructor/LocalAlgorithmsProvider"
+import { ToastProvider } from "../../components/ui/Toast"
 import { AlgorithmNameProvider } from "../../components/constructor/AlgorithmNameProvider"
 import { DiagramOriginProvider } from "../../components/constructor/DiagramOrigin"
 import { DIAGRAM_EXAMPLES } from "../../interfaces/diagramExamples"
@@ -24,16 +26,20 @@ function Probe() {
 
 function renderSection() {
   return render(
-    <SimulatorProvider>
-      <AlgorithmsProvider>
+    <ToastProvider>
+<SimulatorProvider>
+      <AlgorithmsProvider signedIn>
+<LocalAlgorithmsProvider>
         <DiagramOriginProvider><AlgorithmNameProvider>
           <ConstructorProvider>
           <ExamplesSection />
           <Probe />
           </ConstructorProvider>
         </AlgorithmNameProvider></DiagramOriginProvider>
-      </AlgorithmsProvider>
-    </SimulatorProvider>,
+      </LocalAlgorithmsProvider>
+</AlgorithmsProvider>
+    </SimulatorProvider>
+</ToastProvider>,
   )
 }
 
@@ -92,7 +98,8 @@ describe("ExamplesSection", () => {
   it("carrega o exemplo no canvas e marca como selecionado", () => {
     renderSection()
     openExamplesDropdown()
-    expect(screen.getByTestId("canvas-nodes").textContent).toBe("1")
+    // The canvas opens empty now, so the example brings all of its own nodes.
+    expect(screen.getByTestId("canvas-nodes").textContent).toBe("0")
     const button = screen.getByRole("button", { name: /soma de dois valores/i })
     expect(button).toHaveAttribute("aria-pressed", "false")
     fireEvent.click(button)

@@ -1,4 +1,4 @@
-import { memo, useCallback } from "react"
+import { memo, useCallback, useMemo } from "react"
 import { Handle, Position, type NodeProps } from "@xyflow/react"
 import { Plus, Trash2 } from "lucide-react"
 import {
@@ -12,9 +12,16 @@ const DATA_TYPES = ["inteiro", "real", "caractere", "booleano", "texto"]
 const MemoryNode = memo(({ id, data, selected }: NodeProps<AlgorithmNode>) => {
   const { updateNodeData } = useConstructor()
 
-  const rows: MemoryRow[] = data.rows?.length
-    ? data.rows
-    : [{ type: "inteiro", variables: "" }]
+  // Memoized so the fallback array below keeps its identity across renders.
+  // Without this, every render builds a fresh array and the callbacks that
+  // close over it churn too, re-rendering anything memoized downstream.
+  const rows: MemoryRow[] = useMemo(
+    () =>
+      data.rows?.length
+        ? data.rows
+        : [{ type: "inteiro", variables: "" }],
+    [data.rows],
+  )
 
   const borderColor = data.hasError
     ? "hsl(var(--node-error))"

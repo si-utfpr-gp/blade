@@ -2,7 +2,7 @@ class AlgorithmsController < ApplicationController
   before_action :authenticate_user!
 
   def index
-    render json: current_user.algorithms
+    render json: current_user.algorithms.newest_first
   end
 
   def show

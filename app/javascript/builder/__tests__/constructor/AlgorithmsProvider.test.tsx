@@ -50,9 +50,9 @@ function Probe() {
   )
 }
 
-function renderProvider() {
+function renderProvider(signedIn = true) {
   return render(
-    <AlgorithmsProvider>
+    <AlgorithmsProvider signedIn={signedIn}>
       <Probe />
     </AlgorithmsProvider>,
   )
@@ -227,5 +227,25 @@ describe("AlgorithmsProvider", () => {
     const [, options] = fetchMock.mock.calls[1]
     expect(options.headers["X-CSRF-Token"]).toBe("TOKEN123")
     document.head.removeChild(meta)
+  })
+
+  describe("sem sessão", () => {
+    it("não pede a lista, porque só receberia 401", async () => {
+      renderProvider(false)
+
+      await waitFor(() => {
+        expect(screen.getByTestId("status")).toHaveTextContent("idle")
+      })
+      expect(fetchMock).not.toHaveBeenCalled()
+    })
+
+    it("não mostra erro, já que nada foi tentado", async () => {
+      renderProvider(false)
+
+      await waitFor(() => {
+        expect(screen.getByTestId("count")).toHaveTextContent("0")
+      })
+      expect(screen.getByTestId("error")).toHaveTextContent("")
+    })
   })
 })

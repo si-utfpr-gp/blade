@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { Save } from "lucide-react"
 import { useToast } from "../ui/Toast"
 import { useConstructor } from "./ConstructorProvider"
@@ -5,18 +6,23 @@ import { useAlgorithms } from "./AlgorithmsProvider"
 import { useDiagramOrigin } from "./DiagramOrigin"
 import { useAlgorithmNameField } from "./AlgorithmNameProvider"
 import { serializeDiagramForSave } from "./serializeDiagram"
+import { ConfirmDialog } from "../ui/ConfirmDialog"
+import { useLocalAlgorithms } from "./LocalAlgorithmsProvider"
 
 export function CanvasSaveButton() {
-  const { nodes, edges } = useConstructor()
+  const { nodes, edges, markClean } = useConstructor()
   const { saveAlgorithm, updateAlgorithm, status, error } = useAlgorithms()
   const { origin, isReadOnly, markSaved } = useDiagramOrigin()
-  const { algorithmName } = useAlgorithmNameField()
+  const { algorithmName, flagMissingName } = useAlgorithmNameField()
+  const { deleteAlgorithm: deleteLocalAlgorithm } = useLocalAlgorithms()
   const { notify } = useToast()
+  const [emptyWarning, setEmptyWarning] = useState(false)
 
-  const handleSave = async () => {
+  // Saving an empty canvas is almost never the intent: on a saved algorithm it
+  // would overwrite good work with nothing, and a new one would store an
+  // algorithm that cannot do anything. Still allowed, but only on purpose.
+  const save = async () => {
     const trimmed = algorithmName.trim()
-    if (!trimmed || isReadOnly) return
-
     const diagram = serializeDiagramForSave(nodes, edges)
 
     // A selected saved algorithm is updated in place; anything else is a new
@@ -24,27 +30,60 @@ export function CanvasSaveButton() {
     // The name stays in the field after saving: emptying it made the save look
     // like it had failed, and the diagram on screen is still that algorithm.
     if (origin.kind === "saved") {
-      const updated = await updateAlgorithm(origin.id, trimmed, diagram)
-      if (updated) {
-        notify(`Algoritmo "${updated.name}" atualizado.`, "success")
-      } else {
-        notify("Não foi possível atualizar o algoritmo.", "error")
-      }
+      const result = await updateAlgorithm(origin.id, trimmed, diagram)
+
+      // The API says why, for instance that the name is taken. A generic
+      // message left the student with nothing to act on.
+      notify(
+        result.ok
+          ? `Algoritmo "${result.algorithm.name}" atualizado.`
+          : result.message,
+        result.ok ? "success" : "error",
+      )
+      // Only a confirmed save becomes the new baseline: a rejection leaves the
+      // edits counted as unsaved, which is what they still are.
+      if (result.ok) markClean()
       return
     }
 
-    const saved = await saveAlgorithm(trimmed, diagram)
-    if (saved) {
-      markSaved(saved.id)
-      notify(`Algoritmo "${saved.name}" salvo.`, "success")
-    } else {
-      // saveAlgorithm already stored the API message on `error`.
-      notify("Não foi possível salvar o algoritmo.", "error")
+    const result = await saveAlgorithm(trimmed, diagram)
+
+    if (!result.ok) {
+      notify(result.message, "error")
+      return
     }
+
+    // A diagram that came from this browser now lives on an account. Leaving
+    // the local copy behind would put the same algorithm in two lists and let
+    // the student edit one and lose the other, so the move is the point.
+    if (origin.kind === "local") deleteLocalAlgorithm(origin.id)
+
+    markSaved(result.algorithm.id)
+    markClean()
+    notify(`Algoritmo "${result.algorithm.name}" salvo.`, "success")
+  }
+
+  const handleSave = () => {
+    if (isReadOnly) return
+
+    if (!algorithmName.trim()) {
+      // The button stays enabled on purpose: a disabled one only shows a grey
+      // square with no explanation. Pointing at the field is what explains it.
+      // Checked before the empty canvas, since a name is the part the student
+      // can act on right now.
+      notify("Informe um nome para o algoritmo antes de salvar.", "error")
+      flagMissingName()
+      return
+    }
+
+    if (nodes.length === 0 && !emptyWarning) {
+      setEmptyWarning(true)
+      return
+    }
+    void save()
   }
 
   const saving = status === "saving"
-  const canSave = algorithmName.trim().length > 0 && !saving && !isReadOnly
 
   const label = isReadOnly
     ? "Exemplo não pode ser salvo"
@@ -52,23 +91,49 @@ export function CanvasSaveButton() {
       ? "Atualizar algoritmo"
       : "Salvar algoritmo"
 
+  const hint = isReadOnly
+    ? "Exemplos não podem ser alterados"
+    : origin.kind === "saved"
+      ? "Atualizar o algoritmo atual"
+      : "Salvar o algoritmo na sua conta"
+
+  // Icon only, to leave room on small screens. With no visible text the
+  // accessible name and the title carry the whole meaning: screen readers get
+  // aria-label, and the desktop tooltip gets title. Touch has no hover, so
+  // the label is also what explains a disabled button.
   return (
     <div className="flex items-center gap-1.5">
       <button
         type="button"
         onClick={handleSave}
-        disabled={!canSave}
-        title={isReadOnly ? "Exemplos não podem ser alterados" : undefined}
-        className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-sm font-medium text-shadow-card-foreground transition-colors hover:border-primary/40 disabled:hover:border-none hover:bg-muted/50 disabled:opacity-80 hover:cursor-pointer disabled:cursor-not-allowed"
+        disabled={saving || isReadOnly}
+        aria-label={saving ? "Salvando..." : label}
+        title={hint}
+        className="flex h-20 w-20 items-center justify-center rounded-lg border border-border bg-card/95 text-foreground transition-colors hover:border-primary/40 hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-40 sm:h-8 sm:w-8"
       >
-        <Save className="h-3 w-3" />
-        {saving ? "Salvando..." : label}
+        <Save className="h-5 w-5" aria-hidden="true" />
       </button>
       {error && (
         <span className="sr-only" role="alert">
           {error}
         </span>
       )}
+      <ConfirmDialog
+        open={emptyWarning}
+        title="Salvar sem nenhum bloco?"
+        description={
+          origin.kind === "saved"
+            ? `O diagrama guardado em "${algorithmName.trim()}" será substituído por um vazio.`
+            : "O algoritmo não terá nenhum bloco e não poderá ser executado."
+        }
+        confirmLabel="Salvar mesmo assim"
+        destructive={origin.kind === "saved"}
+        onConfirm={() => {
+          setEmptyWarning(false)
+          void save()
+        }}
+        onCancel={() => setEmptyWarning(false)}
+      />
     </div>
   )
 }

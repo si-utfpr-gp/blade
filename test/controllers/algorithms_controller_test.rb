@@ -141,3 +141,67 @@ class AlgorithmsUpdateTest < ActionDispatch::IntegrationTest
     assert_equal "Original", @algorithm.reload.name
   end
 end
+
+# The name is what identifies an algorithm in the dropdown, so the API has to
+# explain the refusal instead of returning a bare 422.
+class AlgorithmsNameUniquenessTest < ActionDispatch::IntegrationTest
+  setup do
+    @user = User.find_or_create_by!(login: "dev") { |user| user.name = "Aluno de Teste" }
+    Algorithm.where(user: @user).delete_all
+  end
+
+  def diagram
+    { nodes: [], edges: [] }
+  end
+
+  test "create refuses a name the student already used" do
+    post algorithms_url, as: :json,
+      params: { name: "Contador", diagram: diagram }
+    assert_response :created
+
+    post algorithms_url, as: :json,
+      params: { name: "Contador", diagram: diagram }
+
+    assert_response :unprocessable_entity
+    assert_match(/já existe/i, response.parsed_body["errors"].join)
+  end
+
+  test "create refuses the same name in a different case" do
+    Algorithm.create!(user: @user, name: "Contador", diagram: diagram)
+
+    post algorithms_url, as: :json,
+      params: { name: "CONTADOR", diagram: diagram }
+
+    assert_response :unprocessable_entity
+  end
+
+  test "update refuses a name already used by another algorithm" do
+    Algorithm.create!(user: @user, name: "Contador", diagram: diagram)
+    other = Algorithm.create!(user: @user, name: "Soma", diagram: diagram)
+
+    patch algorithm_url(other), as: :json,
+      params: { name: "Contador", diagram: diagram }
+
+    assert_response :unprocessable_entity
+    assert_equal "Soma", other.reload.name
+  end
+
+  test "update renaming to a fresh name succeeds" do
+    algorithm = Algorithm.create!(user: @user, name: "Contador", diagram: diagram)
+
+    patch algorithm_url(algorithm), as: :json,
+      params: { name: "Contador v2", diagram: diagram }
+
+    assert_response :success
+    assert_equal "Contador v2", algorithm.reload.name
+  end
+
+  test "update keeping the same name succeeds" do
+    algorithm = Algorithm.create!(user: @user, name: "Contador", diagram: diagram)
+
+    patch algorithm_url(algorithm), as: :json,
+      params: { name: "Contador", diagram: { nodes: [ { id: "a" } ], edges: [] } }
+
+    assert_response :success
+  end
+end

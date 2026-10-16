@@ -22,6 +22,7 @@ import {
 } from "react"
 
 import { ReactFlowProvider } from "@xyflow/react"
+import type { EdgeChange, NodeChange } from "@xyflow/react"
 
 import type { BlockType } from "../blocks/blockDefinitions"
 import { isBlockType } from "../blocks/blockDefinitions"
@@ -31,6 +32,14 @@ import {
   decisionBranchLabel,
   type ConnectionRejection,
 } from "./connectionRules"
+import { diagramSignature } from "./diagramSignature"
+import { serializeDiagramForSave } from "./serializeDiagram"
+import {
+  edgesFromDiagram,
+  isHistoryWorthy,
+  nodesFromDiagram,
+  useDiagramHistory,
+} from "./useDiagramHistory"
 
 export interface MemoryRow {
   type: string
@@ -102,34 +111,103 @@ interface ConstructorContextValue {
   resetCanvas: () => void
 
   clearCanvas: () => void
+
+  // Undo and redo for the canvas only. The name is a separate field and is
+  // left to the browser, so Ctrl+Z in it is not swallowed by the canvas.
+  undo: () => void
+  redo: () => void
+  canUndo: boolean
+  canRedo: boolean
+
+  // Whether the canvas holds edits that no save or load has accounted for.
+  // Guards the actions that throw work away ask on this before proceeding.
+  isDirty: boolean
+
+  // Called once a save is confirmed, so the current state becomes the baseline.
+  markClean: () => void
+
+  // Incremented whenever a whole diagram is loaded, cleared or reset, so the
+  // canvas can tell a new diagram apart from ordinary editing.
+  diagramLoadCount: number
 }
 
 const ConstructorContext = createContext<ConstructorContextValue | null>(null)
 
-const initialNodes: AlgorithmNode[] = [
-  {
-    id: "start-1",
-    type: "startEnd",
-    position: { x: 300, y: 80 },
-    data: {
-      blockType: "startEnd",
-      label: "Início",
-      variant: "start",
-    },
-  },
-]
+// The canvas opens empty: a seeded start block made the first screen look like
+// work already in progress, and a student cannot save an unnamed algorithm
+// anyway. The start block is one tap away in the palette.
+const initialNodes: AlgorithmNode[] = []
 
 const initialEdges: Edge[] = []
 
 export function ConstructorProvider({ children }: { children: ReactNode }) {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
+  const [nodes, setNodes, applyNodeChanges] = useNodesState(initialNodes)
+  const [diagramLoadCount, setDiagramLoadCount] = useState(0)
 
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
+  const [edges, setEdges, applyEdgeChanges] = useEdgesState(initialEdges)
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
 
   const [connectionError, setConnectionError] = useState<string | null>(null)
   const edgeReconnectSuccessful = useRef(true)
+
+  // The dirty check compares the current diagram against the state it had when
+  // it was loaded or last saved. Comparing fingerprints instead of toggling a
+  // flag on each edit means undoing back to the saved state reads as clean
+  // again, which a flag could never do on its own.
+  const currentSignature = useMemo(
+    () => diagramSignature(nodes, edges),
+    [nodes, edges],
+  )
+  const [cleanSignature, setCleanSignature] = useState(() =>
+    diagramSignature(initialNodes, initialEdges),
+  )
+  const isDirty = currentSignature !== cleanSignature
+  const markClean = useCallback(
+    () => setCleanSignature(currentSignature),
+    [currentSignature],
+  )
+
+  const history = useDiagramHistory(
+    () => serializeDiagramForSave(nodes, edges),
+    (diagram) => {
+      setNodes(nodesFromDiagram(diagram))
+      setEdges(edgesFromDiagram(diagram))
+      // A restored diagram is a different one, so the inspector must not keep
+      // pointing at a block that is no longer there.
+      setSelectedNodeId(null)
+    },
+  )
+  const { record, undo, redo, reset: resetHistory } = history
+
+  // React Flow delivers deletions and drags through the change handlers, so
+  // both have to reach the history or those edits would be unundoable.
+  // A deletion also has to let go of the selection: without this the canvas
+  // keeps pointing at a block that is no longer there, which used to leave
+  // the Backspace key deleting nothing and the inspector reading stale data.
+  const onNodesChange = useCallback(
+    (changes: NodeChange<AlgorithmNode>[]) => {
+      if (isHistoryWorthy(changes)) record()
+      if (
+        selectedNodeId !== null &&
+        changes.some(
+          (change) => change.type === "remove" && change.id === selectedNodeId,
+        )
+      ) {
+        setSelectedNodeId(null)
+      }
+      applyNodeChanges(changes)
+    },
+    [applyNodeChanges, record, selectedNodeId, setSelectedNodeId],
+  )
+
+  const onEdgesChange = useCallback(
+    (changes: EdgeChange[]) => {
+      if (isHistoryWorthy(changes)) record()
+      applyEdgeChanges(changes)
+    },
+    [applyEdgeChanges, record],
+  )
 
   const reportRejection = useCallback((reason: ConnectionRejection) => {
     setConnectionError(CONNECTION_REJECTION_MESSAGE[reason])
@@ -151,6 +229,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
 
       const branchLabel = decisionBranchLabel(connection.sourceHandle)
 
+      record()
       setEdges((currentEdges) =>
         addEdge(
           {
@@ -163,7 +242,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
         ),
       )
     },
-    [nodes, edges, setEdges, reportRejection],
+    [nodes, edges, setEdges, reportRejection, record],
   )
 
   const onReconnect = useCallback(
@@ -182,6 +261,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
 
       edgeReconnectSuccessful.current = true
       const branchLabel = decisionBranchLabel(newConnection.sourceHandle)
+      record()
       setEdges((currentEdges) =>
         reconnectEdge(
           { ...oldEdge, label: branchLabel },
@@ -190,7 +270,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
         ),
       )
     },
-    [nodes, edges, setEdges, reportRejection],
+    [nodes, edges, setEdges, reportRejection, record],
   )
 
   const onReconnectEnd = useCallback(
@@ -228,6 +308,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       position: { x: number; y: number },
       explicitVariant?: "start" | "end",
     ) => {
+      record()
       const id = `${type}-${crypto.randomUUID()}`
 
       const variant: "start" | "end" | undefined =
@@ -255,11 +336,22 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       setNodes((currentNodes) => [...currentNodes, node])
       setSelectedNodeId(id)
     },
-    [setNodes, nodes],
+    [setNodes, nodes, record],
   )
 
   const updateNodeData = useCallback(
     (id: string, data: Partial<BlockNodeData>) => {
+      // Typing a character the field already held is not an edit. Recording it
+      // would spend one undo on a keystroke that changed nothing.
+      const existing = nodes.find((node) => node.id === id)
+      const unchanged =
+        existing !== undefined &&
+        Object.entries(data).every(
+          ([key, value]) => existing.data[key as keyof BlockNodeData] === value,
+        )
+      if (unchanged) return
+
+      record()
       setNodes((currentNodes) =>
         currentNodes.map((node) =>
           node.id === id
@@ -274,20 +366,23 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
         ),
       )
     },
-    [setNodes],
+    [setNodes, nodes, record],
   )
 
   const removeNode = useCallback(
     (id: string) => {
+      record()
       setNodes((currentNodes) => currentNodes.filter((node) => node.id !== id))
 
       setEdges((currentEdges) =>
         currentEdges.filter((edge) => edge.source !== id && edge.target !== id),
       )
 
-      setSelectedNodeId(null)
+      // Only the removed block loses the selection. Clearing it for any
+      // removal would drop the selection the student just made elsewhere.
+      if (id === selectedNodeId) setSelectedNodeId(null)
     },
-    [setNodes, setEdges],
+    [setNodes, setEdges, record, selectedNodeId, setSelectedNodeId],
   )
 
   const duplicateNode = useCallback(
@@ -296,6 +391,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
 
       if (!originalNode) return
 
+      record()
       const newId = `${originalNode.data.blockType}-${crypto.randomUUID()}`
 
       const duplicatedNode: AlgorithmNode = {
@@ -314,7 +410,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       setNodes((currentNodes) => [...currentNodes, duplicatedNode])
       setSelectedNodeId(newId)
     },
-    [nodes, setNodes],
+    [nodes, setNodes, record],
   )
 
   const loadCanvasNodes = useCallback(
@@ -324,7 +420,11 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
         .map((node) => ({
           id: node.id,
           type: node.type,
-          position: node.position,
+          // Diagrams arrive from saved records, bundled examples and imported
+          // files, and only the first two are guaranteed to carry geometry.
+          // Falling back to the origin keeps a missing position from placing a
+          // block nowhere, which the signature below would trip over too.
+          position: node.position ?? { x: 0, y: 0 },
           data: {
             blockType: node.type as BlockType,
             label: (node.data.label as string | undefined) ?? "",
@@ -351,21 +451,34 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       setNodes(nextNodes)
       setEdges(nextEdges)
       setSelectedNodeId(null)
+      // What lands on the canvas is the new point of comparison, so opening an
+      // algorithm never reads as an edit the student has to confirm losing.
+      setCleanSignature(diagramSignature(nextNodes, nextEdges))
+      // Loading is a new starting point: walking back from it would bring back
+      // a diagram the student deliberately left.
+      resetHistory()
+      setDiagramLoadCount((count) => count + 1)
     },
-    [setNodes, setEdges],
+    [setNodes, setEdges, resetHistory],
   )
 
   const resetCanvas = useCallback(() => {
     setNodes(initialNodes)
     setEdges(initialEdges)
     setSelectedNodeId(null)
-  }, [setNodes, setEdges])
+    setCleanSignature(diagramSignature(initialNodes, initialEdges))
+    resetHistory()
+    setDiagramLoadCount((count) => count + 1)
+  }, [setNodes, setEdges, resetHistory])
 
   const clearCanvas = useCallback(() => {
     setNodes([])
     setEdges([])
     setSelectedNodeId(null)
-  }, [setNodes, setEdges])
+    setCleanSignature(diagramSignature([], []))
+    resetHistory()
+    setDiagramLoadCount((count) => count + 1)
+  }, [setNodes, setEdges, resetHistory])
 
   const value = useMemo(
     () => ({
@@ -388,6 +501,13 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       loadCanvasNodes,
       resetCanvas,
       clearCanvas,
+      isDirty,
+      markClean,
+      undo,
+      redo,
+      canUndo: history.canUndo,
+      canRedo: history.canRedo,
+      diagramLoadCount,
     }),
     [
       nodes,
@@ -408,6 +528,13 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       loadCanvasNodes,
       resetCanvas,
       clearCanvas,
+      isDirty,
+      markClean,
+      undo,
+      redo,
+      history.canUndo,
+      history.canRedo,
+      diagramLoadCount,
     ],
   )
 

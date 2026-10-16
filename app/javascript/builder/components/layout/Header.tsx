@@ -2,6 +2,7 @@ import { useState } from "react"
 import { ChevronDown, LogOut, FolderOpen, Menu } from "lucide-react"
 
 import { useDrawer } from "./DrawerContext"
+import { csrfToken } from "../../lib/csrf"
 
 interface IHeaderProps {
   title: string
@@ -9,6 +10,7 @@ interface IHeaderProps {
   algorithmName?: string
   onAlgorithmNameChange?: (name: string) => void
   isNameLocked?: boolean
+  isNameMissing?: boolean
 }
 
 export default function Header({
@@ -17,6 +19,7 @@ export default function Header({
   algorithmName = "",
   onAlgorithmNameChange,
   isNameLocked = false,
+  isNameMissing = false,
 }: IHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   // Null when the header is rendered outside WorkspaceLayout, in which case
@@ -61,16 +64,29 @@ export default function Header({
             value={algorithmName}
             placeholder="Sem título"
             disabled={isNameLocked}
+            aria-invalid={isNameMissing || undefined}
+            aria-describedby={isNameMissing ? "algorithm-name-error" : undefined}
             title={
               isNameLocked
                 ? "O nome de um exemplo não pode ser alterado"
                 : undefined
             }
             onChange={(event) => onAlgorithmNameChange(event.target.value)}
-            className="w-full min-w-0 sm:w-64 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none"
+            className={`w-full min-w-0 rounded-lg border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none sm:w-64 ${
+              // Highlight on attempt only, so an untouched empty field does not
+              // look like an error.
+              isNameMissing
+                ? "border-destructive focus:border-destructive"
+                : "border-border focus:border-primary"
+            }`}
           />
         ) : (
           title && <span className="text-xs text-gray-500">{title}</span>
+        )}
+        {isNameMissing && (
+          <p id="algorithm-name-error" role="alert" className="sr-only">
+            Nome do algoritmo obrigatório.
+          </p>
         )}
       </div>
 
@@ -94,24 +110,39 @@ export default function Header({
             role="menu"
             className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-border bg-card p-1 shadow-lg"
           >
-            <button
-              type="button"
+            <a
               role="menuitem"
+              href="/"
               onClick={() => setMenuOpen(false)}
               className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted/50"
             >
               <FolderOpen className="h-3.5 w-3.5" />
               Meus algoritmos
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => setMenuOpen(false)}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-destructive hover:bg-muted/50"
+            </a>
+
+            {/* A real form, not a button: Rails needs a POST carrying the CSRF
+                token to end the session, and data-turbo="false" keeps Turbo
+                from intercepting the submission. */}
+            <form
+              action="/logout"
+              method="post"
+              data-turbo="false"
+              onSubmit={() => setMenuOpen(false)}
             >
-              <LogOut className="h-3.5 w-3.5" />
-              Sair
-            </button>
+              <input
+                type="hidden"
+                name="authenticity_token"
+                value={csrfToken()}
+              />
+              <button
+                type="submit"
+                role="menuitem"
+                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-destructive hover:bg-muted/50"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Sair
+              </button>
+            </form>
           </div>
         )}
       </div>

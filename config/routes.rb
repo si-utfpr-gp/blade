@@ -14,5 +14,17 @@ Rails.application.routes.draw do
   # root "posts#index"
   get "/", to: "builder#index", as: :builder_index
 
+  get "/login", to: "sessions#new", as: :login
+  # The OmniAuth request phase has to be a POST with a CSRF token; OmniAuth 2
+  # rejects GET on /auth/:provider (CVE-2015-9284).
+  #
+  # The callback route is declared here because the middleware hands the request
+  # back to the application once it has the credentials, and Rails needs a route
+  # to turn that into a controller action.
+  get "/auth/:provider/callback", to: "sessions#create", as: :auth_callback
+  # POST works without JavaScript, which is what the header form relies on.
+  # DELETE is accepted too, for callers that can set the method.
+  match "/logout", to: "sessions#destroy", via: [ :post, :delete ], as: :logout
+
   resources :algorithms, only: [ :index, :create, :show, :update, :destroy ]
 end

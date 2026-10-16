@@ -19,6 +19,11 @@ gem "cssbundling-rails"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
 
+# Autenticação. omniauth-rails_csrf_protection mitiga o CVE-2015-9284,
+# que permitia forçar o login de uma vítima via GET em /auth/:provider.
+gem "omniauth-google-oauth2", "~> 1.2"
+gem "omniauth-rails_csrf_protection", "~> 2.0"
+
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
 

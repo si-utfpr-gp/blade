@@ -19,6 +19,9 @@ import {
 import ContextMenu from "./ContextMenu"
 import { RunDiagramButton } from "./RunDiagramButton"
 import { CanvasSaveButton } from "./CanvasSaveButton"
+import { CanvasExportButton } from "./CanvasExportButton"
+import { CanvasHistoryControls } from "./CanvasHistoryControls"
+import { useFitOnDiagramLoad } from "./useFitOnDiagramLoad"
 import { usePanePlacement } from "./usePanePlacement"
 import { PlacementHint } from "./PlacementHint"
 import { useDiagramOrigin } from "./DiagramOrigin"
@@ -44,10 +47,12 @@ export default function ConstructorCanvas({
     addNode,
     setSelectedNodeId,
     removeNode,
+    diagramLoadCount,
   } = useConstructor()
 
   const { screenToFlowPosition, getNode, setCenter } = useReactFlow()
   const placeAt = usePanePlacement()
+  useFitOnDiagramLoad(diagramLoadCount)
   const { state: simulatorState } = useSimulator()
 
   const { isReadOnly } = useDiagramOrigin()
@@ -174,7 +179,9 @@ export default function ConstructorCanvas({
           lands on the wrong one. */}
       <div
         data-testid="canvas-toolbar-save"
-        className="absolute left-3 top-3 z-10 rounded-lg border border-border bg-card/95 px-2 py-1.5 shadow-md backdrop-blur"
+        // The padding follows the button: the touch target is taller on small
+        // screens, and a fixed padding would clip it.
+        className="absolute left-3 top-3 z-10 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
       >
         <CanvasSaveButton />
       </div>
@@ -184,6 +191,24 @@ export default function ConstructorCanvas({
         className="absolute right-3 top-3 z-10 rounded-lg border border-border bg-card/95 px-2 py-1.5 shadow-md backdrop-blur"
       >
         <RunDiagramButton onDiagramLoaded={onDiagramLoaded} />
+      </div>
+
+      {/* Bottom right, away from save on the top left, run on the top right and
+          the zoom controls on the bottom left. The error notice holds the
+          bottom centre, so the four corners never crowd each other. */}
+      <div
+        data-testid="canvas-toolbar-export"
+        className="absolute bottom-3 right-3 z-10 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
+      >
+        <CanvasExportButton />
+      </div>
+
+      {/* Bottom left, right of the zoom controls that own the corner. */}
+      <div
+        data-testid="canvas-toolbar-undo"
+        className="absolute bottom-3 left-14 z-10 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
+      >
+        <CanvasHistoryControls locked={locked} />
       </div>
 
       <ReactFlow
@@ -199,6 +224,10 @@ export default function ConstructorCanvas({
         isValidConnection={isValidConnection}
         edgesReconnectable={!locked}
         nodesDraggable={!locked}
+        // Both keys delete the selected block. Typing in a field never
+        // reaches here: React Flow ignores the keys inside inputs, so the
+        // Backspace in the algorithm name cannot eat a block.
+        deleteKeyCode={["Backspace", "Delete"]}
         nodesConnectable={!locked}
         elementsSelectable={!locked}
         onNodeClick={(_, node) => {

@@ -2,11 +2,13 @@ import { ReactFlowProvider } from "@xyflow/react"
 import BuilderPage from "./BuilderPage"
 
 export default function App() {
-  const userName = document.getElementById("builder")?.dataset.userName || null
+  const root = document.getElementById("builder")
+  const userName = root?.dataset.userName || null
+  const signedIn = root?.dataset.signedIn === "true"
 
   return (
     <ReactFlowProvider>
-      <BuilderPage userName={userName} />
+      <BuilderPage userName={userName} signedIn={signedIn} />
     </ReactFlowProvider>
   )
 }

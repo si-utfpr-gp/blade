@@ -12,6 +12,8 @@ import { useDiagramOrigin } from "./DiagramOrigin"
 interface IAlgorithmNameContextValue {
   algorithmName: string
   setAlgorithmName: (name: string) => void
+  isNameMissing: boolean
+  setIsNameMissing: (missing: boolean) => void
 }
 
 const AlgorithmNameContext = createContext<IAlgorithmNameContextValue | null>(
@@ -22,10 +24,13 @@ const AlgorithmNameContext = createContext<IAlgorithmNameContextValue | null>(
 // canvas, so it needs to be shared rather than owned by either component.
 export function AlgorithmNameProvider({ children }: { children: ReactNode }) {
   const [algorithmName, setAlgorithmName] = useState("")
+  // Raised when saving was attempted without a name, so the header field can
+  // point at itself. Typing clears it: the student has started fixing it.
+  const [isNameMissing, setIsNameMissing] = useState(false)
 
   const value = useMemo<IAlgorithmNameContextValue>(
-    () => ({ algorithmName, setAlgorithmName }),
-    [algorithmName],
+    () => ({ algorithmName, setAlgorithmName, isNameMissing, setIsNameMissing }),
+    [algorithmName, isNameMissing],
   )
 
   return (
@@ -56,23 +61,32 @@ export function useAlgorithmNameField(): {
   onAlgorithmNameChange: (name: string) => void
   clearAlgorithmName: () => void
   isNameLocked: boolean
+  isNameMissing: boolean
+  flagMissingName: () => void
 } {
-  const { algorithmName, setAlgorithmName } = useAlgorithmName()
+  const { algorithmName, setAlgorithmName, isNameMissing, setIsNameMissing } =
+    useAlgorithmName()
   const { isReadOnly } = useDiagramOrigin()
 
   const onAlgorithmNameChange = useCallback(
-    (name: string) => setAlgorithmName(name),
-    [setAlgorithmName],
+    (name: string) => {
+      setAlgorithmName(name)
+      if (name.trim()) setIsNameMissing(false)
+    },
+    [setAlgorithmName, setIsNameMissing],
   )
 
-  const clearAlgorithmName = useCallback(() => setAlgorithmName(""), [
-    setAlgorithmName,
-  ])
+  const clearAlgorithmName = useCallback(() => {
+    setAlgorithmName("")
+    setIsNameMissing(false)
+  }, [setAlgorithmName, setIsNameMissing])
 
   return {
     algorithmName,
     onAlgorithmNameChange,
     clearAlgorithmName,
     isNameLocked: isReadOnly,
+    isNameMissing,
+    flagMissingName: () => setIsNameMissing(true),
   }
 }

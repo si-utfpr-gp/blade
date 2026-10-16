@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react"
+import { csrfToken } from "../../lib/csrf"
 import type { SerializedDiagram } from "./serializeDiagram"
 
 export interface SavedAlgorithm {
@@ -18,25 +19,27 @@ export interface SavedAlgorithm {
 
 export type AlgorithmsStatus = "idle" | "loading" | "saving" | "deleting" | "error"
 
+// The reason a write failed travels with the result: reading it back from the
+// provider state inside the caller is too late, React has not re-rendered yet.
+export type WriteResult =
+  | { ok: true; algorithm: SavedAlgorithm }
+  | { ok: false; message: string }
+
 interface IAlgorithmsContextValue {
   algorithms: SavedAlgorithm[]
+  // Lets the sidebar hide the whole section instead of showing an empty list
+  // that would only invite a visitor to sign in.
+  signedIn: boolean
   status: AlgorithmsStatus
   error: string | null
   loadAlgorithms: () => Promise<void>
-  saveAlgorithm: (name: string, diagram: SerializedDiagram) => Promise<SavedAlgorithm | null>
-  updateAlgorithm: (id: number, name: string, diagram: SerializedDiagram) => Promise<SavedAlgorithm | null>
+  saveAlgorithm: (name: string, diagram: SerializedDiagram) => Promise<WriteResult>
+  updateAlgorithm: (id: number, name: string, diagram: SerializedDiagram) => Promise<WriteResult>
   deleteAlgorithm: (id: number) => Promise<boolean>
   getAlgorithm: (id: number) => Promise<SavedAlgorithm | null>
 }
 
 const AlgorithmsContext = createContext<IAlgorithmsContextValue | null>(null)
-
-function csrfToken(): string {
-  return (
-    document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
-      ?.content ?? ""
-  )
-}
 
 async function readErrors(response: Response): Promise<string> {
   try {
@@ -51,7 +54,13 @@ async function readErrors(response: Response): Promise<string> {
   return `Falha na requisição (${response.status}).`
 }
 
-export function AlgorithmsProvider({ children }: { children: ReactNode }) {
+export function AlgorithmsProvider({
+  children,
+  signedIn = false,
+}: {
+  children: ReactNode
+  signedIn?: boolean
+}) {
   const [algorithms, setAlgorithms] = useState<SavedAlgorithm[]>([])
   const [status, setStatus] = useState<AlgorithmsStatus>("idle")
   const [error, setError] = useState<string | null>(null)
@@ -99,11 +108,13 @@ export function AlgorithmsProvider({ children }: { children: ReactNode }) {
           ...current.filter((item) => item.id !== saved.id),
         ])
         setStatus("idle")
-        return saved
+        return { ok: true, algorithm: saved }
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "Falha ao salvar.")
+        const message =
+          cause instanceof Error ? cause.message : "Falha ao salvar."
+        setError(message)
         setStatus("error")
-        return null
+        return { ok: false, message }
       }
     },
     [],
@@ -129,13 +140,13 @@ export function AlgorithmsProvider({ children }: { children: ReactNode }) {
           current.map((item) => (item.id === id ? updated : item)),
         )
         setStatus("idle")
-        return updated
+        return { ok: true, algorithm: updated }
       } catch (cause) {
-        setError(
-          cause instanceof Error ? cause.message : "Falha ao atualizar.",
-        )
+        const message =
+          cause instanceof Error ? cause.message : "Falha ao atualizar."
+        setError(message)
         setStatus("error")
-        return null
+        return { ok: false, message }
       }
     },
     [],
@@ -174,15 +185,20 @@ export function AlgorithmsProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
+    // Without an account there is nothing to list, and asking anyway would
+    // only earn a 401 and an error toast on a page that works for a visitor.
+    if (!signedIn) return
+
     // Data fetching on mount. Every setState inside fetchAlgorithms runs after
     // an awaited response, so no render is cascaded synchronously here.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchAlgorithms()
-  }, [fetchAlgorithms])
+  }, [fetchAlgorithms, signedIn])
 
   const value = useMemo<IAlgorithmsContextValue>(
     () => ({
-      algorithms,
+      algorithms: signedIn ? algorithms : [],
+      signedIn,
       status,
       error,
       loadAlgorithms,
@@ -193,6 +209,7 @@ export function AlgorithmsProvider({ children }: { children: ReactNode }) {
     }),
     [
       algorithms,
+      signedIn,
       status,
       error,
       loadAlgorithms,
