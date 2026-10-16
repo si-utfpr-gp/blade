@@ -14,6 +14,9 @@ function Probe() {
     removeNode,
     updateNodeData,
     onConnect,
+    onNodesChange,
+    setSelectedNodeId,
+    selectedNodeId,
     undo,
     redo,
     canUndo,
@@ -24,6 +27,7 @@ function Probe() {
   return (
     <div>
       <span data-testid="count">{nodes.length}</span>
+      <span data-testid="selected">{selectedNodeId ?? "nenhum"}</span>
       <span data-testid="labels">{nodes.map((n) => String(n.data.label)).join("|")}</span>
       <span data-testid="edges">{edges.length}</span>
       <span data-testid="can-undo">{String(canUndo)}</span>
@@ -34,11 +38,39 @@ function Probe() {
       <button type="button" onClick={() => addNode("decision", { x: 0, y: 80 })}>
         add-decision
       </button>
+      <button type="button" onClick={() => nodes[0] && removeNode(nodes[0].id)}>
+        remove
+      </button>
       <button
         type="button"
-        onClick={() => nodes[0] && removeNode(nodes[0].id)}
+        onClick={() => nodes[0] && setSelectedNodeId(nodes[0].id)}
       >
-        remove
+        sel
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          nodes.length > 0 && setSelectedNodeId(nodes[nodes.length - 1].id)
+        }
+      >
+        sel-last
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          nodes[0] &&
+          onNodesChange([{ type: "select", id: nodes[0].id, selected: true }])
+        }
+      >
+        select-via-flow
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          nodes[0] && onNodesChange([{ type: "remove", id: nodes[0].id }])
+        }
+      >
+        remove-via-flow
       </button>
       <button
         type="button"
@@ -235,5 +267,50 @@ describe("histórico do canvas", () => {
     fireEvent.click(screen.getByRole("button", { name: "undo" }))
 
     expect(screen.getByTestId("count").textContent).toBe("2")
+  })
+
+  it("selecionar não conta como alteração", () => {
+    renderProvider()
+    add()
+    fireEvent.click(screen.getByRole("button", { name: "select-via-flow" }))
+
+    // Selecting is not an edit: a single undo walks straight back past the
+    // add instead of stopping on the selection first.
+    fireEvent.click(screen.getByRole("button", { name: "undo" }))
+    expect(screen.getByTestId("count").textContent).toBe("0")
+    expect(screen.getByTestId("can-undo").textContent).toBe("false")
+  })
+
+  it("remover pelo teclado conta como alteração", () => {
+    renderProvider()
+    add()
+
+    fireEvent.click(screen.getByRole("button", { name: "remove-via-flow" }))
+
+    expect(screen.getByTestId("count").textContent).toBe("0")
+    expect(screen.getByTestId("can-undo").textContent).toBe("true")
+  })
+
+  it("remover solta a seleção, em vez de apontar para um bloco que sumiu", () => {
+    renderProvider()
+    add()
+    fireEvent.click(screen.getByRole("button", { name: "sel" }))
+    expect(screen.getByTestId("selected").textContent).not.toBe("nenhum")
+
+    fireEvent.click(screen.getByRole("button", { name: "remove-via-flow" }))
+
+    expect(screen.getByTestId("selected").textContent).toBe("nenhum")
+  })
+
+  it("remover outro bloco não solta a seleção atual", () => {
+    renderProvider()
+    add()
+    add()
+    // Selects the second block, then removes the first through the flow.
+    fireEvent.click(screen.getByRole("button", { name: "sel-last" }))
+    const selected = screen.getByTestId("selected").textContent
+    fireEvent.click(screen.getByRole("button", { name: "remove" }))
+
+    expect(screen.getByTestId("selected").textContent).toBe(selected)
   })
 })

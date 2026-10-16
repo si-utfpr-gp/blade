@@ -90,14 +90,17 @@ export function useDiagramHistory(
  * Whether a batch of React Flow changes is worth a history entry.
  *
  * A drag arrives as a change per frame, so recording each one would fill the
- * history with a single gesture. Only the frame that ends the drag counts, which
- * makes one drag one step.
+ * history with a single gesture. Only the frame that ends the drag counts,
+ * which makes one drag one step. Selecting is not an edit at all, so it never
+ * counts: otherwise merely clicking a block would light up the undo button
+ * for an undo that changes nothing.
  */
 export function isHistoryWorthy(
   changes: Array<{ type?: string; dragging?: boolean }>,
 ): boolean {
   return changes.some((change) => {
-    if ("type" in change && change.type === "position") return !change.dragging
+    if (change.type === "select") return false
+    if (change.type === "position") return !change.dragging
     return true
   })
 }

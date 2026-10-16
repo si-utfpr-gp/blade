@@ -224,6 +224,10 @@ export default function ConstructorCanvas({
         isValidConnection={isValidConnection}
         edgesReconnectable={!locked}
         nodesDraggable={!locked}
+        // Both keys delete the selected block. Typing in a field never
+        // reaches here: React Flow ignores the keys inside inputs, so the
+        // Backspace in the algorithm name cannot eat a block.
+        deleteKeyCode={["Backspace", "Delete"]}
         nodesConnectable={!locked}
         elementsSelectable={!locked}
         onNodeClick={(_, node) => {

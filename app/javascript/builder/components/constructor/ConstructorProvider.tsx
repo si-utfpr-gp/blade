@@ -182,12 +182,23 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
 
   // React Flow delivers deletions and drags through the change handlers, so
   // both have to reach the history or those edits would be unundoable.
+  // A deletion also has to let go of the selection: without this the canvas
+  // keeps pointing at a block that is no longer there, which used to leave
+  // the Backspace key deleting nothing and the inspector reading stale data.
   const onNodesChange = useCallback(
     (changes: NodeChange<AlgorithmNode>[]) => {
       if (isHistoryWorthy(changes)) record()
+      if (
+        selectedNodeId !== null &&
+        changes.some(
+          (change) => change.type === "remove" && change.id === selectedNodeId,
+        )
+      ) {
+        setSelectedNodeId(null)
+      }
       applyNodeChanges(changes)
     },
-    [applyNodeChanges, record],
+    [applyNodeChanges, record, selectedNodeId, setSelectedNodeId],
   )
 
   const onEdgesChange = useCallback(
@@ -367,9 +378,11 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
         currentEdges.filter((edge) => edge.source !== id && edge.target !== id),
       )
 
-      setSelectedNodeId(null)
+      // Only the removed block loses the selection. Clearing it for any
+      // removal would drop the selection the student just made elsewhere.
+      if (id === selectedNodeId) setSelectedNodeId(null)
     },
-    [setNodes, setEdges, record],
+    [setNodes, setEdges, record, selectedNodeId, setSelectedNodeId],
   )
 
   const duplicateNode = useCallback(
