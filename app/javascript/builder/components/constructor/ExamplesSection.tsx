@@ -13,6 +13,7 @@ import { useLocalAlgorithms } from "./LocalAlgorithmsProvider"
 import { useAlgorithmNameField } from "./AlgorithmNameProvider"
 import { useToast } from "../ui/Toast"
 import { ConfirmDialog } from "../ui/ConfirmDialog"
+import { CanvasImportButton } from "./CanvasImportButton"
 import { useDiagramOrigin } from "./DiagramOrigin"
 
 const CATEGORY_COLOR: Record<string, string> = {
@@ -294,6 +295,8 @@ export function ExamplesSection() {
         onSelect={handleSelectLocalAlgorithm}
         onDelete={handleDeleteLocal}
       />
+
+      <CanvasImportButton />
 
       {signedIn && (
         <SidebarDropdown
