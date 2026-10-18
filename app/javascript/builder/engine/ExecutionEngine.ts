@@ -7,7 +7,7 @@ import { ExplanationGenerator } from "./ExplanationGenerator";
 import { classifyError, ERROR_TYPES, ExecutionError } from "./errors";
 import type { ExpressionValue } from "./ExpressionParser";
 import type { VarType } from "./types";
-import { parseLogical, typeOfValue } from "./values";
+import { comparisonMismatch, formatValue, parseLogical, sameValue, typeOfValue } from "./values";
 
 interface ExecutionFrame {
     routineName: string
@@ -98,8 +98,7 @@ export class ExecutionEngine {
                 return step
             }
 
-            if (this.shouldAdvanceCurrent) this.moveAfter(node)
-            if (step) this.snapshots.store(step, this.checkpoint())
+            this.finishStep(node, step)
             return step
         } catch (e) {
           const structured = e instanceof ExecutionError ? e : classifyError(e, this.activeFrame()?.current ?? null)
@@ -171,8 +170,7 @@ export class ExecutionEngine {
         try {
             this.shouldAdvanceCurrent = true
             const step = this.exec(node)
-            if (this.shouldAdvanceCurrent) this.moveAfter(node)
-            if (step) this.snapshots.store(step, this.checkpoint())
+            this.finishStep(node, step)
             return step
         } catch (e) {
           const structured = e instanceof ExecutionError ? e : classifyError(e, this.activeFrame()?.current ?? null)
@@ -357,6 +355,13 @@ export class ExecutionEngine {
             case "decision": {
                 const cond = node.label ?? "";
                 const ok = frame.expr.condition(cond, node.id);
+                if (frame.graph.getNextNode(node.id, ok ? "yes" : "no") === null) {
+                    throw new ExecutionError(
+                        ERROR_TYPES.MISSING_CONNECTION,
+                        `Decisão '${cond}': caso ${ok ? "Verdadeiro" : "Falso"} sem ligação`,
+                        node.id,
+                    );
+                }
                 const text = this.explanations.generate({
                     nodeType: node.type,
                     nodeLabel: cond,
@@ -366,6 +371,34 @@ export class ExecutionEngine {
                     nodeId: node.id,
                     nodeLabel: cond,
                     handle: ok ? "yes" : "no",
+                }
+                this.shouldAdvanceCurrent = false
+                return { ...base(), ...text };
+            }
+
+            case "selection": {
+                const expression = node.label ?? "";
+                const value = frame.expr.value(expression, node.id);
+                const cases = node.cases ?? [];
+                const caseValues = this.selectionCaseValues(node, cases, value);
+                const index = caseValues.findIndex(caseValue => sameValue(caseValue, value));
+                const handle = index === -1 ? "default" : `case-${index}`;
+                const selectedCase = index === -1 ? undefined : cases[index].trim();
+                if (frame.graph.getNextNode(node.id, handle) === null) {
+                    const branch = selectedCase === undefined ? "Falso" : `'${selectedCase}'`;
+                    throw new ExecutionError(ERROR_TYPES.MISSING_CONNECTION, `Escolha: caso ${branch} sem ligação`, node.id);
+                }
+                const text = this.explanations.generate({
+                    nodeType: node.type,
+                    nodeLabel: expression,
+                    expressionResult: formatValue(value),
+                    selectedCase,
+                });
+                frame.pendingDecision = {
+                    nodeId: node.id,
+                    nodeLabel: expression,
+                    handle,
+                    ...(selectedCase !== undefined ? { branchLabel: selectedCase } : {}),
                 }
                 this.shouldAdvanceCurrent = false
                 return { ...base(), ...text };
@@ -406,7 +439,7 @@ export class ExecutionEngine {
                 .map(variable => variable.trim())
                 .filter(Boolean)
                 .forEach(variable => {
-                    frame.memory.declare(variable, row.type)
+                    this.declare(frame, variable, row.type, node.id)
                     changes.push(`Declarada: ${variable}`)
                     if (row.initialValue !== undefined) {
                         changes.push(...frame.expr.assign(`${variable} = ${row.initialValue}`, node.id))
@@ -414,6 +447,32 @@ export class ExecutionEngine {
                 })
         })
         return changes
+    }
+
+    /** Declares a variable, pointing a refused name or type at the block that declared it. */
+    private declare(frame: ExecutionFrame, name: string, type: string, blockId: string | null): void {
+        try {
+            frame.memory.declare(name, type)
+        } catch (error) {
+            const classified = classifyError(error, blockId)
+            throw new ExecutionError(classified.type, classified.message, blockId)
+        }
+    }
+
+    /** Evaluates each case value once and rejects a selection that repeats one. */
+    private selectionCaseValues(node: IParserNode, cases: string[], value: ExpressionValue): ExpressionValue[] {
+        const frame = this.requireActiveFrame()
+        const values = cases.map(source => frame.expr.value(source, node.id))
+        values.forEach((caseValue) => {
+            const mismatch = comparisonMismatch(value, caseValue)
+            if (mismatch) throw new ExecutionError(ERROR_TYPES.TYPE_MISMATCH, `Tipo incompatível: ${mismatch}`, node.id)
+        })
+        values.forEach((value, index) => {
+            if (values.findIndex(other => sameValue(other, value)) !== index) {
+                throw new ExecutionError(ERROR_TYPES.INVALID_SELECTION, `Escolha: valor '${cases[index].trim()}' repetido`, node.id)
+            }
+        })
+        return values
     }
 
     private next(node: IParserNode): string | null {
@@ -429,30 +488,77 @@ export class ExecutionEngine {
 
         frame.pendingDecision = null
         frame.current = frame.graph.getNextNode(pending.nodeId, pending.handle)
-        const isTrue = pending.handle === "yes"
         return {
             nodeId: pending.nodeId,
             nodeLabel: pending.nodeLabel,
             nodeType: "branch",
             variables: frame.memory.snapshot(),
-            log: `Caso ${isTrue ? "Verdadeiro" : "Falso"}.`,
-            explanation: `O fluxo segue pelo caso ${isTrue ? "verdadeiro" : "falso"}.`,
-            changes: [`Ramo: ${isTrue ? "VERDADEIRO" : "FALSO"}`],
+            ...this.branchText(pending),
             nextHint: "Avançar.",
             callStack: this.callStack(),
         }
     }
 
+    private branchText(pending: IPendingDecisionCheckpoint): Pick<IExecutionStep, "log" | "explanation" | "changes"> {
+        if (pending.handle.startsWith("case-")) {
+            const value = pending.branchLabel ?? ""
+            return {
+                log: `Caso ${value}.`,
+                explanation: `O fluxo segue pelo caso ${value}.`,
+                changes: [`Ramo: ${value}`],
+            }
+        }
+        if (pending.handle === "default") {
+            return {
+                log: "Caso Falso.",
+                explanation: "Nenhum valor coincidiu; o fluxo segue pelo caso falso.",
+                changes: ["Ramo: FALSO"],
+            }
+        }
+        const isTrue = pending.handle === "yes"
+        return {
+            log: `Caso ${isTrue ? "Verdadeiro" : "Falso"}.`,
+            explanation: `O fluxo segue pelo caso ${isTrue ? "verdadeiro" : "falso"}.`,
+            changes: [`Ramo: ${isTrue ? "VERDADEIRO" : "FALSO"}`],
+        }
+    }
+
+    /**
+     * Records the step and moves past its block. A block with no way out
+     * still gets its step in the desk check, since it ran; the error comes
+     * after, and the flow stops there instead of running the block twice.
+     */
+    private finishStep(node: IParserNode, step: IExecutionStep | null): void {
+        try {
+            if (this.shouldAdvanceCurrent) this.moveAfter(node)
+        } catch (error) {
+            if (step) this.snapshots.store(step, this.checkpoint())
+            throw error
+        }
+        if (step) this.snapshots.store(step, this.checkpoint())
+    }
+
     private moveAfter(node: IParserNode): void {
         const frame = this.requireActiveFrame()
-        frame.current = this.next(node)
-        if (frame.current === null && node.type === "startEnd" && node.variant === "end") {
+        const next = this.next(node)
+        if (next === null && node.type === "startEnd" && node.variant === "end") {
+            frame.current = null
             if (this.frames.length > 1) {
                 this.completeSubroutine()
                 return
             }
             this._done = true
+            return
         }
+        // Only the end block may lead nowhere; anywhere else the flow would
+        // stall with the student pressing Avançar to no effect.
+        frame.current = next
+        if (next === null) throw this.missingExit(node)
+    }
+
+    private missingExit(node: IParserNode): ExecutionError {
+        const name = node.label?.trim() || node.type
+        return new ExecutionError(ERROR_TYPES.MISSING_CONNECTION, `O bloco '${name}' não tem ligação de saída`, node.id)
     }
 
     private enterSubroutine(node: IParserNode): void {
@@ -482,9 +588,15 @@ export class ExecutionEngine {
             pendingInput: null,
             pendingDecision: null,
             returnTarget: call.returnTarget,
-            returnToNode: caller.graph.getNextNode(node.id),
+            returnToNode: this.returnPoint(caller, node),
             returnVariable: routine.returnVariable,
         })
+    }
+
+    private returnPoint(caller: ExecutionFrame, node: IParserNode): string {
+        const next = caller.graph.getNextNode(node.id)
+        if (next === null) throw this.missingExit(node)
+        return next
     }
 
     private completeSubroutine(): void {

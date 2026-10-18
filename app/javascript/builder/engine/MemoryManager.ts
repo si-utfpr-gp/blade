@@ -1,6 +1,7 @@
 import type { IMemory, IMemoryCheckpoint } from "../interfaces/memory"
 import type { IVariable } from "../interfaces/execution"
 import { isValidType, type VarType, VALID_TYPES } from "./types"
+import { isReservedWord } from "./ExpressionParser"
 
 interface VarEntry {
   type: VarType
@@ -19,6 +20,7 @@ export class MemoryManager implements IMemory {
         `Tipo inválido: '${type}'. Tipos válidos: ${VALID_TYPES.join(", ")}`
       )
     }
+    checkVariableName(name.replace(/\[-?\d+\]$/, ""), name)
     const arrayMatch = name.match(/^(\w+)\[(-?\d+)\]$/)
     if (arrayMatch) {
       const varName = arrayMatch[1]
@@ -175,5 +177,18 @@ export class MemoryManager implements IMemory {
 
   public reset(): void {
     this.vars.clear()
+  }
+}
+
+/**
+ * A name the expressions could never read back is refused where it is
+ * declared, instead of failing later in whatever block first uses it.
+ */
+function checkVariableName(name: string, declared: string): void {
+  if (isReservedWord(name)) {
+    throw new Error(`Nome de variável inválido: '${name}' é uma palavra reservada`)
+  }
+  if (!/^[a-zA-Z_]\w*$/.test(name)) {
+    throw new Error(`Nome de variável inválido: '${declared}'`)
   }
 }

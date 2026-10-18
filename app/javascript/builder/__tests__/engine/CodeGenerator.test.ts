@@ -491,4 +491,97 @@ console.log("A soma é: " + soma);
     expect(code).not.toContain("textoDigitado")
   })
 
+  it("não inventa código para escolha/caso: avisa e para no losango", () => {
+    const code = new CodeGenerator(g(
+      [
+        { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+        { id: "memory", type: "memory", position: { x: 0, y: 80 }, data: { rows: [{ type: "inteiro", variables: "opcao" }] } },
+        { id: "sel", type: "selection", position: { x: 0, y: 160 }, data: { label: "opcao", cases: ["1", "2"] } },
+        { id: "a", type: "output", position: { x: 0, y: 240 }, data: { label: "'Novo jogo'" } },
+        { id: "b", type: "output", position: { x: 0, y: 240 }, data: { label: "'Sair'" } },
+        { id: "end", type: "startEnd", position: { x: 0, y: 320 }, data: { variant: "end" } },
+      ],
+      [
+        { id: "e1", source: "start", target: "memory" },
+        { id: "e2", source: "memory", target: "sel" },
+        { id: "e3", source: "sel", target: "a", sourceHandle: "case-0" },
+        { id: "e4", source: "sel", target: "b", sourceHandle: "case-1" },
+        { id: "e5", source: "a", target: "end" },
+        { id: "e6", source: "b", target: "end" },
+      ],
+    )).generate()
+
+    expect(code).toContain("// escolha/caso (opcao) ainda não é convertida para código")
+    expect(code).not.toContain("Novo jogo")
+    expect(code).not.toContain("Sair")
+  })
+
+  it("um se dentro de um enquanto continua sendo se", () => {
+    const code = new CodeGenerator(g(
+      [
+        { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+        { id: "mem", type: "memory", position: { x: 0, y: 0 }, data: { rows: [{ type: "inteiro", variables: "n, d" }] } },
+        { id: "init", type: "process", position: { x: 0, y: 0 }, data: { label: "d = 1" } },
+        { id: "loop", type: "connector", position: { x: 0, y: 0 }, data: {} },
+        { id: "cond", type: "decision", position: { x: 0, y: 0 }, data: { label: "d <= n" } },
+        { id: "test", type: "decision", position: { x: 0, y: 0 }, data: { label: "n % d == 0" } },
+        { id: "show", type: "output", position: { x: 0, y: 0 }, data: { label: "d" } },
+        { id: "join", type: "connector", position: { x: 0, y: 0 }, data: {} },
+        { id: "inc", type: "process", position: { x: 0, y: 0 }, data: { label: "d = d + 1" } },
+        { id: "end", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "end" } },
+      ],
+      [
+        { id: "e1", source: "start", target: "mem" },
+        { id: "e2", source: "mem", target: "init" },
+        { id: "e3", source: "init", target: "loop", targetHandle: "top-in" },
+        { id: "e4", source: "loop", target: "cond", sourceHandle: "bottom-out" },
+        { id: "e5", source: "cond", target: "test", sourceHandle: "yes" },
+        { id: "e6", source: "test", target: "show", sourceHandle: "yes" },
+        { id: "e7", source: "show", target: "join", targetHandle: "right-in" },
+        { id: "e8", source: "test", target: "join", sourceHandle: "no", targetHandle: "left-in" },
+        { id: "e9", source: "join", target: "inc", sourceHandle: "bottom-out" },
+        { id: "e10", source: "inc", target: "loop", targetHandle: "right-in" },
+        { id: "e11", source: "cond", target: "end", sourceHandle: "no" },
+      ],
+    )).generate()
+
+    expect(code.replace(/\n\s*\n/g, "\n")).toContain("while (d <= n) {\n  if (n % d === 0) {\n    console.log(d);\n  }\n  d = d + 1;\n}")
+    expect(code).not.toContain("while (n % d === 0)")
+  })
+
+  it("um enquanto dentro de outro não vira faça-enquanto", () => {
+    const code = new CodeGenerator(g(
+      [
+        { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+        { id: "mem", type: "memory", position: { x: 0, y: 0 }, data: { rows: [{ type: "inteiro", variables: "i, j" }] } },
+        { id: "i0", type: "process", position: { x: 0, y: 0 }, data: { label: "i = 1" } },
+        { id: "outer", type: "connector", position: { x: 0, y: 0 }, data: {} },
+        { id: "ci", type: "decision", position: { x: 0, y: 0 }, data: { label: "i <= 2" } },
+        { id: "j0", type: "process", position: { x: 0, y: 0 }, data: { label: "j = 1" } },
+        { id: "inner", type: "connector", position: { x: 0, y: 0 }, data: {} },
+        { id: "cj", type: "decision", position: { x: 0, y: 0 }, data: { label: "j <= 2" } },
+        { id: "jinc", type: "process", position: { x: 0, y: 0 }, data: { label: "j = j + 1" } },
+        { id: "iinc", type: "process", position: { x: 0, y: 0 }, data: { label: "i = i + 1" } },
+        { id: "end", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "end" } },
+      ],
+      [
+        { id: "e1", source: "start", target: "mem" },
+        { id: "e2", source: "mem", target: "i0" },
+        { id: "e3", source: "i0", target: "outer", targetHandle: "top-in" },
+        { id: "e4", source: "outer", target: "ci", sourceHandle: "bottom-out" },
+        { id: "e5", source: "ci", target: "j0", sourceHandle: "yes" },
+        { id: "e6", source: "j0", target: "inner", targetHandle: "top-in" },
+        { id: "e7", source: "inner", target: "cj", sourceHandle: "bottom-out" },
+        { id: "e8", source: "cj", target: "jinc", sourceHandle: "yes" },
+        { id: "e9", source: "jinc", target: "inner", targetHandle: "right-in" },
+        { id: "e10", source: "cj", target: "iinc", sourceHandle: "no" },
+        { id: "e11", source: "iinc", target: "outer", targetHandle: "right-in" },
+        { id: "e12", source: "ci", target: "end", sourceHandle: "no" },
+      ],
+    )).generate()
+
+    expect(code.replace(/\n\s*\n/g, "\n")).toContain("while (i <= 2) {\n  j = 1;\n  while (j <= 2) {\n    j = j + 1;\n  }\n  i = i + 1;\n}")
+    expect(code).not.toContain("do {")
+  })
+
 })

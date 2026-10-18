@@ -5,6 +5,7 @@ export type BlockType =
   | "output"
   | "process"
   | "decision"
+  | "selection"
   | "subroutine"
   | "connector"
 
@@ -55,6 +56,12 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
     label: "Decisão",
     description: "Executa uma condição",
     color: "bg-amber-500",
+  },
+  {
+    type: "selection",
+    label: "Escolha",
+    description: "Escolhe um caminho pelo valor",
+    color: "bg-orange-500",
   },
   {
     type: "connector",

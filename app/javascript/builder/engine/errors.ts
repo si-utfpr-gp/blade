@@ -11,6 +11,9 @@ export const ERROR_TYPES = {
   MAX_STEPS_EXCEEDED: "MAX_STEPS_EXCEEDED",
   UNKNOWN_BLOCK: "UNKNOWN_BLOCK",
   SUBROUTINE_CONTRACT: "SUBROUTINE_CONTRACT",
+  INVALID_SELECTION: "INVALID_SELECTION",
+  INVALID_VARIABLE_NAME: "INVALID_VARIABLE_NAME",
+  MISSING_CONNECTION: "MISSING_CONNECTION",
 } as const
 
 export type ExecutionErrorType = typeof ERROR_TYPES[keyof typeof ERROR_TYPES]
@@ -72,6 +75,10 @@ function errorTypeFor(message: string): ExecutionErrorType {
     "Tipo incompatível": ERROR_TYPES.TYPE_MISMATCH,
     "Divisão por zero": ERROR_TYPES.DIVISION_BY_ZERO,
     "Expressão inválida": ERROR_TYPES.INVALID_EXPRESSION,
+    "Escolha": ERROR_TYPES.INVALID_SELECTION,
+    "Nome de variável inválido": ERROR_TYPES.INVALID_VARIABLE_NAME,
+    "sem ligação": ERROR_TYPES.MISSING_CONNECTION,
+    "não tem ligação de saída": ERROR_TYPES.MISSING_CONNECTION,
   }
 
   const matched = Object.entries(map).find(([key]) => message.includes(key))

@@ -6,6 +6,7 @@ export function nodeTypeLabel(t: string): string {
     case "output": return "Saída"
     case "process": return "Processo"
     case "decision": return "Decisão"
+    case "selection": return "Escolha"
     case "branch": return "Caso"
     case "connector": return "Conector"
     case "subroutine": return "Sub-rotina"

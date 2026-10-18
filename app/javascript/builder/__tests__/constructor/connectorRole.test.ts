@@ -75,3 +75,61 @@ describe("getConnectorRole", () => {
     expect(getConnectorRole("c1", edges)).toBe("passThrough")
   })
 })
+
+describe("getConnectorRole — junção de escolha", () => {
+  const nodes = [
+    { id: "s", type: "selection" },
+    { id: "a", type: "output" },
+    { id: "b", type: "output" },
+    { id: "f", type: "output" },
+    { id: "x", type: "process" },
+  ]
+  const branches: Edge[] = [
+    { id: "s-a", source: "s", target: "a", sourceHandle: "case-0" },
+    { id: "s-b", source: "s", target: "b", sourceHandle: "case-1" },
+    { id: "s-f", source: "s", target: "f", sourceHandle: "default" },
+  ]
+
+  it("reconhece N entradas vindas dos ramos da mesma escolha", () => {
+    const edges: Edge[] = [
+      ...branches,
+      { id: "a-c", source: "a", target: "c1", targetHandle: "left-in" },
+      { id: "b-c", source: "b", target: "c1", targetHandle: "top-in" },
+      { id: "f-c", source: "f", target: "c1", targetHandle: "left-in" },
+    ]
+
+    expect(getConnectorRole("c1", edges, nodes)).toBe("selectionJoin")
+  })
+
+  it("aceita um caso ligado direto ao conector", () => {
+    const edges: Edge[] = [
+      ...branches,
+      { id: "s-c", source: "s", target: "c1", sourceHandle: "case-1", targetHandle: "left-in" },
+      { id: "a-c", source: "a", target: "c1", targetHandle: "left-in" },
+      { id: "f-c", source: "f", target: "c1", targetHandle: "right-in" },
+    ]
+
+    expect(getConnectorRole("c1", edges, nodes)).toBe("selectionJoin")
+  })
+
+  it("é inválida quando uma das entradas não vem da escolha", () => {
+    const edges: Edge[] = [
+      ...branches,
+      { id: "a-c", source: "a", target: "c1", targetHandle: "left-in" },
+      { id: "b-c", source: "b", target: "c1", targetHandle: "right-in" },
+      { id: "x-c", source: "x", target: "c1", targetHandle: "top-in" },
+    ]
+
+    expect(getConnectorRole("c1", edges, nodes)).toBe("invalid")
+  })
+
+  it("sem os blocos, mantém a classificação pelos pontos de entrada", () => {
+    const edges: Edge[] = [
+      ...branches,
+      { id: "a-c", source: "a", target: "c1", targetHandle: "left-in" },
+      { id: "b-c", source: "b", target: "c1", targetHandle: "right-in" },
+    ]
+
+    expect(getConnectorRole("c1", edges)).toBe("decisionJoin")
+  })
+})

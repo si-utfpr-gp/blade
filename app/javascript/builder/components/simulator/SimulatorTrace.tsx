@@ -53,6 +53,7 @@ export function traceInstruction(step: IExecutionStep): string {
       : log;
     return `Processo (${expression})`;
   }
+  if (step.nodeType === "selection") return `Escolha (${step.nodeLabel})`;
   if (step.nodeType !== "decision") return log;
 
   const [condition] = log.split(" → ");

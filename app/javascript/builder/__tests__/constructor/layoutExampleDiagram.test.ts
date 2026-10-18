@@ -42,17 +42,18 @@ describe("layoutExampleDiagram", () => {
   it("separa corpo do laço e saída do laço nas colunas laterais", () => {
     const { nodes } = layoutExampleDiagram(getExample("fatorial"))
 
-    // entrada até a decisão permanece centralizada
+    // entrada, conector do laço e decisão permanecem centralizados
     expect(positionOf(nodes, "n1").x).toBe(300)
     expect(positionOf(nodes, "n5").x).toBe(300)
+    expect(positionOf(nodes, "n6").x).toBe(300)
 
     // corpo do laço (yes) à direita, saída (no) à esquerda, na mesma altura
-    const loopBody = positionOf(nodes, "n6")
-    const exit = positionOf(nodes, "n7")
+    const loopBody = positionOf(nodes, "n7")
+    const exit = positionOf(nodes, "n8")
     expect(loopBody.x).toBe(470)
     expect(exit.x).toBe(130)
     expect(loopBody.y).toBe(exit.y)
-    expect(exit.y).toBe(5 * 170)
+    expect(exit.y).toBe(6 * 170)
 
     nodes.forEach((node) => {
       expect(node.position.y % 170).toBe(0)

@@ -231,3 +231,81 @@ describe("ConstructorProvider estado sujo", () => {
     expect(screen.getByTestId("dirty").textContent).toBe("false")
   })
 })
+
+function SelectionProbe() {
+  const { nodes, edges, addNode, onConnect, updateSelectionCases } =
+    useConstructor()
+  const selection = nodes.find((node) => node.data.blockType === "selection")
+  const outputs = nodes.filter((node) => node.data.blockType === "output")
+  return (
+    <div>
+      <button type="button" onClick={() => addNode("selection", { x: 0, y: 0 })}>
+        add-selection
+      </button>
+      <button type="button" onClick={() => addNode("output", { x: 0, y: 100 })}>
+        add-output
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          outputs.forEach((output, index) =>
+            onConnect({
+              source: selection!.id,
+              target: output.id,
+              sourceHandle: `case-${index}`,
+              targetHandle: null,
+            }),
+          )
+        }
+      >
+        connect-cases
+      </button>
+      <button
+        type="button"
+        onClick={() => updateSelectionCases(selection!.id, ["20"], [1])}
+      >
+        remove-first-and-edit
+      </button>
+      <span data-testid="cases">{selection?.data.cases?.join(",")}</span>
+      <span data-testid="label">{selection?.data.label}</span>
+      <span data-testid="edges">
+        {edges.map((edge) => `${edge.sourceHandle}:${edge.label}`).join(",")}
+      </span>
+    </div>
+  )
+}
+
+describe("ConstructorProvider escolha", () => {
+  function renderSelection() {
+    return render(
+      <SimulatorProvider>
+        <ConstructorProvider>
+          <SelectionProbe />
+        </ConstructorProvider>
+      </SimulatorProvider>,
+    )
+  }
+
+  it("cria a escolha com dois casos", () => {
+    renderSelection()
+    fireEvent.click(screen.getByText("add-selection"))
+
+    expect(screen.getByTestId("label")).toHaveTextContent("variável")
+    expect(screen.getByTestId("cases")).toHaveTextContent("1,2")
+  })
+
+  it("rotula as setas pelo valor do caso e as acompanha quando os casos mudam", () => {
+    renderSelection()
+    fireEvent.click(screen.getByText("add-selection"))
+    fireEvent.click(screen.getByText("add-output"))
+    fireEvent.click(screen.getByText("add-output"))
+    fireEvent.click(screen.getByText("connect-cases"))
+
+    expect(screen.getByTestId("edges")).toHaveTextContent("case-0:1,case-1:2")
+
+    fireEvent.click(screen.getByText("remove-first-and-edit"))
+
+    expect(screen.getByTestId("cases")).toHaveTextContent("20")
+    expect(screen.getByTestId("edges")).toHaveTextContent(/^case-0:20$/)
+  })
+})

@@ -3,6 +3,7 @@ import type { Edge, Node } from "@xyflow/react"
 import { DIAGRAM_EXAMPLES, type IDiagramExample } from "../../interfaces/diagramExamples"
 import { parse } from "../../parser/parser"
 import { ExecutionEngine } from "../../engine/ExecutionEngine"
+import { constructorIssues, type RawDiagram } from "./runDiagram"
 
 type RawRoutine = { nodes: Omit<Node, "position">[]; edges: Edge[] } & Record<string, unknown>
 
@@ -45,6 +46,8 @@ const EXPECTED: Record<string, string[]> = {
   "Média de Notas com Vetor": ["A média das notas é: 0"],
   "Sub-rotina Visual — Fatorial": ["Fatorial: 2"],
   "Média de Duas Notas": ["1"],
+  "Menu de opções": ["Carregar jogo"],
+  "Conceito da Nota": ["Conceito inválido"],
 }
 
 describe("exemplos de diagramas", () => {
@@ -54,5 +57,9 @@ describe("exemplos de diagramas", () => {
 
   it.each(DIAGRAM_EXAMPLES)("executa '$title' até o fim", (example) => {
     expect(runToEnd(engineFor(example), ["2"])).toEqual(EXPECTED[example.title])
+  })
+
+  it.each(DIAGRAM_EXAMPLES)("'$title' pode ser desenhado no construtor, conectores incluídos", (example) => {
+    expect(constructorIssues(example.diagram as RawDiagram)).toEqual([])
   })
 })

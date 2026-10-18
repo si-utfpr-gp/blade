@@ -1,6 +1,10 @@
 import type { Connection, Edge } from "@xyflow/react"
 import type { AlgorithmNode } from "./ConstructorProvider"
-import { getBlockCapabilities } from "../blocks/blockCapabilities"
+import {
+  getBlockCapabilities,
+  SELECTION_DEFAULT_HANDLE,
+  selectionCaseIndex,
+} from "../blocks/blockCapabilities"
 import { getConnectorRole } from "./nodes/connectorRole"
 
 export type ConnectionRejection =
@@ -21,6 +25,22 @@ export function decisionBranchLabel(
   if (sourceHandle === "yes") return "VERDADEIRO"
   if (sourceHandle === "no") return "FALSO"
   return undefined
+}
+
+/**
+ * Label an arrow leaving `source` through `sourceHandle` carries:
+ * VERDADEIRO/FALSO for a decision, the case value (or FALSO) for a selection.
+ */
+export function branchLabel(
+  source: Pick<AlgorithmNode, "data"> | undefined,
+  sourceHandle?: string | null,
+): string | undefined {
+  if (source?.data.blockType === "selection") {
+    if (sourceHandle === SELECTION_DEFAULT_HANDLE) return "FALSO"
+    const index = selectionCaseIndex(sourceHandle)
+    return index === null ? undefined : source.data.cases?.[index]
+  }
+  return decisionBranchLabel(sourceHandle)
 }
 
 export const CONNECTION_REJECTION_MESSAGE: Record<ConnectionRejection, string> =
@@ -86,24 +106,31 @@ export function validateConnection({
         (connection.targetHandle ?? undefined),
   )
 
-  if (targetHandleTaken) {
+  const connectorRole =
+    targetNode.data.blockType === "connector" && connection.targetHandle
+      ? getConnectorRole(
+          targetNode.id,
+          [
+            ...relevantEdges,
+            {
+              id: "__preview__",
+              source: connection.source,
+              target: connection.target,
+              targetHandle: connection.targetHandle,
+            } as Edge,
+          ],
+          nodes,
+        )
+      : null
+
+  // A selection join gathers every branch of one selection, so it is the one
+  // place where several arrows may share an entry point.
+  if (targetHandleTaken && connectorRole !== "selectionJoin") {
     return { valid: false, reason: "target-handle-taken" }
   }
 
-  if (targetNode.data.blockType === "connector" && connection.targetHandle) {
-    const hypothetical: Edge[] = [
-      ...relevantEdges,
-      {
-        id: "__preview__",
-        source: connection.source,
-        target: connection.target,
-        targetHandle: connection.targetHandle,
-      } as Edge,
-    ]
-
-    if (getConnectorRole(targetNode.id, hypothetical) === "invalid") {
-      return { valid: false, reason: "invalid-connector-role" }
-    }
+  if (connectorRole === "invalid") {
+    return { valid: false, reason: "invalid-connector-role" }
   }
 
   return { valid: true }

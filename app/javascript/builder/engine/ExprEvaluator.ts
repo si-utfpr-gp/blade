@@ -7,7 +7,9 @@ import {
 } from "./ExpressionParser"
 import { ERROR_TYPES, ExecutionError, classifyError } from "./errors"
 import { isValidType, type VarType } from "./types"
-import { TypeMismatch, formatValue, fromStored, toStored } from "./values"
+import { TypeMismatch, comparisonMismatch, formatValue, fromStored, normalizeNumber, toStored } from "./values"
+
+const COMPARISONS = new Set(["<", "<=", ">", ">=", "=", "==", "!="])
 
 /**
  * Evaluates the expression subset used by diagram blocks.
@@ -23,6 +25,8 @@ export class ExprEvaluator {
     return this.splitStatements(expr, blockId).map(s => {
       const [target, ...rest] = s.trim().split("=")
       const src = rest.join("=").trim()
+      // The target is checked first: in "1 = x" the problem is the 1, not x.
+      this.checkTarget(target.trim(), blockId)
       const stored = this.store(target, this.evaluateSource(src, blockId), blockId)
       return `${target.trim()} = ${stored}`
     })
@@ -35,11 +39,9 @@ export class ExprEvaluator {
    */
   store(target: string, value: ExpressionValue, blockId: string | null): string {
     const trimmed = target.trim()
+    this.checkTarget(trimmed, blockId)
     const indexTarget = trimmed.match(/^([a-zA-Z_]\w*)\[(.+)\]$/)
     const name = indexTarget ? indexTarget[1] : trimmed
-    if (!indexTarget && !/^[a-zA-Z_]\w*$/.test(name)) {
-      throw this.invalidExpression(`destino de atribuição inválido: ${name}`, blockId)
-    }
 
     const type = this.declaredType(name, blockId)
     const stored = this.checkType(() => toStored(value, type, trimmed), blockId)
@@ -51,6 +53,12 @@ export class ExprEvaluator {
       this.runWithExecutionError(blockId, () => this.memory.set(name, stored))
     }
     return stored
+  }
+
+  private checkTarget(target: string, blockId: string | null): void {
+    if (!/^[a-zA-Z_]\w*(\[.+\])?$/.test(target)) {
+      throw this.invalidExpression(`destino de atribuição inválido: ${target}`, blockId)
+    }
   }
 
   /** Declared type of a variable or of the vector a target such as `notas[i]` points into. */
@@ -159,6 +167,7 @@ export class ExprEvaluator {
     if (node.operator === "ou" && this.toBoolean(left, blockId)) return true
 
     const right = this.evaluate(node.right, blockId)
+    if (COMPARISONS.has(node.operator)) return this.compare(node.operator, left, right, blockId)
     switch (node.operator) {
       case "e": return this.toBoolean(right, blockId)
       case "ou": return this.toBoolean(right, blockId)
@@ -175,14 +184,29 @@ export class ExprEvaluator {
         return this.toNumber(left, blockId) / divisor
       }
       case "%": return this.toNumber(left, blockId) % this.toNumber(right, blockId)
-      case "<": return left < right
-      case "<=": return left <= right
-      case ">": return left > right
-      case ">=": return left >= right
-      case "=":
-      case "==": return left === right
-      case "!=": return left !== right
       default: throw this.invalidExpression(`operador '${node.operator}' não permitido`, blockId)
+    }
+  }
+
+  /**
+   * Numbers are compared at the 15 significant digits a real keeps in
+   * memory, so 0.1 + 0.2 == 0.3 holds on the spot just as it does once
+   * stored. The arithmetic before the comparison keeps full precision.
+   */
+  private compare(operator: string, left: ExpressionValue, right: ExpressionValue, blockId: string | null): boolean {
+    const mismatch = comparisonMismatch(left, right)
+    if (mismatch) throw new ExecutionError(ERROR_TYPES.TYPE_MISMATCH, `Tipo incompatível: ${mismatch}`, blockId)
+    const a = typeof left === "number" ? normalizeNumber(left) : left
+    const b = typeof right === "number" ? normalizeNumber(right) : right
+    switch (operator) {
+      case "<": return a < b
+      case "<=": return a <= b
+      case ">": return a > b
+      case ">=": return a >= b
+      case "!=": return a !== b
+      case "=":
+      case "==": return a === b
+      default: throw this.invalidExpression(`operador '${operator}' não permitido`, blockId)
     }
   }
 

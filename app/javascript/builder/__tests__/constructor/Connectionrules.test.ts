@@ -4,6 +4,7 @@ import {
   validateConnection,
   CONNECTION_REJECTION_MESSAGE,
   decisionBranchLabel,
+  branchLabel,
 } from "../../components/constructor/connectionRules"
 import type { AlgorithmNode } from "../../components/constructor/ConstructorProvider"
 
@@ -310,5 +311,79 @@ describe("decisionBranchLabel", () => {
     expect(decisionBranchLabel(null)).toBeUndefined()
     expect(decisionBranchLabel(undefined)).toBeUndefined()
     expect(decisionBranchLabel("bottom-out")).toBeUndefined()
+  })
+})
+
+describe("branchLabel", () => {
+  it("mantém VERDADEIRO/FALSO na decisão", () => {
+    expect(branchLabel(node("d", "decision"), "yes")).toBe("VERDADEIRO")
+    expect(branchLabel(node("d", "decision"), "no")).toBe("FALSO")
+  })
+
+  it("rotula a saída de um caso com o valor dele", () => {
+    const selection = node("s", "selection", { cases: ["1", "'a'"] })
+
+    expect(branchLabel(selection, "case-0")).toBe("1")
+    expect(branchLabel(selection, "case-1")).toBe("'a'")
+    expect(branchLabel(selection, "default")).toBe("FALSO")
+    expect(branchLabel(selection, "case-5")).toBeUndefined()
+  })
+})
+
+describe("validateConnection — escolha", () => {
+  const selectionNodes = () => [
+    node("s", "selection", { cases: ["1", "2"] }),
+    node("a", "output"),
+    node("b", "output"),
+    node("f", "output"),
+    node("c", "connector"),
+    node("x", "process"),
+  ]
+  const branches: Edge[] = [
+    { id: "s-a", source: "s", target: "a", sourceHandle: "case-0" },
+    { id: "s-b", source: "s", target: "b", sourceHandle: "case-1" },
+    { id: "s-f", source: "s", target: "f", sourceHandle: "default" },
+  ]
+
+  it("aceita uma saída por caso e a saída Falso", () => {
+    const nodes = selectionNodes()
+
+    expect(validateConnection({ connection: connection("s", "a", "case-1"), nodes, edges: [] })).toEqual({ valid: true })
+    expect(validateConnection({ connection: connection("s", "a", "default"), nodes, edges: [] })).toEqual({ valid: true })
+    expect(validateConnection({ connection: connection("s", "a", "case-2"), nodes, edges: [] })).toEqual({
+      valid: false,
+      reason: "source-handle-not-allowed",
+    })
+  })
+
+  it("deixa os ramos da mesma escolha dividirem um ponto de entrada do conector", () => {
+    const edges: Edge[] = [
+      ...branches,
+      { id: "a-c", source: "a", target: "c", targetHandle: "left-in" },
+      { id: "b-c", source: "b", target: "c", targetHandle: "right-in" },
+    ]
+
+    const result = validateConnection({
+      connection: connection("f", "c", null, "left-in"),
+      nodes: selectionNodes(),
+      edges,
+    })
+
+    expect(result).toEqual({ valid: true })
+  })
+
+  it("recusa dividir o ponto de entrada com algo que não vem da escolha", () => {
+    const edges: Edge[] = [
+      ...branches,
+      { id: "a-c", source: "a", target: "c", targetHandle: "left-in" },
+    ]
+
+    const result = validateConnection({
+      connection: connection("x", "c", null, "left-in"),
+      nodes: selectionNodes(),
+      edges,
+    })
+
+    expect(result).toEqual({ valid: false, reason: "target-handle-taken" })
   })
 })

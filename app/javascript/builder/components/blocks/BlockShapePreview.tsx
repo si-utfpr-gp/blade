@@ -7,6 +7,7 @@ const SHAPE_COLOR: Record<BlockType, string> = {
   output: "var(--node-output)",
   process: "var(--node-process)",
   decision: "var(--node-decision)",
+  selection: "var(--node-selection)",
   subroutine: "var(--node-subroutine)",
   connector: "var(--node-connector)",
 }
@@ -102,6 +103,23 @@ export default function BlockShapePreview({
           strokeWidth="3"
           strokeLinejoin="round"
         />
+      )}
+      {type === "selection" && (
+        <g>
+          <polygon
+            points="32,3 55,15 32,27 9,15"
+            fill="white"
+            stroke={stroke}
+            strokeWidth="3"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M32 27 V31 M14 31 H50 M14 31 V37 M32 31 V37 M50 31 V37"
+            fill="none"
+            stroke={stroke}
+            strokeWidth="2"
+          />
+        </g>
       )}
       {type === "subroutine" && (
         <g>

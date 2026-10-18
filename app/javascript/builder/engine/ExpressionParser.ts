@@ -22,6 +22,13 @@ export class ExpressionSyntaxError extends Error {
   }
 }
 
+/** Words the grammar reads as operators or logical values, never as variable names. */
+export const RESERVED_WORDS = ["e", "ou", "nao", "verdadeiro", "falso"] as const
+
+export function isReservedWord(name: string): boolean {
+  return (RESERVED_WORDS as readonly string[]).includes(name.toLowerCase())
+}
+
 export function parseExpression(source: string): ExpressionNode {
   return new Parser(tokenize(source)).parse()
 }
@@ -75,11 +82,11 @@ function tokenize(source: string): Token[] {
     if (identifier) {
       const value = identifier[0]
       const normalized = value.toLowerCase()
-      const kind: TokenKind = normalized === "verdadeiro" || normalized === "falso"
-        ? "boolean"
-        : normalized === "e" || normalized === "ou" || normalized === "nao"
-          ? "operator"
-          : "identifier"
+      const kind: TokenKind = !isReservedWord(normalized)
+        ? "identifier"
+        : normalized === "verdadeiro" || normalized === "falso"
+          ? "boolean"
+          : "operator"
       tokens.push({ kind, value: kind === "operator" || kind === "boolean" ? normalized : value, position })
       position += value.length
       continue

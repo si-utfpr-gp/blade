@@ -12,6 +12,7 @@ describe("getBlockDisplayName", () => {
     expect(getBlockDisplayName("memory")).toBe("Memória")
     expect(getBlockDisplayName("process")).toBe("Processo")
     expect(getBlockDisplayName("decision")).toBe("Decisão")
+    expect(getBlockDisplayName("selection")).toBe("Escolha")
     expect(getBlockDisplayName("output")).toBe("Saída")
     expect(getBlockDisplayName("connector")).toBe("Conector")
     expect(getBlockDisplayName("subroutine")).toBe("Subrotina")

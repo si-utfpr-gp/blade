@@ -27,9 +27,13 @@ import type { EdgeChange, NodeChange } from "@xyflow/react"
 import type { BlockType } from "../blocks/blockDefinitions"
 import { isBlockType } from "../blocks/blockDefinitions"
 import {
+  selectionCaseHandle,
+  selectionCaseIndex,
+} from "../blocks/blockCapabilities"
+import {
   validateConnection,
   CONNECTION_REJECTION_MESSAGE,
-  decisionBranchLabel,
+  branchLabel,
   type ConnectionRejection,
 } from "./connectionRules"
 import { diagramSignature } from "./diagramSignature"
@@ -51,6 +55,7 @@ export interface BlockNodeData extends Record<string, unknown> {
   label: string
   variant?: "start" | "end"
   rows?: MemoryRow[]
+  cases?: string[]
   hasError?: boolean
 }
 
@@ -101,6 +106,14 @@ interface ConstructorContextValue {
   ) => void
 
   updateNodeData: (id: string, data: Partial<BlockNodeData>) => void
+
+  // Replaces the values of a selection. `origins[i]` is the index case i had
+  // before the edit, or null for a new case, so the arrows follow their case.
+  updateSelectionCases: (
+    id: string,
+    cases: string[],
+    origins: (number | null)[],
+  ) => void
 
   removeNode: (id: string) => void
 
@@ -227,14 +240,17 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      const branchLabel = decisionBranchLabel(connection.sourceHandle)
+      const label = branchLabel(
+        nodes.find((node) => node.id === connection.source),
+        connection.sourceHandle,
+      )
 
       record()
       setEdges((currentEdges) =>
         addEdge(
           {
             ...connection,
-            ...(branchLabel !== undefined ? { label: branchLabel } : {}),
+            ...(label !== undefined ? { label } : {}),
             type: "step",
             markerEnd: { type: MarkerType.ArrowClosed },
           },
@@ -260,11 +276,14 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       }
 
       edgeReconnectSuccessful.current = true
-      const branchLabel = decisionBranchLabel(newConnection.sourceHandle)
+      const label = branchLabel(
+        nodes.find((node) => node.id === newConnection.source),
+        newConnection.sourceHandle,
+      )
       record()
       setEdges((currentEdges) =>
         reconnectEdge(
-          { ...oldEdge, label: branchLabel },
+          { ...oldEdge, label },
           newConnection,
           currentEdges,
         ),
@@ -330,6 +349,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
           blockType: type,
           label: getDefaultLabel(type, variant),
           ...(variant ? { variant } : {}),
+          ...(type === "selection" ? { cases: ["1", "2"] } : {}),
         },
       }
 
@@ -367,6 +387,37 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       )
     },
     [setNodes, nodes, record],
+  )
+
+  const updateSelectionCases = useCallback(
+    (id: string, cases: string[], origins: (number | null)[]) => {
+      record()
+      setNodes((currentNodes) =>
+        currentNodes.map((node) =>
+          node.id === id ? { ...node, data: { ...node.data, cases } } : node,
+        ),
+      )
+
+      // An arrow keeps following its case when cases move, takes the case's
+      // new value as its label, and goes away with a removed case.
+      setEdges((currentEdges) =>
+        currentEdges.flatMap((edge) => {
+          if (edge.source !== id) return [edge]
+          const previous = selectionCaseIndex(edge.sourceHandle)
+          if (previous === null) return [edge]
+          const next = origins.indexOf(previous)
+          if (next === -1) return []
+          return [
+            {
+              ...edge,
+              sourceHandle: selectionCaseHandle(next),
+              label: cases[next],
+            },
+          ]
+        }),
+      )
+    },
+    [setNodes, setEdges, record],
   )
 
   const removeNode = useCallback(
@@ -434,6 +485,9 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
             ...(node.data.rows !== undefined
               ? { rows: node.data.rows as MemoryRow[] }
               : {}),
+            ...(Array.isArray(node.data.cases)
+              ? { cases: (node.data.cases as unknown[]).map(String) }
+              : {}),
           },
         }))
 
@@ -496,6 +550,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       connectionError,
       addNode,
       updateNodeData,
+      updateSelectionCases,
       removeNode,
       duplicateNode,
       loadCanvasNodes,
@@ -523,6 +578,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       connectionError,
       addNode,
       updateNodeData,
+      updateSelectionCases,
       removeNode,
       duplicateNode,
       loadCanvasNodes,
@@ -571,6 +627,8 @@ function getDefaultLabel(type: BlockType, variant?: "start" | "end") {
       return "Processo"
     case "decision":
       return "Condição"
+    case "selection":
+      return "variável"
     case "subroutine":
       return "Subrotina"
     case "connector":

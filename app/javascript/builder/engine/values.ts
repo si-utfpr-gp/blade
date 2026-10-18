@@ -22,8 +22,32 @@ export function formatValue(value: ExpressionValue): string {
 }
 
 function formatNumber(value: number): string {
-  if (Number.isInteger(value)) return String(value)
-  return String(Number.parseFloat(value.toPrecision(15)))
+  return String(normalizeNumber(value))
+}
+
+/**
+ * Rounds a result to the 15 significant digits a real keeps in memory, so
+ * 0.1 + 0.2 is 0.3 whether it is stored first or compared on the spot.
+ */
+export function normalizeNumber(value: number): number {
+  if (Number.isInteger(value) || !Number.isFinite(value)) return value
+  return Number.parseFloat(value.toPrecision(15))
+}
+
+/**
+ * Values can only be compared with values of the same kind: a caractere
+ * "12" is neither equal to nor less than the number 12. Integers and reals
+ * are both numbers. Returns the message for a mismatch, or null.
+ */
+export function comparisonMismatch(a: ExpressionValue, b: ExpressionValue): string | null {
+  if (typeof a === typeof b) return null
+  return `não é possível comparar ${describe(a)} com ${describe(b)}`
+}
+
+/** Equality as the student sees it: numbers match at the 15 digits a real keeps. */
+export function sameValue(a: ExpressionValue, b: ExpressionValue): boolean {
+  if (typeof a === "number" && typeof b === "number") return normalizeNumber(a) === normalizeNumber(b)
+  return a === b
 }
 
 /** Parses the logical words accepted by an input block, or null when it is none of them. */

@@ -20,6 +20,8 @@ export class ExplanationGenerator {
                 return this.process(context);
             case "decision":
                 return this.decision(context);
+            case "selection":
+                return this.selection(context);
             case "subroutine":
                 return this.subroutine(context);
             default:
@@ -61,6 +63,20 @@ export class ExplanationGenerator {
             changes: [`Decisão: ${ok ? "VERDADEIRO" : "FALSO"}`],
             explanation: `'${context.nodeLabel}' é ${ok ? "verdadeiro" : "falso"}.`,
             nextHint: `Seguindo ${ok ? "VERDADEIRO" : "FALSO"}.`,
+        };
+    }
+
+    private selection(context: IExplanationContext): ExplanationResult {
+        const value = context.expressionResult ?? "";
+        const branch = context.selectedCase === undefined ? "Falso" : `Caso ${context.selectedCase}`;
+        const explanation = context.selectedCase === undefined
+            ? `'${context.nodeLabel}' vale ${value}, que não coincide com nenhum caso.`
+            : `'${context.nodeLabel}' vale ${value}, que coincide com o caso ${context.selectedCase}.`;
+        return {
+            log: `${context.nodeLabel} = ${value} → ${branch}`,
+            changes: [`Escolha: ${context.selectedCase ?? "FALSO"}`],
+            explanation,
+            nextHint: `Seguindo ${context.selectedCase ?? "FALSO"}.`,
         };
     }
 

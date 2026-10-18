@@ -57,7 +57,7 @@ daquela linha na própria declaração; use linhas separadas quando as variávei
 iniciais diferentes.
 
 **Tipos de bloco:** `startEnd` (com `variant: "start"|"end"`), `memory`, `input`, `process`,
-`output`, `decision`, `subroutine`, `connector`.
+`output`, `decision`, `selection`, `subroutine`, `connector`.
 
 **Sub-rotinas:** o campo opcional `subroutines` define diagramas internos chamados por blocos `subroutine`. Cada item deve conter `id`, `name`, `parameters`, `returnVariable`, `nodes` e `edges`. A chamada no bloco usa o formato `resultado = nome(argumento)`, e `nome` precisa existir em `subroutines[].name`. O resumo acima é ilustrativo; para copiar e executar, use o exemplo completo de sub-rotina na seção 9.
 
@@ -79,6 +79,21 @@ necessários nos JSONs de teste de mesa.
 
 > Em `decision`, as arestas de saída devem usar `sourceHandle: "yes"` (verdadeiro) e
 > `sourceHandle: "no"` (falso).
+
+> **Conectores, como no construtor:** cada bloco recebe uma única aresta. Ramos que se juntam e laços
+> que voltam passam por um `connector`, e a aresta que chega a ele indica o lado em `targetHandle`:
+> `top-in` (fluxo de cima), `left-in` ou `right-in` (laterais). A saída do conector usa
+> `sourceHandle: "bottom-out"`. Os papéis aceitos são: junção de decisão (duas laterais), início de
+> laço (topo + uma lateral), fim de laço (uma lateral), ligação simples (só o topo) e junção de
+> escolha (várias entradas vindas da mesma escolha). Os JSONs abaixo são os mesmos dos exemplos do
+> construtor.
+
+> Em `selection` (escolha/caso), `data.label` é a expressão comparada e `data.cases` lista os
+> valores dos casos, cada um escrito como expressão (`1`, `'a'`). A aresta do caso de índice `i` usa
+> `sourceHandle: "case-i"` e a do ramo Falso (`outrocaso`) usa `sourceHandle: "default"`. A comparação
+> é por igualdade estrita: o número `1` não coincide com o texto `'1'`. Valores repetidos, ou um caso
+> escolhido sem aresta, interrompem a execução com erro. Os ramos convergem em um `connector`, que
+> aceita várias arestas no mesmo ponto de entrada quando todas vêm da mesma escolha.
 
 ---
 
@@ -127,7 +142,8 @@ Testa se um número é par ou ímpar usando `n % 2 == 0` em um bloco `decision`,
     { "id": "n4", "type": "decision", "data": { "label": "n % 2 == 0" } },
     { "id": "n5", "type": "output", "data": { "label": "'O número é PAR'" } },
     { "id": "n6", "type": "output", "data": { "label": "'O número é ÍMPAR'" } },
-    { "id": "n7", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n7", "type": "connector", "data": { "label": "Fim do se" } },
+    { "id": "n8", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
@@ -135,8 +151,9 @@ Testa se um número é par ou ímpar usando `n % 2 == 0` em um bloco `decision`,
     { "id": "e3", "source": "n3", "target": "n4" },
     { "id": "e4", "source": "n4", "target": "n5", "sourceHandle": "yes", "label": "VERDADEIRO" },
     { "id": "e5", "source": "n4", "target": "n6", "sourceHandle": "no", "label": "FALSO" },
-    { "id": "e6", "source": "n5", "target": "n7" },
-    { "id": "e7", "source": "n6", "target": "n7" }
+    { "id": "e6", "source": "n5", "target": "n7", "targetHandle": "right-in" },
+    { "id": "e7", "source": "n6", "target": "n7", "targetHandle": "left-in" },
+    { "id": "e8", "source": "n7", "target": "n8", "sourceHandle": "bottom-out" }
   ]
 }
 ```
@@ -159,23 +176,27 @@ Encontra o maior entre três números usando decisões aninhadas (if dentro de i
     { "id": "n4", "type": "process", "data": { "label": "maior = a" } },
     { "id": "n5", "type": "decision", "data": { "label": "b > maior" } },
     { "id": "n6", "type": "process", "data": { "label": "maior = b" } },
-    { "id": "n7", "type": "decision", "data": { "label": "c > maior" } },
-    { "id": "n8", "type": "process", "data": { "label": "maior = c" } },
-    { "id": "n9", "type": "output", "data": { "label": "'O maior é: ' + maior" } },
-    { "id": "n10", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n7", "type": "connector", "data": { "label": "Fim do se b" } },
+    { "id": "n8", "type": "decision", "data": { "label": "c > maior" } },
+    { "id": "n9", "type": "process", "data": { "label": "maior = c" } },
+    { "id": "n10", "type": "connector", "data": { "label": "Fim do se c" } },
+    { "id": "n11", "type": "output", "data": { "label": "'O maior é: ' + maior" } },
+    { "id": "n12", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
     { "id": "e2", "source": "n2", "target": "n3" },
     { "id": "e3", "source": "n3", "target": "n4" },
     { "id": "e4", "source": "n4", "target": "n5" },
-    { "id": "e5", "source": "n5", "target": "n6", "sourceHandle": "yes" },
-    { "id": "e6", "source": "n5", "target": "n7", "sourceHandle": "no" },
-    { "id": "e7", "source": "n6", "target": "n7" },
-    { "id": "e8", "source": "n7", "target": "n8", "sourceHandle": "yes" },
-    { "id": "e9", "source": "n7", "target": "n9", "sourceHandle": "no" },
-    { "id": "e10", "source": "n8", "target": "n9" },
-    { "id": "e11", "source": "n9", "target": "n10" }
+    { "id": "e5", "source": "n5", "target": "n6", "sourceHandle": "yes", "label": "VERDADEIRO" },
+    { "id": "e6", "source": "n6", "target": "n7", "targetHandle": "right-in" },
+    { "id": "e7", "source": "n5", "target": "n7", "sourceHandle": "no", "label": "FALSO", "targetHandle": "left-in" },
+    { "id": "e8", "source": "n7", "target": "n8", "sourceHandle": "bottom-out" },
+    { "id": "e9", "source": "n8", "target": "n9", "sourceHandle": "yes", "label": "VERDADEIRO" },
+    { "id": "e10", "source": "n9", "target": "n10", "targetHandle": "right-in" },
+    { "id": "e11", "source": "n8", "target": "n10", "sourceHandle": "no", "label": "FALSO", "targetHandle": "left-in" },
+    { "id": "e12", "source": "n10", "target": "n11", "sourceHandle": "bottom-out" },
+    { "id": "e13", "source": "n11", "target": "n12" }
   ]
 }
 ```
@@ -184,7 +205,7 @@ Encontra o maior entre três números usando decisões aninhadas (if dentro de i
 
 # 4. Fatorial — ENQUANTO (while)
 
-Calcula o fatorial de `n` com laço `enquanto` (decisão + aresta de retorno).
+Calcula o fatorial de `n` com laço `enquanto`: o conector "Início do laço" recebe a entrada pelo topo e o retorno do corpo pela lateral, e a decisão logo abaixo dele controla a repetição.
 
 **Entradas:** `n` (inteiro, `n >= 0`).
 **Saída esperada:** `O fatorial de 5 é 120`.
@@ -196,20 +217,22 @@ Calcula o fatorial de `n` com laço `enquanto` (decisão + aresta de retorno).
     { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "n, fatorial, i" } ] } },
     { "id": "n3", "type": "input", "data": { "label": "n" } },
     { "id": "n4", "type": "process", "data": { "label": "fatorial = 1; i = 1" } },
-    { "id": "n5", "type": "decision", "data": { "label": "i <= n" } },
-    { "id": "n6", "type": "process", "data": { "label": "fatorial = fatorial * i; i = i + 1" } },
-    { "id": "n7", "type": "output", "data": { "label": "'O fatorial de ' + n + ' é ' + fatorial" } },
-    { "id": "n8", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n5", "type": "connector", "data": { "label": "Início do laço" } },
+    { "id": "n6", "type": "decision", "data": { "label": "i <= n" } },
+    { "id": "n7", "type": "process", "data": { "label": "fatorial = fatorial * i; i = i + 1" } },
+    { "id": "n8", "type": "output", "data": { "label": "'O fatorial de ' + n + ' é ' + fatorial" } },
+    { "id": "n9", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
     { "id": "e2", "source": "n2", "target": "n3" },
     { "id": "e3", "source": "n3", "target": "n4" },
-    { "id": "e4", "source": "n4", "target": "n5" },
-    { "id": "e5", "source": "n5", "target": "n6", "sourceHandle": "yes" },
-    { "id": "e6", "source": "n6", "target": "n5" },
-    { "id": "e7", "source": "n5", "target": "n7", "sourceHandle": "no" },
-    { "id": "e8", "source": "n7", "target": "n8" }
+    { "id": "e4", "source": "n4", "target": "n5", "targetHandle": "top-in" },
+    { "id": "e5", "source": "n5", "target": "n6", "sourceHandle": "bottom-out" },
+    { "id": "e6", "source": "n6", "target": "n7", "sourceHandle": "yes", "label": "VERDADEIRO" },
+    { "id": "e7", "source": "n7", "target": "n5", "targetHandle": "right-in" },
+    { "id": "e8", "source": "n6", "target": "n8", "sourceHandle": "no", "label": "FALSO" },
+    { "id": "e9", "source": "n8", "target": "n9" }
   ]
 }
 ```
@@ -227,10 +250,7 @@ Soma números fornecidos até que o valor informado seja `0` (o `0` não altera 
 {
   "nodes": [
     { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
-    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [
-      { "type": "inteiro", "variables": "num" },
-      { "type": "inteiro", "variables": "soma", "initialValue": "0" }
-    ] } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "num" }, { "type": "inteiro", "variables": "soma", "initialValue": "0" } ] } },
     { "id": "n3", "type": "connector", "data": { "label": "Iniciar leitura" } },
     { "id": "n4", "type": "input", "data": { "label": "num" } },
     { "id": "n5", "type": "process", "data": { "label": "soma = soma + num" } },
@@ -242,22 +262,23 @@ Soma números fornecidos até que o valor informado seja `0` (o `0` não altera 
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
-    { "id": "e2", "source": "n2", "target": "n3" },
-    { "id": "e3", "source": "n3", "target": "n4" },
+    { "id": "e2", "source": "n2", "target": "n3", "targetHandle": "top-in" },
+    { "id": "e3", "source": "n3", "target": "n4", "sourceHandle": "bottom-out" },
     { "id": "e4", "source": "n4", "target": "n5" },
     { "id": "e5", "source": "n5", "target": "n6" },
-    { "id": "e6", "source": "n6", "target": "n7", "sourceHandle": "yes" },
-    { "id": "e7", "source": "n7", "target": "n4" },
-    { "id": "e8", "source": "n6", "target": "n8", "sourceHandle": "no" },
-    { "id": "e9", "source": "n8", "target": "n9" },
+    { "id": "e6", "source": "n6", "target": "n7", "sourceHandle": "yes", "label": "VERDADEIRO", "targetHandle": "left-in" },
+    { "id": "e7", "source": "n7", "target": "n3", "sourceHandle": "bottom-out", "targetHandle": "right-in" },
+    { "id": "e8", "source": "n6", "target": "n8", "sourceHandle": "no", "label": "FALSO", "targetHandle": "left-in" },
+    { "id": "e9", "source": "n8", "target": "n9", "sourceHandle": "bottom-out" },
     { "id": "e10", "source": "n9", "target": "n10" }
   ]
 }
 ```
 
 Com as entradas `2`, `7`, `14`, `0`, os passos principais são: conector `3`, entrada `4`,
-processo `5`, condição `6`, caso `6.1`, conector `7` e entrada `8`. No fim, o caso falso
-`18.1` segue pelo conector `19`, pela saída `20` e encerra no passo `21`.
+processo `5`, condição `6`, caso `6.1`, conector `7` ("Ler próximo número"), que volta ao conector
+`8` ("Iniciar leitura"), e entrada `9`. No fim, o caso falso `21.1` segue pelo conector `22`, pela
+saída `23` e encerra no passo `24`.
 
 O gerador converte esse ciclo para um `do...while`, preservando a leitura e a soma dentro do
 laço e a saída somente após o valor `0`:
@@ -288,16 +309,18 @@ Valida se a nota está no intervalo `[0, 10]` usando uma condição composta com
     { "id": "n4", "type": "decision", "data": { "label": "nota >= 0 e nota <= 10" } },
     { "id": "n5", "type": "output", "data": { "label": "'NOTA VÁLIDA'" } },
     { "id": "n6", "type": "output", "data": { "label": "'NOTA INVÁLIDA'" } },
-    { "id": "n7", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n7", "type": "connector", "data": { "label": "Fim do se" } },
+    { "id": "n8", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
     { "id": "e2", "source": "n2", "target": "n3" },
     { "id": "e3", "source": "n3", "target": "n4" },
-    { "id": "e4", "source": "n4", "target": "n5", "sourceHandle": "yes" },
-    { "id": "e5", "source": "n4", "target": "n6", "sourceHandle": "no" },
-    { "id": "e6", "source": "n5", "target": "n7" },
-    { "id": "e7", "source": "n6", "target": "n7" }
+    { "id": "e4", "source": "n4", "target": "n5", "sourceHandle": "yes", "label": "VERDADEIRO" },
+    { "id": "e5", "source": "n4", "target": "n6", "sourceHandle": "no", "label": "FALSO" },
+    { "id": "e6", "source": "n5", "target": "n7", "targetHandle": "right-in" },
+    { "id": "e7", "source": "n6", "target": "n7", "targetHandle": "left-in" },
+    { "id": "e8", "source": "n7", "target": "n8", "sourceHandle": "bottom-out" }
   ]
 }
 ```
@@ -318,24 +341,26 @@ Lê `n` valores e calcula a média. Laço com contador `i`.
     { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "n, i" }, { "type": "real", "variables": "valor, soma, media" } ] } },
     { "id": "n3", "type": "input", "data": { "label": "n" } },
     { "id": "n4", "type": "process", "data": { "label": "soma = 0; i = 0" } },
-    { "id": "n5", "type": "decision", "data": { "label": "i < n" } },
-    { "id": "n6", "type": "input", "data": { "label": "valor" } },
-    { "id": "n7", "type": "process", "data": { "label": "soma = soma + valor; i = i + 1" } },
-    { "id": "n8", "type": "process", "data": { "label": "media = soma / n" } },
-    { "id": "n9", "type": "output", "data": { "label": "'A média é: ' + media" } },
-    { "id": "n10", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n5", "type": "connector", "data": { "label": "Início do laço" } },
+    { "id": "n6", "type": "decision", "data": { "label": "i < n" } },
+    { "id": "n7", "type": "input", "data": { "label": "valor" } },
+    { "id": "n8", "type": "process", "data": { "label": "soma = soma + valor; i = i + 1" } },
+    { "id": "n9", "type": "process", "data": { "label": "media = soma / n" } },
+    { "id": "n10", "type": "output", "data": { "label": "'A média é: ' + media" } },
+    { "id": "n11", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
     { "id": "e2", "source": "n2", "target": "n3" },
     { "id": "e3", "source": "n3", "target": "n4" },
-    { "id": "e4", "source": "n4", "target": "n5" },
-    { "id": "e5", "source": "n5", "target": "n6", "sourceHandle": "yes" },
-    { "id": "e6", "source": "n6", "target": "n7" },
-    { "id": "e7", "source": "n7", "target": "n5" },
-    { "id": "e8", "source": "n5", "target": "n8", "sourceHandle": "no" },
-    { "id": "e9", "source": "n8", "target": "n9" },
-    { "id": "e10", "source": "n9", "target": "n10" }
+    { "id": "e4", "source": "n4", "target": "n5", "targetHandle": "top-in" },
+    { "id": "e5", "source": "n5", "target": "n6", "sourceHandle": "bottom-out" },
+    { "id": "e6", "source": "n6", "target": "n7", "sourceHandle": "yes", "label": "VERDADEIRO" },
+    { "id": "e7", "source": "n7", "target": "n8" },
+    { "id": "e8", "source": "n8", "target": "n5", "targetHandle": "right-in" },
+    { "id": "e9", "source": "n6", "target": "n9", "sourceHandle": "no", "label": "FALSO" },
+    { "id": "e10", "source": "n9", "target": "n10" },
+    { "id": "e11", "source": "n10", "target": "n11" }
   ]
 }
 ```
@@ -357,24 +382,26 @@ Armazena as notas em um vetor `notas[5]` e calcula a média. Usa atribuição in
     { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "n, i" }, { "type": "real", "variables": "notas[5], soma, media, nota" } ] } },
     { "id": "n3", "type": "input", "data": { "label": "n" } },
     { "id": "n4", "type": "process", "data": { "label": "soma = 0; i = 0" } },
-    { "id": "n5", "type": "decision", "data": { "label": "i < n" } },
-    { "id": "n6", "type": "input", "data": { "label": "nota" } },
-    { "id": "n7", "type": "process", "data": { "label": "notas[i] = nota; soma = soma + nota; i = i + 1" } },
-    { "id": "n8", "type": "process", "data": { "label": "media = soma / n" } },
-    { "id": "n9", "type": "output", "data": { "label": "'A média das notas é: ' + media" } },
-    { "id": "n10", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n5", "type": "connector", "data": { "label": "Início do laço" } },
+    { "id": "n6", "type": "decision", "data": { "label": "i < n" } },
+    { "id": "n7", "type": "input", "data": { "label": "nota" } },
+    { "id": "n8", "type": "process", "data": { "label": "notas[i] = nota; soma = soma + nota; i = i + 1" } },
+    { "id": "n9", "type": "process", "data": { "label": "media = soma / n" } },
+    { "id": "n10", "type": "output", "data": { "label": "'A média das notas é: ' + media" } },
+    { "id": "n11", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
     { "id": "e2", "source": "n2", "target": "n3" },
     { "id": "e3", "source": "n3", "target": "n4" },
-    { "id": "e4", "source": "n4", "target": "n5" },
-    { "id": "e5", "source": "n5", "target": "n6", "sourceHandle": "yes" },
-    { "id": "e6", "source": "n6", "target": "n7" },
-    { "id": "e7", "source": "n7", "target": "n5" },
-    { "id": "e8", "source": "n5", "target": "n8", "sourceHandle": "no" },
-    { "id": "e9", "source": "n8", "target": "n9" },
-    { "id": "e10", "source": "n9", "target": "n10" }
+    { "id": "e4", "source": "n4", "target": "n5", "targetHandle": "top-in" },
+    { "id": "e5", "source": "n5", "target": "n6", "sourceHandle": "bottom-out" },
+    { "id": "e6", "source": "n6", "target": "n7", "sourceHandle": "yes", "label": "VERDADEIRO" },
+    { "id": "e7", "source": "n7", "target": "n8" },
+    { "id": "e8", "source": "n8", "target": "n5", "targetHandle": "right-in" },
+    { "id": "e9", "source": "n6", "target": "n9", "sourceHandle": "no", "label": "FALSO" },
+    { "id": "e10", "source": "n9", "target": "n10" },
+    { "id": "e11", "source": "n10", "target": "n11" }
   ]
 }
 ```
@@ -409,23 +436,25 @@ Exemplo completo de sub-rotina visual. O algoritmo principal lê `n`, chama `res
     {
       "id": "routine-fatorial",
       "name": "fatorial",
-      "parameters": ["valor"],
+      "parameters": [ "valor" ],
       "returnVariable": "retorno",
       "nodes": [
         { "id": "r1", "type": "startEnd", "data": { "label": "Início fatorial", "variant": "start" } },
         { "id": "r2", "type": "memory", "data": { "label": "Memória local", "rows": [ { "type": "inteiro", "variables": "retorno, i" } ] } },
         { "id": "r3", "type": "process", "data": { "label": "retorno = 1; i = 1" } },
-        { "id": "r4", "type": "decision", "data": { "label": "i <= valor" } },
-        { "id": "r5", "type": "process", "data": { "label": "retorno = retorno * i; i = i + 1" } },
-        { "id": "r6", "type": "startEnd", "data": { "label": "Fim fatorial", "variant": "end" } }
+        { "id": "r4", "type": "connector", "data": { "label": "Início do laço" } },
+        { "id": "r5", "type": "decision", "data": { "label": "i <= valor" } },
+        { "id": "r6", "type": "process", "data": { "label": "retorno = retorno * i; i = i + 1" } },
+        { "id": "r7", "type": "startEnd", "data": { "label": "Fim fatorial", "variant": "end" } }
       ],
       "edges": [
         { "id": "re1", "source": "r1", "target": "r2" },
         { "id": "re2", "source": "r2", "target": "r3" },
-        { "id": "re3", "source": "r3", "target": "r4" },
-        { "id": "re4", "source": "r4", "target": "r5", "sourceHandle": "yes" },
-        { "id": "re5", "source": "r5", "target": "r4" },
-        { "id": "re6", "source": "r4", "target": "r6", "sourceHandle": "no" }
+        { "id": "re3", "source": "r3", "target": "r4", "targetHandle": "top-in" },
+        { "id": "re4", "source": "r4", "target": "r5", "sourceHandle": "bottom-out" },
+        { "id": "re5", "source": "r5", "target": "r6", "sourceHandle": "yes", "label": "VERDADEIRO" },
+        { "id": "re6", "source": "r6", "target": "r4", "targetHandle": "right-in" },
+        { "id": "re7", "source": "r5", "target": "r7", "sourceHandle": "no", "label": "FALSO" }
       ]
     }
   ]
@@ -464,14 +493,100 @@ No teste de mesa, as leituras do único bloco de entrada aparecem como passos `3
 
 ---
 
+# 11. Menu de opções — ESCOLHA/CASO
+
+Lê o número de uma opção e exibe a mensagem do caso correspondente, ou `Opção inválida` pelo ramo Falso.
+
+**Entrada:** `opcao` (inteiro).
+**Saída esperada:** `opcao=2` → `Carregar jogo`; `opcao=7` → `Opção inválida`.
+
+```json
+{
+  "nodes": [
+    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "opcao" } ] } },
+    { "id": "n3", "type": "input", "data": { "label": "opcao" } },
+    { "id": "n4", "type": "selection", "data": { "label": "opcao", "cases": [ "1", "2", "3" ] } },
+    { "id": "n5", "type": "output", "data": { "label": "'Novo jogo'" } },
+    { "id": "n6", "type": "output", "data": { "label": "'Carregar jogo'" } },
+    { "id": "n7", "type": "output", "data": { "label": "'Sair'" } },
+    { "id": "n8", "type": "output", "data": { "label": "'Opção inválida'" } },
+    { "id": "n9", "type": "connector", "data": { "label": "Fim da escolha" } },
+    { "id": "n10", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n1", "target": "n2" },
+    { "id": "e2", "source": "n2", "target": "n3" },
+    { "id": "e3", "source": "n3", "target": "n4" },
+    { "id": "e4", "source": "n4", "target": "n5", "sourceHandle": "case-0", "label": "1" },
+    { "id": "e5", "source": "n4", "target": "n6", "sourceHandle": "case-1", "label": "2" },
+    { "id": "e6", "source": "n4", "target": "n7", "sourceHandle": "case-2", "label": "3" },
+    { "id": "e7", "source": "n4", "target": "n8", "sourceHandle": "default", "label": "FALSO" },
+    { "id": "e8", "source": "n5", "target": "n9", "targetHandle": "left-in" },
+    { "id": "e9", "source": "n6", "target": "n9", "targetHandle": "top-in" },
+    { "id": "e10", "source": "n7", "target": "n9", "targetHandle": "right-in" },
+    { "id": "e11", "source": "n8", "target": "n9", "targetHandle": "left-in" },
+    { "id": "e12", "source": "n9", "target": "n10", "sourceHandle": "bottom-out" }
+  ]
+}
+```
+
+---
+
+# 12. Conceito da Nota — ESCOLHA/CASO COM CARACTERE
+
+Lê um conceito (`caractere`) e exibe a faixa da nota. Os valores dos casos são textos, então vão entre
+aspas simples (`'A'`). Sem aspas, `A` seria lido como o nome de uma variável.
+
+**Entrada:** `conceito` (caractere).
+**Saída esperada:** `conceito=B` → `Entre 7 e 9`; `conceito=Z` → `Conceito inválido`.
+
+> **Aba Código:** o gerador ainda não converte escolha/caso. No lugar do losango aparece o comentário
+> `// escolha/caso (conceito) ainda não é convertida para código`, e o código gerado termina ali. O
+> teste de mesa e a execução passo a passo funcionam normalmente.
+
+```json
+{
+  "nodes": [
+    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "caractere", "variables": "conceito" } ] } },
+    { "id": "n3", "type": "input", "data": { "label": "conceito" } },
+    { "id": "n4", "type": "selection", "data": { "label": "conceito", "cases": [ "'A'", "'B'", "'C'" ] } },
+    { "id": "n5", "type": "output", "data": { "label": "'Acima de 9'" } },
+    { "id": "n6", "type": "output", "data": { "label": "'Entre 7 e 9'" } },
+    { "id": "n7", "type": "output", "data": { "label": "'Entre 5 e 7'" } },
+    { "id": "n8", "type": "output", "data": { "label": "'Conceito inválido'" } },
+    { "id": "n9", "type": "connector", "data": { "label": "Fim da escolha" } },
+    { "id": "n10", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n1", "target": "n2" },
+    { "id": "e2", "source": "n2", "target": "n3" },
+    { "id": "e3", "source": "n3", "target": "n4" },
+    { "id": "e4", "source": "n4", "target": "n5", "sourceHandle": "case-0", "label": "'A'" },
+    { "id": "e5", "source": "n4", "target": "n6", "sourceHandle": "case-1", "label": "'B'" },
+    { "id": "e6", "source": "n4", "target": "n7", "sourceHandle": "case-2", "label": "'C'" },
+    { "id": "e7", "source": "n4", "target": "n8", "sourceHandle": "default", "label": "FALSO" },
+    { "id": "e8", "source": "n5", "target": "n9", "targetHandle": "left-in" },
+    { "id": "e9", "source": "n6", "target": "n9", "targetHandle": "top-in" },
+    { "id": "e10", "source": "n7", "target": "n9", "targetHandle": "right-in" },
+    { "id": "e11", "source": "n8", "target": "n9", "targetHandle": "left-in" },
+    { "id": "e12", "source": "n9", "target": "n10", "sourceHandle": "bottom-out" }
+  ]
+}
+```
+
+---
+
 # Checklist de validação
 
 - [ ] O JSON carrega sem erro de sintaxe (botão **Carregar** retorna uma mensagem de diagrama carregado).
 - [ ] O teste de mesa mostra cada bloco visitado, inclusive `memory` e `connector`, e o caso selecionado após cada decisão.
 - [ ] As variáveis aparecem preenchidas no passo em que são alteradas.
 - [ ] A explicação descreve a operação de cada passo.
-- [ ] O código gerado é semanticamente equivalente ao diagrama.
+- [ ] O código gerado é semanticamente equivalente ao diagrama (exceto escolha/caso, que gera só um comentário).
 - [ ] Blocos `input` solicitam valor pelo diálogo durante a execução.
 - [ ] Decisões seguem pelos ramos `yes`/`no` conforme o resultado da condição.
+- [ ] Escolhas seguem pelo caso cujo valor coincide, ou pelo ramo `default` quando nenhum coincide.
 - [ ] Laços (`enquanto`/`faça-enquanto`) repetem os passos e terminam quando a condição falha.
 - [ ] Vetores (`notas[i]`) atualizam cada posição no teste de mesa.

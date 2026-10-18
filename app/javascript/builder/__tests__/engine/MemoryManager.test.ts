@@ -247,4 +247,26 @@ describe("MemoryManager", () => {
     expect(mm.isDeclared("x")).toBe(false)
     expect(mm.snapshot()).toEqual([])
   })
+
+  // --- variable names ---
+
+  it.each(["e", "ou", "nao", "verdadeiro", "falso", "E", "Verdadeiro"])("rejects the reserved word '%s' as a name", (name) => {
+    const mm = new MemoryManager()
+    expect(() => mm.declare(name, "inteiro")).toThrow(`Nome de variável inválido: '${name}' é uma palavra reservada`)
+    expect(mm.isDeclared(name)).toBe(false)
+  })
+
+  it("rejects a reserved word as a vector name", () => {
+    expect(() => new MemoryManager().declare("ou[3]", "inteiro")).toThrow("Nome de variável inválido: 'ou' é uma palavra reservada")
+  })
+
+  it.each(["1x", "nota final", "valor-total", "x!"])("rejects '%s', which is not an identifier", (name) => {
+    expect(() => new MemoryManager().declare(name, "inteiro")).toThrow(`Nome de variável inválido: '${name}'`)
+  })
+
+  it.each(["expoente", "eixo", "outro", "nao_lido", "_x", "x1", "notas[3]"])("accepts '%s', which only starts like a reserved word", (name) => {
+    const mm = new MemoryManager()
+    mm.declare(name, "inteiro")
+    expect(mm.isDeclared(name.replace(/\[.*\]$/, ""))).toBe(true)
+  })
 })

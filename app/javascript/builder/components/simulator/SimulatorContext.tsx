@@ -161,6 +161,8 @@ export function SimulatorProvider({
           syncFromEngine()
         }
       } catch (e) {
+        // The steps that ran before the error still belong in the desk check.
+        syncFromEngine()
         dispatch({ type: "SET_ERROR", error: userFacingExecutionError(e) })
       }
     },
@@ -188,6 +190,7 @@ export function SimulatorProvider({
         }
       }
     } catch (e) {
+      syncFromEngine()
       dispatch({ type: "SET_ERROR", error: userFacingExecutionError(e) })
     }
   }, [callbacks, syncFromEngine])

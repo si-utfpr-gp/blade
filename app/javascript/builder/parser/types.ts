@@ -20,6 +20,7 @@ export interface IParserNode {
     variant?: "start" | "end"
     label?: string
     rows?: Array<{ type: string; variables: string; initialValue?: string }>
+    cases?: string[]
 }
 
 export interface IParserEdge {

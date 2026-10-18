@@ -17,6 +17,7 @@ export function parse(nodes: IParserInputNode[], edges: IParserInputEdge[], opti
             variant: data?.variant as "start" | "end" | undefined,
             label: data?.label as string | undefined,
             rows: data?.rows as Array<{ type: string; variables: string; initialValue?: string }> | undefined,
+            cases: Array.isArray(data?.cases) ? (data.cases as unknown[]).map(String) : undefined,
         }
         nodeMap.set(node.id, parserNode);
 

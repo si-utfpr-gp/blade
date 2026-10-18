@@ -1,4 +1,5 @@
 import type { IDiagramExample } from "../../interfaces/diagramExamples"
+import { selectionCaseIndex } from "../blocks/blockCapabilities"
 
 export interface PositionedExampleNode {
   id: string
@@ -73,9 +74,16 @@ export function layoutExampleDiagram(example: IDiagramExample): LaidOutExample {
   const laneByChild = new Map<string, number>()
   for (const edge of rawEdges) {
     const parent = rawNodes.find((node) => node.id === edge.source)
-    if (!parent || parent.type !== "decision") continue
-    if (edge.sourceHandle === "yes") laneByChild.set(edge.target, 1)
-    if (edge.sourceHandle === "no") laneByChild.set(edge.target, -1)
+    if (parent?.type === "decision") {
+      if (edge.sourceHandle === "yes") laneByChild.set(edge.target, 1)
+      if (edge.sourceHandle === "no") laneByChild.set(edge.target, -1)
+    }
+    if (parent?.type === "selection") {
+      // Falso leaves on the left; the cases fan out to the right of it.
+      const caseIndex = selectionCaseIndex(edge.sourceHandle)
+      if (edge.sourceHandle === "default") laneByChild.set(edge.target, -1)
+      if (caseIndex !== null) laneByChild.set(edge.target, caseIndex)
+    }
   }
 
   const nodes: PositionedExampleNode[] = order.map((id) => {
@@ -98,6 +106,7 @@ export function layoutExampleDiagram(example: IDiagramExample): LaidOutExample {
     source: edge.source,
     target: edge.target,
     ...(edge.sourceHandle !== undefined ? { sourceHandle: edge.sourceHandle } : {}),
+    ...(edge.targetHandle !== undefined ? { targetHandle: edge.targetHandle } : {}),
     ...(edge.label !== undefined ? { label: edge.label } : {}),
   }))
 

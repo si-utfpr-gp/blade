@@ -767,3 +767,203 @@ describe("ExecutionEngine", () => {
     expect(e.step()?.output).toBe("30")
   })
 })
+
+function selectionEngine(
+  { type = "inteiro", initial, cases, connected = ["case-0", "case-1", "default"] }:
+  { type?: string; initial: string; cases: string[]; connected?: string[] },
+) {
+  const branches: Record<string, string> = { "case-0": "out-a", "case-1": "out-b", default: "out-f" }
+  return new ExecutionEngine(g(
+    [
+      { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+      { id: "memory", type: "memory", position: { x: 0, y: 80 }, data: { rows: [{ type, variables: "x", initialValue: initial }] } },
+      { id: "sel", type: "selection", position: { x: 0, y: 160 }, data: { label: "x", cases } },
+      { id: "out-a", type: "output", position: { x: 0, y: 240 }, data: { label: "'A'" } },
+      { id: "out-b", type: "output", position: { x: 0, y: 240 }, data: { label: "'B'" } },
+      { id: "out-f", type: "output", position: { x: 0, y: 240 }, data: { label: "'F'" } },
+      { id: "join", type: "connector", position: { x: 0, y: 320 }, data: {} },
+      { id: "end", type: "startEnd", position: { x: 0, y: 400 }, data: { variant: "end" } },
+    ],
+    [
+      { id: "e1", source: "start", target: "memory" },
+      { id: "e2", source: "memory", target: "sel" },
+      ...connected.map((handle) => ({ id: `sel-${handle}`, source: "sel", target: branches[handle], sourceHandle: handle })),
+      { id: "ja", source: "out-a", target: "join", targetHandle: "left-in" },
+      { id: "jb", source: "out-b", target: "join", targetHandle: "left-in" },
+      { id: "jf", source: "out-f", target: "join", targetHandle: "right-in" },
+      { id: "e3", source: "join", target: "end" },
+    ],
+  ))
+}
+
+function runAll(engine: ExecutionEngine) {
+  engine.start()
+  const steps = []
+  for (let step = engine.step(); step !== null; step = engine.step()) steps.push(step)
+  return steps
+}
+
+describe("ExecutionEngine — escolha/caso", () => {
+  it("segue o caso cujo valor coincide com o da variável", () => {
+    const e = selectionEngine({ initial: "2", cases: ["1", "2"] })
+    const steps = runAll(e)
+
+    expect(e.getCurrentOutputs()).toEqual(["B"])
+    const selection = steps.find((step) => step.nodeType === "selection")
+    expect(selection?.log).toBe("x = 2 → Caso 2")
+    expect(selection?.changes).toEqual(["Escolha: 2"])
+    const branch = steps.find((step) => step.nodeType === "branch")
+    expect(branch?.log).toBe("Caso 2.")
+    expect(branch?.changes).toEqual(["Ramo: 2"])
+  })
+
+  it("segue o ramo Falso quando nenhum valor coincide", () => {
+    const e = selectionEngine({ initial: "9", cases: ["1", "2"] })
+    const steps = runAll(e)
+
+    expect(e.getCurrentOutputs()).toEqual(["F"])
+    expect(steps.find((step) => step.nodeType === "selection")?.log).toBe("x = 9 → Falso")
+    const branch = steps.find((step) => step.nodeType === "branch")
+    expect(branch?.log).toBe("Caso Falso.")
+    expect(branch?.explanation).toBe("Nenhum valor coincidiu; o fluxo segue pelo caso falso.")
+  })
+
+  it("compara valores caractere pelo texto", () => {
+    const e = selectionEngine({ type: "caractere", initial: "'b'", cases: ["'a'", "'b'"] })
+    runAll(e)
+
+    expect(e.getCurrentOutputs()).toEqual(["B"])
+  })
+
+  it("acusa erro de tipo ao comparar o texto '1' com o caso numérico 1", () => {
+    const e = selectionEngine({ type: "caractere", initial: "'1'", cases: ["1", "2"] })
+
+    expect(() => runAll(e)).toThrow("Tipo incompatível: não é possível comparar o texto '1' com o valor 1")
+  })
+
+  it("acusa erro quando o caso escolhido não tem ligação", () => {
+    const e = selectionEngine({ initial: "2", cases: ["1", "2"], connected: ["case-0", "default"] })
+
+    expect(() => runAll(e)).toThrow("Escolha: caso '2' sem ligação")
+    expect(e.getCurrentState().error).toBe("Escolha: caso '2' sem ligação")
+  })
+
+  it("acusa erro quando há valores repetidos", () => {
+    const e = selectionEngine({ initial: "2", cases: ["1", "1"] })
+
+    let error: unknown
+    try { runAll(e) } catch (caught) { error = caught }
+    expect(error).toBeInstanceOf(ExecutionError)
+    expect((error as ExecutionError).type).toBe("INVALID_SELECTION")
+    expect((error as ExecutionError).message).toBe("Escolha: valor '1' repetido")
+  })
+
+  it("volta para antes e depois da escolha no teste de mesa", () => {
+    const e = selectionEngine({ initial: "1", cases: ["1", "2"] })
+    const steps = runAll(e)
+    const selectionIndex = steps.findIndex((step) => step.nodeType === "selection") + 1
+
+    expect(e.goToStep(selectionIndex)).toBe(true)
+    const branch = e.step()
+    expect(branch?.nodeType).toBe("branch")
+    expect(branch?.log).toBe("Caso 1.")
+    expect(e.step()?.output).toBe("A")
+
+    expect(e.goToStep(selectionIndex + 1)).toBe(true)
+    expect(e.step()?.output).toBe("A")
+  })
+
+  it("executa uma escolha dentro de uma sub-rotina", () => {
+    const e = new ExecutionEngine(parse(
+      [
+        { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+        { id: "memory", type: "memory", position: { x: 0, y: 80 }, data: { rows: [{ type: "caractere", variables: "nome" }] } },
+        { id: "call", type: "subroutine", position: { x: 0, y: 160 }, data: { label: "nome = mes(2)" } },
+        { id: "out", type: "output", position: { x: 0, y: 240 }, data: { label: "nome" } },
+        { id: "end", type: "startEnd", position: { x: 0, y: 320 }, data: { variant: "end" } },
+      ],
+      [
+        { id: "e1", source: "start", target: "memory" },
+        { id: "e2", source: "memory", target: "call" },
+        { id: "e3", source: "call", target: "out" },
+        { id: "e4", source: "out", target: "end" },
+      ],
+      {
+        subroutines: [{
+          id: "routine-mes",
+          name: "mes",
+          parameters: ["n"],
+          returnVariable: "r",
+          nodes: [
+            { id: "r-start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+            { id: "r-memory", type: "memory", position: { x: 0, y: 80 }, data: { rows: [{ type: "caractere", variables: "r" }] } },
+            { id: "r-sel", type: "selection", position: { x: 0, y: 160 }, data: { label: "n", cases: ["1", "2"] } },
+            { id: "r-jan", type: "process", position: { x: 0, y: 240 }, data: { label: "r = 'janeiro'" } },
+            { id: "r-fev", type: "process", position: { x: 0, y: 240 }, data: { label: "r = 'fevereiro'" } },
+            { id: "r-other", type: "process", position: { x: 0, y: 240 }, data: { label: "r = '?'" } },
+            { id: "r-join", type: "connector", position: { x: 0, y: 320 }, data: {} },
+            { id: "r-end", type: "startEnd", position: { x: 0, y: 400 }, data: { variant: "end" } },
+          ],
+          edges: [
+            { id: "re1", source: "r-start", target: "r-memory" },
+            { id: "re2", source: "r-memory", target: "r-sel" },
+            { id: "re3", source: "r-sel", target: "r-jan", sourceHandle: "case-0" },
+            { id: "re4", source: "r-sel", target: "r-fev", sourceHandle: "case-1" },
+            { id: "re5", source: "r-sel", target: "r-other", sourceHandle: "default" },
+            { id: "re6", source: "r-jan", target: "r-join", targetHandle: "left-in" },
+            { id: "re7", source: "r-fev", target: "r-join", targetHandle: "left-in" },
+            { id: "re8", source: "r-other", target: "r-join", targetHandle: "right-in" },
+            { id: "re9", source: "r-join", target: "r-end" },
+          ],
+        }],
+      },
+    ))
+
+    runAll(e)
+
+    expect(e.getCurrentOutputs()).toEqual(["fevereiro"])
+  })
+})
+
+describe("ExecutionEngine — nomes de variáveis e reais", () => {
+  it("acusa na memória uma variável com nome reservado", () => {
+    const e = new ExecutionEngine(g(
+      [
+        { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+        { id: "memory", type: "memory", position: { x: 0, y: 80 }, data: { rows: [{ type: "inteiro", variables: "base, e" }] } },
+        { id: "end", type: "startEnd", position: { x: 0, y: 160 }, data: { variant: "end" } },
+      ],
+      [
+        { id: "e1", source: "start", target: "memory" },
+        { id: "e2", source: "memory", target: "end" },
+      ],
+    ))
+    e.start()
+
+    let error: unknown
+    try { e.step() } catch (caught) { error = caught }
+    expect(error).toBeInstanceOf(ExecutionError)
+    expect((error as ExecutionError).type).toBe("INVALID_VARIABLE_NAME")
+    expect((error as ExecutionError).blockId).toBe("memory")
+  })
+
+  it("compara 0.1 + 0.2 com 0.3 da mesma forma direto na condição e guardado na memória", () => {
+    const e = new ExecutionEngine(g(
+      [
+        { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+        { id: "memory", type: "memory", position: { x: 0, y: 80 }, data: { rows: [{ type: "logico", variables: "direto" }] } },
+        { id: "p", type: "process", position: { x: 0, y: 160 }, data: { label: "direto = 0.1 + 0.2 == 0.3" } },
+        { id: "end", type: "startEnd", position: { x: 0, y: 240 }, data: { variant: "end" } },
+      ],
+      [
+        { id: "e1", source: "start", target: "memory" },
+        { id: "e2", source: "memory", target: "p" },
+        { id: "e3", source: "p", target: "end" },
+      ],
+    ))
+    e.start()
+    e.step()
+
+    expect(e.step()?.changes).toEqual(["direto = verdadeiro"])
+  })
+})
