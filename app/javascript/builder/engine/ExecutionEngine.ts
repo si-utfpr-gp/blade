@@ -5,6 +5,9 @@ import { MemoryManager } from "./MemoryManager";
 import { SnapshotManager } from "./SnapshotManager";
 import { ExplanationGenerator } from "./ExplanationGenerator";
 import { classifyError, ERROR_TYPES, ExecutionError } from "./errors";
+import type { ExpressionValue } from "./ExpressionParser";
+import type { VarType } from "./types";
+import { parseLogical, typeOfValue } from "./values";
 
 interface ExecutionFrame {
     routineName: string
@@ -203,6 +206,19 @@ export class ExecutionEngine {
       }
     }
 
+    /** Converts an already validated input to the value its declared type holds. */
+    private inputValue(raw: string, type: VarType): ExpressionValue {
+      switch (type) {
+        case "inteiro":
+        case "real":
+          return Number(raw.trim())
+        case "logico":
+          return parseLogical(raw) ?? false
+        case "caractere":
+          return raw
+      }
+    }
+
     /** Executes one block and returns the UI-facing step/snapshot data for it. */
     private exec(node: IParserNode, input?: string): IExecutionStep | null {
         const frame = this.requireActiveFrame()
@@ -258,7 +274,7 @@ export class ExecutionEngine {
                 const name = pi.names[pi.index]
 
                 if (input === undefined) {
-                    const type = frame.memory.getType(name) ?? "caractere"
+                    const type = frame.expr.typeOf(name) ?? "caractere"
                     const text = this.explanations.generate({
                         nodeType: node.type,
                         nodeLabel: name,
@@ -275,11 +291,14 @@ export class ExecutionEngine {
                     };
                 }
 
-                const declaredType = frame.memory.getType(name) ?? "caractere"
-                if (!frame.memory.has(name)) frame.memory.declare(name, "caractere")
+                // RN09: an input only fills a variable the memory block declared.
+                const declaredType = frame.expr.typeOf(name)
+                if (!declaredType) {
+                    throw new ExecutionError(ERROR_TYPES.UNDECLARED_VARIABLE, `Variável '${name}' não declarada`, node.id)
+                }
                 const validationError = this.validateInput(input, declaredType)
-                if (validationError) throw new Error(validationError)
-                frame.memory.set(name, input)
+                if (validationError) throw new ExecutionError(ERROR_TYPES.TYPE_MISMATCH, validationError, node.id)
+                frame.expr.store(name, this.inputValue(input, declaredType), node.id)
 
                 const remaining = pi.index + 1 < pi.names.length
                 pi.index += 1
@@ -298,7 +317,7 @@ export class ExecutionEngine {
                         inputEntered: true,
                         inputPrompt: `Valor para '${nextName}':`,
                         inputVariable: nextName,
-                        inputType: frame.memory.getType(nextName) ?? "caractere",
+                        inputType: frame.expr.typeOf(nextName) ?? "caractere",
                         ...text,
                     };
                 }
@@ -448,8 +467,9 @@ export class ExecutionEngine {
         const localMemory = new MemoryManager()
         const localExpr = new ExprEvaluator(localMemory)
         routine.parameters.forEach((parameter, index) => {
-            localMemory.declare(parameter, "caractere")
-            localMemory.set(parameter, caller.expr.output(call.args[index], node.id))
+            const value = caller.expr.value(call.args[index], node.id)
+            localMemory.declare(parameter, typeOfValue(value))
+            localExpr.store(parameter, value, node.id)
         })
 
         this.frames.push({
@@ -473,10 +493,11 @@ export class ExecutionEngine {
         if (!finished || !caller) return
         if (finished.returnTarget) {
             if (!finished.returnVariable) throw this.subroutineContract(`Sub-rotina '${finished.routineName}' não possui variável de retorno`, null)
-            const value = finished.memory.get(finished.returnVariable)
-            if (value === null) throw this.subroutineContract(`Retorno da sub-rotina '${finished.routineName}' não inicializado`, null)
-            if (!caller.memory.has(finished.returnTarget)) caller.memory.declare(finished.returnTarget, "caractere")
-            caller.memory.set(finished.returnTarget, value)
+            if (finished.memory.get(finished.returnVariable) === null) {
+                throw this.subroutineContract(`Retorno da sub-rotina '${finished.routineName}' não inicializado`, null)
+            }
+            // RN09: the caller declares the variable that receives the result.
+            caller.expr.store(finished.returnTarget, finished.expr.value(finished.returnVariable, null), null)
         }
         caller.current = finished.returnToNode ?? null
     }

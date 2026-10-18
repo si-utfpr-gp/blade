@@ -354,7 +354,7 @@ Armazena as notas em um vetor `notas[5]` e calcula a média. Usa atribuição in
 {
   "nodes": [
     { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
-    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "n, i" }, { "type": "real", "variables": "notas[5], soma, media" } ] } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "n, i" }, { "type": "real", "variables": "notas[5], soma, media, nota" } ] } },
     { "id": "n3", "type": "input", "data": { "label": "n" } },
     { "id": "n4", "type": "process", "data": { "label": "soma = 0; i = 0" } },
     { "id": "n5", "type": "decision", "data": { "label": "i < n" } },

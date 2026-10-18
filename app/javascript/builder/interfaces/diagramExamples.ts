@@ -191,7 +191,7 @@ export const DIAGRAM_EXAMPLES: IDiagramExample[] = [
     diagram: diagram(
       [
         node("n1", "startEnd", "Início", { variant: "start" }),
-        node("n2", "memory", "Memória", { rows: [{ type: "inteiro", variables: "n, i" }, { type: "real", variables: "notas[5], soma, media" }] }),
+        node("n2", "memory", "Memória", { rows: [{ type: "inteiro", variables: "n, i" }, { type: "real", variables: "notas[5], soma, media, nota" }] }),
         node("n3", "input", "n"),
         node("n4", "process", "soma = 0; i = 0"),
         node("n5", "decision", "i < n"),

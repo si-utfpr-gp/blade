@@ -638,7 +638,7 @@ O sistema detecta e reporta erros durante a simulação que impedem o algoritmo 
 - Acesso a índice fora dos limites do vetor declarado;
 - Divisão por zero;
 - Expressões inválidas ou malformadas;
-- Tipo de dado incompatível com a operação;
+- Tipo de dado incompatível com a operação ou com o tipo declarado da variável (RN17), por exemplo `inteiro` recebendo `3.5`, aritmética com texto ou condição que não resulta em lógico (`TYPE_MISMATCH`);
 - Limite máximo de passos excedido (proteção contra loop infinito).
 
 Quando um erro é detectado, a execução é interrompida e uma mensagem descritiva é exibida ao usuário, indicando o bloco onde o erro ocorreu e a natureza do problema.

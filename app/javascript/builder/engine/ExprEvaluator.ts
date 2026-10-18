@@ -6,6 +6,8 @@ import {
   type ExpressionValue,
 } from "./ExpressionParser"
 import { ERROR_TYPES, ExecutionError, classifyError } from "./errors"
+import { isValidType, type VarType } from "./types"
+import { TypeMismatch, formatValue, fromStored, toStored } from "./values"
 
 /**
  * Evaluates the expression subset used by diagram blocks.
@@ -21,32 +23,62 @@ export class ExprEvaluator {
     return this.splitStatements(expr, blockId).map(s => {
       const [target, ...rest] = s.trim().split("=")
       const src = rest.join("=").trim()
-      const res = String(this.evaluateSource(src, blockId))
-      const indexTarget = target.trim().match(/^([a-zA-Z_]\w*)\[(.+)\]$/)
-      if (indexTarget) {
-        const arrName = indexTarget[1]
-        const idx = this.indexValue(this.evaluateSource(indexTarget[2], blockId), blockId)
-        this.runWithExecutionError(blockId, () => this.memory.setIndex(arrName, idx, res))
-        return `${target.trim()} = ${res}`
-      }
-      const variable = target.trim()
-      if (!/^[a-zA-Z_]\w*$/.test(variable)) {
-        throw this.invalidExpression(`destino de atribuição inválido: ${variable}`, blockId)
-      }
-      if (!this.memory.has(variable)) {
-        this.runWithExecutionError(blockId, () => this.memory.declare(variable, "caractere"))
-      }
-      this.runWithExecutionError(blockId, () => this.memory.set(variable, res))
-      return `${variable} = ${res}`
+      const stored = this.store(target, this.evaluateSource(src, blockId), blockId)
+      return `${target.trim()} = ${stored}`
     })
   }
 
+  /**
+   * Writes a value into a declared variable or vector element, checked
+   * against its declared type. Using a variable that the memory block never
+   * declared is an error (RN09), so a typo cannot create a new one silently.
+   */
+  store(target: string, value: ExpressionValue, blockId: string | null): string {
+    const trimmed = target.trim()
+    const indexTarget = trimmed.match(/^([a-zA-Z_]\w*)\[(.+)\]$/)
+    const name = indexTarget ? indexTarget[1] : trimmed
+    if (!indexTarget && !/^[a-zA-Z_]\w*$/.test(name)) {
+      throw this.invalidExpression(`destino de atribuição inválido: ${name}`, blockId)
+    }
+
+    const type = this.declaredType(name, blockId)
+    const stored = this.checkType(() => toStored(value, type, trimmed), blockId)
+
+    if (indexTarget) {
+      const index = this.indexValue(this.evaluateSource(indexTarget[2], blockId), blockId)
+      this.runWithExecutionError(blockId, () => this.memory.setIndex(name, index, stored))
+    } else {
+      this.runWithExecutionError(blockId, () => this.memory.set(name, stored))
+    }
+    return stored
+  }
+
+  /** Declared type of a variable or of the vector a target such as `notas[i]` points into. */
+  typeOf(target: string): VarType | null {
+    const name = target.trim().replace(/\[.*\]$/, "")
+    const type = this.memory.getType(name)
+    return type !== null && isValidType(type) ? type : null
+  }
+
   condition(expr: string, blockId: string | null): boolean {
-    return Boolean(this.evaluateSource(expr, blockId))
+    const value = this.evaluateSource(expr, blockId)
+    if (typeof value !== "boolean") {
+      throw new ExecutionError(
+        ERROR_TYPES.TYPE_MISMATCH,
+        `A condição '${expr}' deve resultar em verdadeiro ou falso, mas resultou em ${formatValue(value)}`,
+        blockId,
+      )
+    }
+    return value
   }
 
   output(expr: string, blockId: string | null): string {
-    return String(this.evaluateSource(expr, blockId))
+    return formatValue(this.evaluateSource(expr, blockId))
+  }
+
+  /** Evaluates an expression keeping its type, for callers that store the result elsewhere. */
+  value(expr: string, blockId: string | null): ExpressionValue {
+    return this.evaluateSource(expr, blockId)
   }
 
   private evaluateSource(source: string, blockId: string | null): ExpressionValue {
@@ -114,7 +146,7 @@ export class ExprEvaluator {
       }
       case "unary": {
         const value = this.evaluate(node.operand, blockId)
-        return node.operator === "nao" ? !value : this.toNumber(value, blockId) * -1
+        return node.operator === "nao" ? !this.toBoolean(value, blockId) : this.toNumber(value, blockId) * -1
       }
       case "binary":
         return this.evaluateBinary(node, blockId)
@@ -123,14 +155,16 @@ export class ExprEvaluator {
 
   private evaluateBinary(node: Extract<ExpressionNode, { kind: "binary" }>, blockId: string | null): ExpressionValue {
     const left = this.evaluate(node.left, blockId)
-    if (node.operator === "e" && !left) return false
-    if (node.operator === "ou" && left) return true
+    if (node.operator === "e" && !this.toBoolean(left, blockId)) return false
+    if (node.operator === "ou" && this.toBoolean(left, blockId)) return true
 
     const right = this.evaluate(node.right, blockId)
     switch (node.operator) {
-      case "e": return Boolean(right)
-      case "ou": return Boolean(right)
-      case "+": return typeof left === "string" || typeof right === "string" ? `${left}${right}` : left + right
+      case "e": return this.toBoolean(right, blockId)
+      case "ou": return this.toBoolean(right, blockId)
+      case "+":
+        if (typeof left === "string" || typeof right === "string") return `${formatValue(left)}${formatValue(right)}`
+        return this.toNumber(left, blockId) + this.toNumber(right, blockId)
       case "-": return this.toNumber(left, blockId) - this.toNumber(right, blockId)
       case "*": return this.toNumber(left, blockId) * this.toNumber(right, blockId)
       case "/": {
@@ -163,14 +197,32 @@ export class ExprEvaluator {
     return value
   }
 
+  /** Reads stored text as its declared type, so a caractere "12" stays text. */
   private valueFromMemory(name: string, value: string, blockId: string | null): ExpressionValue {
-    if (/^-?(?:\d+(?:\.\d+)?|\.\d+)$/.test(value)) return Number(value)
-    if (value === "true") return true
-    if (value === "false") return false
-    if (value === null) {
-      throw new ExecutionError(ERROR_TYPES.UNINITIALIZED_VARIABLE, `Variável '${name}' não inicializada`, blockId)
+    const type = this.declaredType(name, blockId)
+    return this.checkType(() => fromStored(value, type), blockId)
+  }
+
+  private declaredType(name: string, blockId: string | null): VarType {
+    if (!this.memory.has(name)) {
+      throw new ExecutionError(ERROR_TYPES.UNDECLARED_VARIABLE, `Variável '${name}' não declarada`, blockId)
     }
-    return value
+    const type = this.memory.getType(name)
+    if (type === null || !isValidType(type)) {
+      throw new ExecutionError(ERROR_TYPES.INVALID_TYPE, `Tipo inválido: '${type}'`, blockId)
+    }
+    return type
+  }
+
+  private checkType<T>(action: () => T, blockId: string | null): T {
+    try {
+      return action()
+    } catch (error) {
+      if (error instanceof TypeMismatch) {
+        throw new ExecutionError(ERROR_TYPES.TYPE_MISMATCH, `Tipo incompatível: ${error.message}`, blockId)
+      }
+      throw error
+    }
   }
 
   private indexValue(value: ExpressionValue, blockId: string | null): number {
@@ -181,12 +233,27 @@ export class ExprEvaluator {
     return index
   }
 
-  private toNumber(value: ExpressionValue, blockId: string | null): number {
-    const number = Number(value)
-    if (Number.isNaN(number)) {
-      throw this.invalidExpression(`valor numérico esperado, recebido '${value}'`, blockId)
+  private toBoolean(value: ExpressionValue, blockId: string | null): boolean {
+    if (typeof value !== "boolean") {
+      throw new ExecutionError(
+        ERROR_TYPES.TYPE_MISMATCH,
+        `Tipo incompatível: valor lógico esperado, recebido '${formatValue(value)}'`,
+        blockId,
+      )
     }
-    return number
+    return value
+  }
+
+  /** Arithmetic only takes numbers: a caractere "12" or a logical value is not silently converted. */
+  private toNumber(value: ExpressionValue, blockId: string | null): number {
+    if (typeof value !== "number") {
+      throw new ExecutionError(
+        ERROR_TYPES.TYPE_MISMATCH,
+        `Tipo incompatível: valor numérico esperado, recebido '${formatValue(value)}'`,
+        blockId,
+      )
+    }
+    return value
   }
 
   private runWithExecutionError<T>(blockId: string | null, action: () => T): T {

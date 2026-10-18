@@ -1,7 +1,7 @@
 # Checklist - Blade
 
 **Versao:** 2.0.0
-**Atualizado em:** 2026-10-12 (integração Constructor → Simulator e tratamento pedagógico de erros atualizados)
+**Atualizado em:** 2026-10-17 (memória tipada, declaração obrigatória e switch/case no escopo)
 
 ---
 
@@ -18,6 +18,7 @@
 | 7 | — | Validação Estrutural (RN01–RN16) | ⬜ Pendente |
 | 8 | [#164](https://github.com/si-utfpr-gp/blade/issues/164) | Exportar diagrama do Constructor para o Simulator | 🟡 Em andamento |
 | 9 | [#165](https://github.com/si-utfpr-gp/blade/issues/165) | Normalizar JSON removendo metadados visuais | 🟡 Em andamento |
+| 10 | — | Bloco visual de escolha múltipla (switch/case, US19/RN18) com casos e caso padrão | ⬜ Pendente (aguardando especificação) |
 
 ---
 
@@ -68,6 +69,11 @@
 | 13 | — | Gerar código JS/TS com inputs tipados, operadores Portugol e `while` para loops simples | ✅ Feito |
 | 14 | — | Avaliador seguro e erros estruturados: `ExprEvaluator` interpreta apenas a AST interna permitida, sem `eval` ou `new Function`; `ExecutionError` preserva `{ type, message, blockId }` até a `ExecutionEngine`. Chamadas, propriedades e payloads de construtor fora da gramática são rejeitados. | ✅ Feito |
 | 15 | — | Proteção contra excesso de passos/loops e mensagens pedagógicas de erro sem expor bloco ou variável ao aluno | ✅ Feito |
+| 16 | — | Memória tipada (RN08/RN17): leitura pelo tipo declarado, `inteiro` sem decimais, `caractere` com dígitos continua texto, lógico lido da entrada respeitado na decisão, `verdadeiro`/`falso` na saída e números sem ruído de ponto flutuante | ✅ Feito |
+| 17 | — | Declaração obrigatória (RN09): atribuição, entrada e retorno de sub-rotina não declaram variáveis automaticamente | ✅ Feito |
+| 18 | — | Entrada direto em posição de vetor (`notas[i]`) | ✅ Feito |
+| 19 | — | Teste de regressão executando todos os exemplos de diagramas até o fim | ✅ Feito |
+| 20 | — | Bloco de escolha múltipla (switch/case, US19/RN18): interpretação, teste de mesa, explicação e geração de código | ⬜ Pendente (aguardando especificação) |
 
 ---
 

@@ -249,8 +249,24 @@ describe("ExecutionEngine", () => {
   })
 
   it("keeps semicolons and equals signs inside string assignments", () => {
-    const e = processEngine("mensagem = 'a; b = c'; contador = 1")
+    const e = new ExecutionEngine(g(
+      [
+        { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
+        { id: "memory", type: "memory", position: { x: 0, y: 80 }, data: { rows: [
+          { type: "caractere", variables: "mensagem" },
+          { type: "inteiro", variables: "contador" },
+        ] } },
+        { id: "process", type: "process", position: { x: 0, y: 160 }, data: { label: "mensagem = 'a; b = c'; contador = 1" } },
+        { id: "end", type: "startEnd", position: { x: 0, y: 240 }, data: { variant: "end" } },
+      ],
+      [
+        { id: "e1", source: "start", target: "memory" },
+        { id: "e2", source: "memory", target: "process" },
+        { id: "e3", source: "process", target: "end" },
+      ],
+    ))
     e.start()
+    e.step()
 
     const step = e.step()
 
@@ -500,11 +516,13 @@ describe("ExecutionEngine", () => {
   it("input com valor avança corretamente", () => {
     const e = new ExecutionEngine(g(
       [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"}},
+       { id:"m",type:"memory",position:{x:0,y:50},data:{rows:[{type:"inteiro",variables:"x"}]}},
        { id:"n2",type:"input",position:{x:0,y:100},data:{label:"x"}},
        { id:"n3",type:"startEnd",position:{x:0,y:200},data:{variant:"end"}}],
-      [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"}]
+      [{ id:"e1",source:"n1",target:"m"},{ id:"em",source:"m",target:"n2"},{ id:"e2",source:"n2",target:"n3"}]
     ))
     e.start()
+    e.step()
     const s = e.step("42")
     expect(s?.variables.find(v=>v.name==="x")?.value).toBe("42")
     expect(s?.waitingForInput).toBeFalsy()
@@ -579,11 +597,13 @@ describe("ExecutionEngine", () => {
   it("gera explicação para cada passo", () => {
     const e = new ExecutionEngine(g(
       [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"}},
+       { id:"m",type:"memory",position:{x:0,y:50},data:{rows:[{type:"inteiro",variables:"a"}]}},
        { id:"n2",type:"process",position:{x:0,y:100},data:{label:"a = 1 + 2"}},
        { id:"n3",type:"startEnd",position:{x:0,y:200},data:{variant:"end"}}],
-      [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"}]
+      [{ id:"e1",source:"n1",target:"m"},{ id:"em",source:"m",target:"n2"},{ id:"e2",source:"n2",target:"n3"}]
     ))
     e.start()
+    e.step()
     const s = e.step()
     expect(s?.explanation.length).toBeGreaterThan(0)
     expect(s?.changes.length).toBeGreaterThan(0)
@@ -625,7 +645,7 @@ describe("ExecutionEngine", () => {
     const graph = g(
       [
         { id:"n1", type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
-        { id:"n2", type:"memory",position:{x:0,y:80},data:{rows:[{type:"inteiro",variables:"n, i"},{type:"real",variables:"notas[3], soma, media"}]} },
+        { id:"n2", type:"memory",position:{x:0,y:80},data:{rows:[{type:"inteiro",variables:"n, i"},{type:"real",variables:"notas[3], soma, media, nota"}]} },
         { id:"n3", type:"input",position:{x:0,y:200},data:{label:"n"} },
         { id:"n4", type:"process",position:{x:0,y:300},data:{label:"soma = 0; i = 0"} },
         { id:"n5", type:"decision",position:{x:0,y:400},data:{label:"i < n"} },
