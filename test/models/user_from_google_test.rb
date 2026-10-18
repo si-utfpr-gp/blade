@@ -112,4 +112,10 @@ class UserFromGoogleTest < ActiveSupport::TestCase
     assert_equal User::DEV_LOGIN, dev.login
     assert_nil dev.provider_uid
   end
+
+  test "explains a Google account without an email in plain Portuguese" do
+    error = assert_raises(User::EmailRequired) { User.from_google(auth(uid: "sem-email", email: nil)) }
+
+    assert_equal "A conta do Google não informa um email.", error.message
+  end
 end

@@ -2,9 +2,10 @@ class SessionsController < ApplicationController
   # The callback and the login page must stay reachable without a session.
   skip_before_action :verify_authenticity_token, only: :create
 
+  # The login page: sign in as a student or open the builder as a guest. It is
+  # shown signed in too, offering to continue rather than bouncing the visitor.
   def new
-    return redirect_to builder_index_path if current_user
-
+    @user = current_user
     @error = flash[:alert]
   end
 
@@ -28,7 +29,7 @@ class SessionsController < ApplicationController
 
   def destroy
     sign_out
-    redirect_to login_path
+    redirect_to root_path
   end
 
   private

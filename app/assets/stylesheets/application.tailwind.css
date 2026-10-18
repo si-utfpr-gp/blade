@@ -131,6 +131,53 @@
     box-shadow: none;
   }
 
+  /* Landing page (sessions/new) ------------------------------------------ */
+
+  /* The builder canvas dot grid, fading out at the edges. */
+  .landing-grid {
+    background-image: radial-gradient(hsl(var(--canvas-grid)) 1.2px, transparent 1.2px);
+    background-size: 22px 22px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 35%, #000 40%, transparent 100%);
+  }
+  .landing-grid-dark {
+    background-image: radial-gradient(rgb(255 255 255 / 0.12) 1.2px, transparent 1.2px);
+  }
+
+  /* Soft colour field in one of the block colours (--glow). */
+  .landing-glow {
+    background: radial-gradient(circle, hsl(var(--glow) / 0.55), transparent 65%);
+    filter: blur(40px);
+    animation: landing-drift 18s ease-in-out infinite alternate;
+  }
+
+  .landing-rise { animation: landing-rise 700ms cubic-bezier(.2, .7, .2, 1) both; }
+  .landing-float { animation: landing-float 7s ease-in-out infinite; }
+
+  /* Access cards carry the colour of the block they stand for (--c). */
+  .landing-access { position: relative; overflow: hidden; background: #fff; }
+  .landing-access::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    border-radius: 1rem 0 0 1rem;
+    background: hsl(var(--c));
+  }
+  .landing-check, .landing-cross { display: flex; gap: .5rem; align-items: baseline; }
+  .landing-check::before { content: "✓"; color: hsl(var(--node-start)); font-weight: 700; }
+  .landing-cross { color: hsl(215 16% 47%); text-decoration: line-through; }
+  .landing-cross::before { content: "✕"; color: hsl(var(--node-end)); font-weight: 700; text-decoration: none; }
+
+  @keyframes landing-rise { from { opacity: 0; transform: translateY(14px); } }
+  @keyframes landing-float { 50% { transform: translateY(-8px); } }
+  @keyframes landing-drift { to { transform: translate(40px, 30px) scale(1.1); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .landing-glow, .landing-rise, .landing-float {
+      animation: none;
+    }
+  }
+
   /* Execution highlight animation */
   @keyframes node-pulse {
     0%, 100% { box-shadow: 0 0 0 3px hsl(var(--secondary)), 0 0 8px hsl(var(--secondary) / 0.3); }

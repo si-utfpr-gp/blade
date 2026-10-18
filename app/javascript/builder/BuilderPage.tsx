@@ -19,13 +19,14 @@ import { DiagramOriginProvider } from "./components/constructor/DiagramOrigin"
 import { BlockPlacementProvider } from "./components/constructor/BlockPlacement"
 import { ToastProvider } from "./components/ui/Toast"
 
-function BuilderHeader({ userName }: { userName: string | null }) {
+function BuilderHeader({ userName, signedIn }: { userName: string | null; signedIn: boolean }) {
   const { algorithmName, onAlgorithmNameChange, isNameLocked } =
     useAlgorithmNameField()
   return (
     <Header
       title="Construa seu algoritmo"
       userName={userName}
+      signedIn={signedIn}
       algorithmName={algorithmName}
       onAlgorithmNameChange={onAlgorithmNameChange}
       isNameLocked={isNameLocked}
@@ -52,7 +53,7 @@ export default function BuilderPage({
               <BlockPlacementProvider>
                 <ConstructorProvider>
                   <WorkspaceLayout
-                    header={<BuilderHeader userName={userName} />}
+                    header={<BuilderHeader userName={userName} signedIn={signedIn} />}
                     sidebar={<BlocksPanel errors={[]} />}
                     canvas={
                       <ConstructorCanvas

@@ -17,12 +17,13 @@ class ApplicationController < ActionController::Base
     User.dev_user
   end
 
-  # HTML is sent to the login page; the API keeps answering 401 JSON.
+  # HTML is sent to the landing page, where signing in happens; the API keeps
+  # answering 401 JSON.
   def require_login
     return if current_user
 
     respond_to do |format|
-      format.html { redirect_to login_path }
+      format.html { redirect_to root_path }
       format.json { render json: { error: NOT_AUTHENTICATED }, status: :unauthorized }
     end
   end

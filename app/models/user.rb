@@ -35,7 +35,7 @@ class User < ApplicationRecord
   def self.from_google(auth)
     info = auth["info"] || {}
     email = info["email"].presence
-    raise EmailRequired, "A conta do Google não информа um email." if email.nil?
+    raise EmailRequired, "A conta do Google não informa um email." if email.nil?
 
     unless google_email_verified?(auth)
       raise EmailNotVerified, "O email da conta do Google não está verificado."

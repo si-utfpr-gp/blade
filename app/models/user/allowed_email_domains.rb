@@ -1,8 +1,8 @@
 class User
-  # The university's real domains are not known yet: the Workspace admin console,
-  # an LDAP query or the IT department have to confirm them. Until then the list
-  # stays empty and any Google account is accepted, which keeps testing possible.
-  # Turning the list on is a configuration change, not a code change.
+  # Restricts sign in to the configured email domains and their subdomains:
+  # listing utfpr.edu.br lets in @utfpr.edu.br and @alunos.utfpr.edu.br alike.
+  # An empty list accepts any Google account, which keeps local testing
+  # possible; turning the list on is a configuration change, not a code change.
   module AllowedEmailDomains
     ENV_KEY = "GOOGLE_ALLOWED_DOMAINS".freeze
 
@@ -31,7 +31,7 @@ class User
         domain = email.to_s.split("@").last.to_s.downcase
         return false if domain.empty?
 
-        domains.include?(domain)
+        domains.any? { |allowed| domain == allowed || domain.end_with?(".#{allowed}") }
       end
 
       # Names come from config and change between runs in the test suite.

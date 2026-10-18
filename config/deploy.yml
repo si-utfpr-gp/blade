@@ -70,9 +70,10 @@ env:
     DATABASE_HOST: blade-db
     DATABASE_PORT: 5432
 
-    # Restringe o login a esses domínios de e-mail (separados por vírgula).
+    # Restringe o login a esses domínios de e-mail e seus subdomínios
+    # (separados por vírgula): utfpr.edu.br aceita também alunos.utfpr.edu.br.
     # Vazio ou ausente aceita qualquer conta Google.
-    # GOOGLE_ALLOWED_DOMAINS: utfpr.edu.br
+    GOOGLE_ALLOWED_DOMAINS: utfpr.edu.br
 
     # Log everything from Rails
     # RAILS_LOG_LEVEL: debug

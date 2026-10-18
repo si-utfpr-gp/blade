@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ChevronDown, LogOut, FolderOpen, Menu } from "lucide-react"
+import { ChevronDown, LogIn, LogOut, FolderOpen, Menu } from "lucide-react"
 
 import { useDrawer } from "./DrawerContext"
 import { csrfToken } from "../../lib/csrf"
@@ -7,6 +7,9 @@ import { csrfToken } from "../../lib/csrf"
 interface IHeaderProps {
   title: string
   userName?: string | null
+  // Without an account the builder still works, so the header offers signing
+  // in where the account menu would be.
+  signedIn?: boolean
   algorithmName?: string
   onAlgorithmNameChange?: (name: string) => void
   isNameLocked?: boolean
@@ -16,6 +19,7 @@ interface IHeaderProps {
 export default function Header({
   title,
   userName,
+  signedIn = false,
   algorithmName = "",
   onAlgorithmNameChange,
   isNameLocked = false,
@@ -41,17 +45,20 @@ export default function Header({
             <Menu className="h-5 w-5" />
           </button>
         )}
-        <svg
-          className="w-5 h-5 text-blue-600"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path d="M12 14l9-5-9-5-9 5 9 5z" />
-          <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-        </svg>
-        <span className="font-bold text-2xl">Blade</span>
+        <a href="/" className="flex items-center gap-2" aria-label="Blade, página inicial">
+          <svg
+            className="w-5 h-5 text-blue-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden="true"
+          >
+            <path d="M12 14l9-5-9-5-9 5 9 5z" />
+            <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+          </svg>
+          <span className="font-bold text-2xl">Blade</span>
+        </a>
       </div>
 
       {/* Narrow screens keep the field in the flex flow so it shrinks with the
@@ -90,6 +97,7 @@ export default function Header({
         )}
       </div>
 
+      {signedIn ? (
       <div className="relative z-50">
         <button
           type="button"
@@ -112,7 +120,7 @@ export default function Header({
           >
             <a
               role="menuitem"
-              href="/"
+              href="/builder"
               onClick={() => setMenuOpen(false)}
               className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted/50"
             >
@@ -146,6 +154,21 @@ export default function Header({
           </div>
         )}
       </div>
+      ) : (
+        // OmniAuth only accepts a POST carrying the CSRF token, and Turbo
+        // would follow the redirect to Google with fetch, so this is a real
+        // form with data-turbo="false", like the one on the landing page.
+        <form action="/auth/google_oauth2" method="post" data-turbo="false">
+          <input type="hidden" name="authenticity_token" value={csrfToken()} />
+          <button
+            type="submit"
+            className="flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-500"
+          >
+            <LogIn className="h-3.5 w-3.5" />
+            Entrar com Google
+          </button>
+        </form>
+      )}
     </header>
   )
 }

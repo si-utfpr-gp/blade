@@ -80,11 +80,37 @@ class AllowedEmailDomainsTest < ActiveSupport::TestCase
     assert User.from_google(auth("qualquer@gmail.com"))
   end
 
-  test "refuses a subdomain that is not the domain itself" do
+  # UTFPR students sign in as @alunos.utfpr.edu.br, so a configured domain
+  # covers its subdomains: listing utfpr.edu.br lets in anyone from UTFPR.
+  test "accepts the subdomains of a configured domain" do
     with_domains("utfpr.edu.br")
 
-    assert_raises(User::DomainNotAllowed) do
-      User.from_google(auth("aluno@faculdade.utfpr.edu.br"))
+    assert User.from_google(auth("aluno@alunos.utfpr.edu.br", uid: "1"))
+    assert User.from_google(auth("prof@professores.utfpr.edu.br", uid: "2"))
+  end
+
+  test "allowed? accepts the domain and its subdomains only" do
+    with_domains("utfpr.edu.br")
+
+    assert User::AllowedEmailDomains.allowed?("ana@utfpr.edu.br")
+    assert User::AllowedEmailDomains.allowed?("ana@alunos.utfpr.edu.br")
+    assert User::AllowedEmailDomains.allowed?("ana@ALUNOS.UTFPR.EDU.BR")
+  end
+
+  # A domain that merely ends with the same letters, or that carries the real
+  # one as a prefix, belongs to someone else.
+  test "refuses look-alike domains" do
+    with_domains("utfpr.edu.br")
+
+    %w[
+      ana@fakeutfpr.edu.br
+      ana@utfpr.edu.br.golpe.com
+      ana@utfpr.edu.brx
+      ana@gmail.com
+      ana@
+      ana
+    ].each do |email|
+      assert_not User::AllowedEmailDomains.allowed?(email), "#{email} não deveria passar"
     end
   end
 

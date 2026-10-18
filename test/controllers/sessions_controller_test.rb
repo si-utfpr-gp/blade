@@ -2,7 +2,7 @@ require "test_helper"
 
 # The OAuth round trip, exercised through the real middleware and routes.
 # Page markup is covered by SessionsPageTest, which can observe an anonymous
-# visitor; here User.dev_user is present, so the login page always redirects.
+# visitor; here User.dev_user is present, so every request has a user.
 class SessionsControllerTest < ActionDispatch::IntegrationTest
   setup do
     User.delete_all
@@ -41,7 +41,7 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
   test "signing in creates the user and records the session" do
     sign_in_as
 
-    assert_redirected_to builder_index_url
+    assert_redirected_to "http://www.example.com/builder"
     assert_equal "ana@utfpr.edu.br", User.find_by(provider_uid: "sub-123")&.login
     assert session[:user_id]
   end
@@ -69,13 +69,13 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert session[:user_id]
   end
 
-  test "signing out clears the session and returns to the login page" do
+  test "signing out clears the session and returns to the landing page" do
     sign_in_as
     assert session[:user_id]
 
     delete logout_url
 
-    assert_redirected_to login_url
+    assert_redirected_to "http://www.example.com/"
   end
 
   test "a refused account returns to the login page with a message" do
@@ -86,11 +86,9 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
 
     run_oauth
 
-    assert_redirected_to login_url
+    assert_redirected_to "http://www.example.com/login"
     assert_nil User.find_by(provider_uid: "sub-999")
 
-    # The page itself cannot be inspected here: in the test environment
-    # User.dev_user resolves, so /login redirects straight back to the builder.
     # SessionsPageTest covers the rendering; here the flash is what matters.
     assert_match(/institucional/i, flash[:alert].to_s)
   ensure
@@ -104,18 +102,30 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_nil session[:user_id]
   end
 
-  test "a signed in user is redirected away from the login page" do
+  # The landing presents the system, so it stays reachable after signing in;
+  # it offers a way into the builder instead of bouncing the visitor there.
+  test "a signed in user still sees the landing page" do
     sign_in_as
 
-    get login_url
+    get "/"
 
-    assert_redirected_to builder_index_url
+    assert_response :success
+    assert_select "a[href=?]", "/builder"
   end
 
-  # dev_user means current_user is never nil locally, which is deliberate.
-  test "the login page is never reached in development" do
-    get login_url
+  test "the landing page is the root" do
+    get "/"
 
-    assert_redirected_to builder_index_url
+    assert_response :success
+    assert_select "#builder", false
+    assert_select "#acessos"
+  end
+
+  # The login page stays reachable signed in: it offers to continue.
+  test "the login page is its own page" do
+    get "/login"
+
+    assert_response :success
+    assert_select "a[href=?]", "/builder"
   end
 end

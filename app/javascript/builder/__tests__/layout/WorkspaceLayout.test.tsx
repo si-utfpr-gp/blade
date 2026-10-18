@@ -252,6 +252,7 @@ function renderHeaderWithName() {
     <Header
       title=""
       userName="Ana"
+      signedIn
       algorithmName="Contador"
       onAlgorithmNameChange={() => undefined}
     />,

@@ -10,11 +10,13 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
-  # Defines the root path route ("/")
-  # root "posts#index"
-  get "/", to: "builder#index", as: :builder_index
-
+  # The landing page presents Blade. /login lets the visitor pick between
+  # signing in as a student (Google) or opening the builder as a guest. The
+  # builder lives at /builder and is open without an account; signing in is
+  # what saves work.
+  root "landing#show"
   get "/login", to: "sessions#new", as: :login
+  get "/builder", to: "builder#index", as: :builder_index
   # The OmniAuth request phase has to be a POST with a CSRF token; OmniAuth 2
   # rejects GET on /auth/:provider (CVE-2015-9284).
   #

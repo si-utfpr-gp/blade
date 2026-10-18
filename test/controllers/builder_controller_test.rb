@@ -12,8 +12,8 @@ class BuilderControllerTest < ActionDispatch::IntegrationTest
     ENV["FORCE_GOOGLE_LOGIN"] = @original
   end
 
-  test "renders the builder root" do
-    get builder_index_url
+  test "renders the builder at /builder" do
+    get "/builder"
     assert_response :success
     assert_select "#builder"
   end

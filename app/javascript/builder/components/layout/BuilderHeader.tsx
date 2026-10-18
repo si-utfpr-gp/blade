@@ -6,7 +6,13 @@ import { useAlgorithmNameField } from "../constructor/AlgorithmNameProvider"
  * context, so the name can be edited in one place and read by the save button
  * in another.
  */
-export function BuilderHeader({ userName }: { userName: string | null }) {
+export function BuilderHeader({
+  userName = null,
+  signedIn = false,
+}: {
+  userName?: string | null
+  signedIn?: boolean
+}) {
   const { algorithmName, onAlgorithmNameChange, isNameLocked, isNameMissing } =
     useAlgorithmNameField()
 
@@ -14,6 +20,7 @@ export function BuilderHeader({ userName }: { userName: string | null }) {
     <Header
       title="Construa seu algoritmo"
       userName={userName}
+      signedIn={signedIn}
       algorithmName={algorithmName}
       onAlgorithmNameChange={onAlgorithmNameChange}
       isNameLocked={isNameLocked}
