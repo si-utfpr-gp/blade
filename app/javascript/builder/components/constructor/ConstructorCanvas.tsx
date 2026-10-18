@@ -5,6 +5,7 @@ import { useConstructor, type AlgorithmNode } from "./ConstructorProvider"
 import { useSimulator } from "../simulator/SimulatorContext"
 import {
   getHighlightedNodeId,
+  canvasPermissions,
   isCanvasLocked,
   getContextMenuPosition,
   centerDropPosition,
@@ -57,11 +58,13 @@ export default function ConstructorCanvas({
 
   const { isReadOnly } = useDiagramOrigin()
 
-  // Two independent reasons to lock: the simulator is running, or the
-  // diagram is a read-only bundled example.
-  const locked =
-    isCanvasLocked(simulatorState.isStarted, simulatorState.isFinished) ||
-    isReadOnly
+  // A running simulation freezes everything; a bundled example can still be
+  // rearranged, but not edited.
+  const { canMove, canEdit } = canvasPermissions({
+    running: isCanvasLocked(simulatorState.isStarted, simulatorState.isFinished),
+    isExample: isReadOnly,
+  })
+  const locked = !canEdit
   const highlightedNodeId = getHighlightedNodeId(
     simulatorState.steps,
     simulatorState.currentStepIndex,
@@ -223,11 +226,12 @@ export default function ConstructorCanvas({
         onReconnectEnd={onReconnectEnd}
         isValidConnection={isValidConnection}
         edgesReconnectable={!locked}
-        nodesDraggable={!locked}
+        nodesDraggable={canMove}
         // Both keys delete the selected block. Typing in a field never
         // reaches here: React Flow ignores the keys inside inputs, so the
-        // Backspace in the algorithm name cannot eat a block.
-        deleteKeyCode={["Backspace", "Delete"]}
+        // Backspace in the algorithm name cannot eat a block. A locked
+        // canvas, an example included, has no key that deletes.
+        deleteKeyCode={locked ? null : ["Backspace", "Delete"]}
         nodesConnectable={!locked}
         elementsSelectable={!locked}
         onNodeClick={(_, node) => {

@@ -128,4 +128,21 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "a[href=?]", "/builder"
   end
+
+  # Locally the development user signs in by itself. Signing out has to stick
+  # until the next real sign in, or the button would look broken.
+  test "signing out keeps the development user out until the next sign in" do
+    get "/builder"
+    assert_select "#builder[data-signed-in='true']"
+
+    post logout_url
+    get "/builder"
+    assert_select "#builder[data-signed-in='false']"
+    get "/"
+    assert_select "a[href=?]", "/login"
+
+    sign_in_as
+    get "/builder"
+    assert_select "#builder[data-user-name=?]", "Ana Souza"
+  end
 end

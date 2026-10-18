@@ -8,6 +8,21 @@ export function getHighlightedNodeId(
   return steps[currentStepIndex]?.nodeId ?? null
 }
 
+/**
+ * What the canvas lets the student do. A running simulation freezes the
+ * diagram; a bundled example can be rearranged to read it better, but its
+ * content stays as shipped, so nothing is added, removed or rewired.
+ */
+export function canvasPermissions({
+  running,
+  isExample,
+}: {
+  running: boolean
+  isExample: boolean
+}): { canMove: boolean; canEdit: boolean } {
+  return { canMove: !running, canEdit: !running && !isExample }
+}
+
 export function isCanvasLocked(
   isStarted: boolean,
   isFinished: boolean,

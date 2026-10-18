@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest"
+import { describe, it, expect, beforeEach, vi } from "vitest"
 import { render, screen, fireEvent, within } from "@testing-library/react"
 import BuilderPage from "../BuilderPage"
 
@@ -94,5 +94,36 @@ describe("BuilderPage — menu de blocos no celular", () => {
       screen.getByRole("button", { name: /^Meus algoritmos/i }),
     ).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /^Exemplos/i })).toBeInTheDocument()
+  })
+
+  it("logado, Meus algoritmos no menu da conta abre a lista de algoritmos", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve({ ok: true, status: 200, json: async () => [] })))
+    try {
+      render(<BuilderPage userName="Ana Souza" signedIn />)
+      fireEvent.click(screen.getByRole("button", { name: /conta de ana souza/i }))
+      fireEvent.click(screen.getByRole("menuitem", { name: /meus algoritmos/i }))
+
+      expect(await screen.findByRole("dialog", { name: /meus algoritmos/i })).toBeInTheDocument()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it("num exemplo, os blocos podem ser movidos mas não apagados", () => {
+    const { container } = render(<BuilderPage />)
+    fireEvent.click(screen.getByRole("button", { name: /abrir menu de blocos/i }))
+    fireEvent.click(screen.getByRole("button", { name: /^Exemplos/i }))
+    fireEvent.click(screen.getByRole("button", { name: /^Par ou Ímpar/i }))
+
+    const nodes = container.querySelectorAll(".react-flow__node")
+    expect(nodes.length).toBeGreaterThan(0)
+    nodes.forEach((node) => expect(node).toHaveClass("draggable"))
+
+    fireEvent.contextMenu(nodes[0], { clientX: 100, clientY: 100 })
+    expect(screen.queryByText("Excluir")).not.toBeInTheDocument()
+
+    fireEvent.click(nodes[0])
+    fireEvent.keyDown(document.body, { key: "Delete" })
+    expect(container.querySelectorAll(".react-flow__node")).toHaveLength(nodes.length)
   })
 })

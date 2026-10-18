@@ -13,7 +13,12 @@ class ApplicationController < ActionController::Base
       current_user_from_fallback.tap { |user| session[:user_id] = user&.id }
   end
 
+  # After signing out the fallback stays off, or the development user would
+  # sign straight back in and Sair would look broken. The next sign in resets
+  # the session, which turns it back on.
   def current_user_from_fallback
+    return nil if session[:signed_out]
+
     User.dev_user
   end
 

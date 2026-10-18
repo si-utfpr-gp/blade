@@ -10,6 +10,9 @@ interface IHeaderProps {
   // Without an account the builder still works, so the header offers signing
   // in where the account menu would be.
   signedIn?: boolean
+  // Opens the list of saved algorithms. The header only asks for it; the
+  // builder owns the list and the canvas it loads into.
+  onOpenAlgorithms?: () => void
   algorithmName?: string
   onAlgorithmNameChange?: (name: string) => void
   isNameLocked?: boolean
@@ -20,6 +23,7 @@ export default function Header({
   title,
   userName,
   signedIn = false,
+  onOpenAlgorithms,
   algorithmName = "",
   onAlgorithmNameChange,
   isNameLocked = false,
@@ -109,34 +113,42 @@ export default function Header({
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
             {userName?.charAt(0).toUpperCase() ?? "?"}
           </span>
-          <span className="hidden max-w-24 truncate sm:inline">{userName ?? "Usuário"}</span>
+          {/* Only the first name fits beside the name field; the menu shows it whole. */}
+          <span className="hidden max-w-32 truncate sm:inline">{userName?.split(" ")[0] || "Usuário"}</span>
           <ChevronDown className={`h-3 w-3 transition-transform ${menuOpen ? "rotate-180" : ""}`} />
         </button>
 
         {menuOpen && (
           <div
             role="menu"
-            className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-border bg-card p-1 shadow-lg"
+            className="absolute right-0 top-full z-50 mt-1 w-64 rounded-lg border border-border bg-card p-1 shadow-lg"
           >
-            <a
-              role="menuitem"
-              href="/builder"
-              onClick={() => setMenuOpen(false)}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted/50"
-            >
-              <FolderOpen className="h-3.5 w-3.5" />
-              Meus algoritmos
-            </a>
+            {userName && (
+              <p className="break-words border-b border-border px-2 pb-2 pt-1.5 text-sm font-medium text-foreground">
+                {userName}
+              </p>
+            )}
+            {onOpenAlgorithms && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false)
+                  onOpenAlgorithms()
+                }}
+                className="mt-1 flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-muted/50"
+              >
+                <FolderOpen className="h-4 w-4" />
+                Meus algoritmos
+              </button>
+            )}
 
             {/* A real form, not a button: Rails needs a POST carrying the CSRF
                 token to end the session, and data-turbo="false" keeps Turbo
-                from intercepting the submission. */}
-            <form
-              action="/logout"
-              method="post"
-              data-turbo="false"
-              onSubmit={() => setMenuOpen(false)}
-            >
+                from intercepting the submission. The menu must not close on
+                submit: that unmounts the form, and the browser drops the
+                submission of a form that left the page. */}
+            <form action="/logout" method="post" data-turbo="false">
               <input
                 type="hidden"
                 name="authenticity_token"
@@ -145,9 +157,9 @@ export default function Header({
               <button
                 type="submit"
                 role="menuitem"
-                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-destructive hover:bg-muted/50"
+                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-destructive hover:bg-muted/50"
               >
-                <LogOut className="h-3.5 w-3.5" />
+                <LogOut className="h-4 w-4" />
                 Sair
               </button>
             </form>

@@ -43,5 +43,6 @@ class SessionsController < ApplicationController
 
   def sign_out
     reset_session
+    session[:signed_out] = true
   end
 end

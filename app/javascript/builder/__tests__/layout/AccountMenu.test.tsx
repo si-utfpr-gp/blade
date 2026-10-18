@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest"
-import { render, screen, fireEvent } from "@testing-library/react"
+import { describe, it, expect, vi } from "vitest"
+import { render, screen, fireEvent, within } from "@testing-library/react"
 
 import Header from "../../components/layout/Header"
 
@@ -10,7 +10,7 @@ import Header from "../../components/layout/Header"
  */
 function renderHeader(props: Partial<Parameters<typeof Header>[0]> = {}) {
   return render(
-    <Header title="" userName="Ana Souza" signedIn {...props} />,
+    <Header title="" userName="Ana Souza" signedIn onOpenAlgorithms={() => undefined} {...props} />,
   )
 }
 
@@ -36,14 +36,40 @@ describe("menu de conta", () => {
     expect(screen.getByRole("menuitem", { name: /sair/i })).toBeInTheDocument()
   })
 
-  it("meus algoritmos leva ao construtor", async () => {
-    renderHeader()
+  it("meus algoritmos abre a lista de algoritmos salvos", async () => {
+    const onOpenAlgorithms = vi.fn()
+    renderHeader({ onOpenAlgorithms })
     await openMenu()
 
     const item = screen.getByRole("menuitem", { name: /meus algoritmos/i })
-    const link = item.closest("a") ?? item.querySelector("a")
+    expect(item.tagName).toBe("BUTTON")
+    fireEvent.click(item)
 
-    expect(link).toHaveAttribute("href", "/builder")
+    expect(onOpenAlgorithms).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument()
+  })
+
+  // Closing the menu on submit unmounted the form before the browser sent it,
+  // and a form that leaves the page is never submitted: Sair did nothing.
+  it("sair continua na página durante o envio", async () => {
+    renderHeader()
+    await openMenu()
+
+    const form = screen.getByRole("menuitem", { name: /sair/i }).closest("form")!
+    fireEvent.submit(form)
+
+    expect(form.isConnected).toBe(true)
+  })
+
+  it("um nome longo aparece inteiro dentro do menu", async () => {
+    const name = "Maria Eduarda dos Santos Albuquerque Ferreira"
+    renderHeader({ userName: name })
+
+    const trigger = screen.getByRole("button", { name: `Conta de ${name}` })
+    expect(within(trigger).getByText("Maria")).toBeInTheDocument()
+
+    fireEvent.click(trigger)
+    expect(within(screen.getByRole("menu")).getByText(name)).toBeInTheDocument()
   })
 
   // data-turbo="false" keeps Turbo from swallowing the submission.

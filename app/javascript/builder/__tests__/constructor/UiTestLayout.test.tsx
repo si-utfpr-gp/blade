@@ -85,7 +85,7 @@ describe("UI test layout", () => {
 
     it("opens the account menu from the user icon", async () => {
       const user = userEvent.setup()
-      renderHeader({ title: "", userName: "Ana Souza", signedIn: true })
+      renderHeader({ title: "", userName: "Ana Souza", signedIn: true, onOpenAlgorithms: () => undefined })
 
       const trigger = screen.getByRole("button", { name: /conta de ana souza/i })
       expect(trigger).toHaveAttribute("aria-expanded", "false")

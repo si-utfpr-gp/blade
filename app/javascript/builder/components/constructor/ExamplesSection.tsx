@@ -15,6 +15,7 @@ import { useToast } from "../ui/Toast"
 import { ConfirmDialog } from "../ui/ConfirmDialog"
 import { CanvasImportButton } from "./CanvasImportButton"
 import { useDiagramOrigin } from "./DiagramOrigin"
+import { useOpenSavedAlgorithm } from "./useOpenSavedAlgorithm"
 
 const CATEGORY_COLOR: Record<string, string> = {
   "Entrada e saída": "var(--node-input)",
@@ -199,14 +200,15 @@ function SidebarDropdown({
 export function ExamplesSection() {
   const { loadCanvasNodes } = useConstructor()
   const { reset } = useSimulator()
-  const { algorithms, getAlgorithm, signedIn, deleteAlgorithm } = useAlgorithms()
+  const { algorithms, signedIn, deleteAlgorithm } = useAlgorithms()
+  const openSaved = useOpenSavedAlgorithm()
   const {
     algorithms: localAlgorithms,
     getAlgorithm: getLocalAlgorithm,
     deleteAlgorithm: deleteLocalAlgorithm,
   } = useLocalAlgorithms()
   const { onAlgorithmNameChange } = useAlgorithmNameField()
-  const { markExample, markSaved, markLocal } = useDiagramOrigin()
+  const { markExample, markLocal } = useDiagramOrigin()
   const { notify } = useToast()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
@@ -230,13 +232,8 @@ export function ExamplesSection() {
   }
 
   const handleSelectUserAlgorithm = async (id: string) => {
-    const saved = await getAlgorithm(Number(id))
-    if (!saved) return
-    loadCanvasNodes(saved.diagram.nodes, saved.diagram.edges)
-    reset()
-    onAlgorithmNameChange(saved.name)
-    markSaved(saved.id)
-    setSelectedUserId(saved.id.toString())
+    const saved = await openSaved(Number(id))
+    if (saved) setSelectedUserId(saved.id.toString())
   }
 
   const handleSelectLocalAlgorithm = (id: string) => {

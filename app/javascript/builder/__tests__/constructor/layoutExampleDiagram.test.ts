@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest"
-import { layoutExampleDiagram } from "../../components/constructor/layoutExampleDiagram"
-import { DIAGRAM_EXAMPLES } from "../../interfaces/diagramExamples"
+import {
+  layoutExampleDiagram,
+  type PositionedExampleNode,
+} from "../../components/constructor/layoutExampleDiagram"
+import { DIAGRAM_EXAMPLES, type IDiagramExample } from "../../interfaces/diagramExamples"
 
 function getExample(id: string) {
   const example = DIAGRAM_EXAMPLES.find((item) => item.id === id)
@@ -8,64 +11,112 @@ function getExample(id: string) {
   return example
 }
 
-function positionOf(nodes: { id: string; position: { x: number; y: number } }[], id: string) {
-  const node = nodes.find((item) => item.id === id)
-  if (!node) throw new Error(`node not found: ${id}`)
-  return node.position
+/*
+ * Sizes as the canvas renders each block, measured in the browser. They are
+ * kept here on purpose instead of reusing the layout's own estimates, so the
+ * overlap check does not just agree with itself.
+ */
+function renderedSize(node: PositionedExampleNode): { w: number; h: number } {
+  const label = String(node.data.label ?? "")
+  switch (node.type) {
+    case "startEnd": return { w: 140, h: 50 }
+    case "memory": return { w: 330, h: 60 + 35 * ((node.data.rows as unknown[] | undefined)?.length ?? 1) }
+    case "decision": return { w: 140, h: 100 }
+    case "connector": return { w: 48, h: 48 }
+    case "selection": return { w: Math.max(160, (((node.data.cases as unknown[]) ?? []).length + 1) * 64), h: 130 }
+    default: return { w: Math.max(160, 40 + 8.5 * label.length), h: 50 }
+  }
 }
 
+const box = (node: PositionedExampleNode) => {
+  const { w, h } = renderedSize(node)
+  return { left: node.position.x, top: node.position.y, right: node.position.x + w, bottom: node.position.y + h }
+}
+const centerX = (node: PositionedExampleNode) => node.position.x + renderedSize(node).w / 2
+const centerY = (node: PositionedExampleNode) => node.position.y + renderedSize(node).h / 2
+
+// Positions are whole pixels, so a centre can land half a pixel off.
+const expectAligned = (a: number, b: number) => expect(Math.abs(a - b)).toBeLessThanOrEqual(1)
+
+function layout(id: string) {
+  const { nodes, edges } = layoutExampleDiagram(getExample(id))
+  const byId = (nodeId: string) => {
+    const node = nodes.find((item) => item.id === nodeId)
+    if (!node) throw new Error(`node not found: ${nodeId}`)
+    return node
+  }
+  return { nodes, edges, byId }
+}
+
+const examplesOnCanvas = DIAGRAM_EXAMPLES.filter((example) => !example.diagram.subroutines?.length)
+
 describe("layoutExampleDiagram", () => {
-  it("empilha os nós de um fluxo linear ao redor da coluna central", () => {
-    const { nodes } = layoutExampleDiagram(getExample("soma-dois-valores"))
+  // The point of the layout: opening an example never shows one block on top
+  // of another, with room left for the arrows between them.
+  it.each(examplesOnCanvas)("'$title' abre sem blocos encostados", (example: IDiagramExample) => {
+    const { nodes } = layoutExampleDiagram(example)
+    const margin = 24
+    const touching: string[] = []
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const a = box(nodes[i])
+        const b = box(nodes[j])
+        const apart = a.right + margin <= b.left || b.right + margin <= a.left ||
+          a.bottom + margin <= b.top || b.bottom + margin <= a.top
+        if (!apart) touching.push(`${nodes[i].id}×${nodes[j].id}`)
+      }
+    }
+    expect(touching).toEqual([])
+  })
+
+  it("empilha um fluxo linear numa coluna reta, centralizada", () => {
+    const { nodes } = layout("soma-dois-valores")
     expect(nodes.map((node) => node.id)).toEqual(["n1", "n2", "n3", "n4", "n5", "n6"])
-    nodes.forEach((node, index) => {
-      expect(node.position).toEqual({ x: 300, y: index * 170 })
-    })
+    const centers = nodes.map(centerX)
+    centers.forEach((center) => expectAligned(center, centers[0]))
+    for (let i = 1; i < nodes.length; i++) expect(nodes[i].position.y).toBeGreaterThan(nodes[i - 1].position.y)
   })
 
-  it("abre os dois ramos da decisão em colunas laterais e alinha na mesma altura", () => {
-    const { nodes } = layoutExampleDiagram(getExample("par-ou-impar"))
-    const yes = positionOf(nodes, "n5")
-    const no = positionOf(nodes, "n6")
+  it("abre o se com Verdadeiro à direita, Falso à esquerda e a junção no meio", () => {
+    const { byId } = layout("par-ou-impar")
+    const decision = byId("n4")
+    const yes = byId("n5")
+    const no = byId("n6")
+    const join = byId("n7")
 
-    expect(yes.x).toBe(470)
-    expect(no.x).toBe(130)
-    expect(yes.y).toBe(no.y)
-    expect(yes.y).toBe(4 * 170)
+    expect(centerX(yes)).toBeGreaterThan(centerX(decision))
+    expect(centerX(no)).toBeLessThan(centerX(decision))
+    expectAligned(centerY(yes), centerY(no))
+    expectAligned(centerX(join), centerX(decision))
+    expect(join.position.y).toBeGreaterThan(yes.position.y)
   })
 
-  it("centraliza de novo o nó de junção dos dois ramos", () => {
-    const { nodes } = layoutExampleDiagram(getExample("par-ou-impar"))
-    expect(positionOf(nodes, "n7")).toEqual({ x: 300, y: 5 * 170 })
+  it("põe o corpo do laço ao lado e a saída abaixo do corpo inteiro", () => {
+    const { byId } = layout("media-de-valores")
+    const decision = byId("n6")
+    const body = [byId("n7"), byId("n8")]
+    const exit = byId("n9")
+
+    body.forEach((node) => expect(centerX(node)).toBeGreaterThan(centerX(decision)))
+    body.forEach((node) => expect(exit.position.y).toBeGreaterThan(box(node).bottom))
+    expectAligned(centerX(exit), centerX(decision))
   })
 
-  it("separa corpo do laço e saída do laço nas colunas laterais", () => {
-    const { nodes } = layoutExampleDiagram(getExample("fatorial"))
+  it("espalha os ramos da escolha com o Falso à esquerda e junta no meio", () => {
+    const { byId } = layout("menu-de-opcoes")
+    const selection = byId("n4")
+    const branches = [byId("n8"), byId("n5"), byId("n6"), byId("n7")] // Falso, 1, 2, 3
+    const xs = branches.map(centerX)
 
-    // entrada, conector do laço e decisão permanecem centralizados
-    expect(positionOf(nodes, "n1").x).toBe(300)
-    expect(positionOf(nodes, "n5").x).toBe(300)
-    expect(positionOf(nodes, "n6").x).toBe(300)
-
-    // corpo do laço (yes) à direita, saída (no) à esquerda, na mesma altura
-    const loopBody = positionOf(nodes, "n7")
-    const exit = positionOf(nodes, "n8")
-    expect(loopBody.x).toBe(470)
-    expect(exit.x).toBe(130)
-    expect(loopBody.y).toBe(exit.y)
-    expect(exit.y).toBe(6 * 170)
-
-    nodes.forEach((node) => {
-      expect(node.position.y % 170).toBe(0)
-    })
+    expect([...xs].sort((a, b) => a - b)).toEqual(xs)
+    expectAligned(centerX(byId("n9")), centerX(selection))
+    branches.forEach((node) => expect(node.position.y).toBeGreaterThan(box(selection).bottom))
   })
 
   it("visita os dois ramos da decisão antes da junção", () => {
-    const { nodes } = layoutExampleDiagram(getExample("par-ou-impar"))
+    const { nodes } = layout("par-ou-impar")
     const ids = nodes.map((node) => node.id)
     expect(ids[0]).toBe("n1")
-    expect(ids).toContain("n5")
-    expect(ids).toContain("n6")
     expect(ids.indexOf("n7")).toBeGreaterThan(ids.indexOf("n5"))
     expect(ids.indexOf("n7")).toBeGreaterThan(ids.indexOf("n6"))
   })

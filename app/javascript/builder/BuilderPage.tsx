@@ -1,6 +1,7 @@
 import { useState } from "react"
 
-import { Header, WorkspaceLayout } from "./components/layout"
+import { WorkspaceLayout } from "./components/layout"
+import { BuilderHeader } from "./components/layout/BuilderHeader"
 
 import BlocksPanel from "./components/blocks/BlocksPanel"
 
@@ -11,28 +12,10 @@ import ConstructorCanvas from "./components/constructor/ConstructorCanvas"
 import { ConstructorProvider } from "./components/constructor/ConstructorProvider"
 import { AlgorithmsProvider } from "./components/constructor/AlgorithmsProvider"
 import { LocalAlgorithmsProvider } from "./components/constructor/LocalAlgorithmsProvider"
-import {
-  AlgorithmNameProvider,
-  useAlgorithmNameField,
-} from "./components/constructor/AlgorithmNameProvider"
+import { AlgorithmNameProvider } from "./components/constructor/AlgorithmNameProvider"
 import { DiagramOriginProvider } from "./components/constructor/DiagramOrigin"
 import { BlockPlacementProvider } from "./components/constructor/BlockPlacement"
 import { ToastProvider } from "./components/ui/Toast"
-
-function BuilderHeader({ userName, signedIn }: { userName: string | null; signedIn: boolean }) {
-  const { algorithmName, onAlgorithmNameChange, isNameLocked } =
-    useAlgorithmNameField()
-  return (
-    <Header
-      title="Construa seu algoritmo"
-      userName={userName}
-      signedIn={signedIn}
-      algorithmName={algorithmName}
-      onAlgorithmNameChange={onAlgorithmNameChange}
-      isNameLocked={isNameLocked}
-    />
-  )
-}
 
 export default function BuilderPage({
   userName = null,

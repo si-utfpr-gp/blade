@@ -26,7 +26,7 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 function LoadButton() {
-  const { loadCanvasNodes, clearCanvas, diagramLoadCount } = useConstructor()
+  const { loadCanvasNodes, clearCanvas, diagramLoadCount, onNodesChange } = useConstructor()
   const { nodes } = useConstructor()
 
   useFitOnDiagramLoad(diagramLoadCount)
@@ -61,6 +61,22 @@ function LoadButton() {
       </button>
       <button type="button" onClick={() => clearCanvas()}>
         limpar
+      </button>
+      {/* What React Flow does once it has drawn the blocks: it reports their
+          size. jsdom never draws, so the tests press this instead. */}
+      <button
+        type="button"
+        onClick={() =>
+          onNodesChange(
+            nodes.map((node) => ({
+              type: "dimensions" as const,
+              id: node.id,
+              dimensions: { width: 140, height: 50 },
+            })),
+          )
+        }
+      >
+        medir
       </button>
     </div>
   )
@@ -98,6 +114,18 @@ describe("viewport ao trocar de algoritmo", () => {
     setViewport.mockClear()
   })
 
+  // Fitting before the new blocks are measured frames only the few already
+  // known, and the camera zoomed all the way in on them.
+  it("espera os blocos novos serem medidos antes de enquadrar", () => {
+    renderCanvas()
+
+    fireEvent.click(screen.getByRole("button", { name: "carregar" }))
+    expect(fitView).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole("button", { name: "medir" }))
+    expect(fitView).toHaveBeenCalledTimes(1)
+  })
+
   it("conta as cargas de diagrama", () => {
     renderCanvas()
 
@@ -112,6 +140,7 @@ describe("viewport ao trocar de algoritmo", () => {
     renderCanvas()
 
     fireEvent.click(screen.getByRole("button", { name: "carregar" }))
+    fireEvent.click(screen.getByRole("button", { name: "medir" }))
 
     expect(fitView).toHaveBeenCalledTimes(1)
   })
@@ -120,12 +149,17 @@ describe("viewport ao trocar de algoritmo", () => {
     renderCanvas()
 
     fireEvent.click(screen.getByRole("button", { name: "carregar" }))
+    fireEvent.click(screen.getByRole("button", { name: "medir" }))
     fitView.mockClear()
 
-    // Placing a block is ordinary editing; the view must stay where the student
-    // left it, otherwise every drag would yank the camera.
+    // Measuring again is what dragging or editing a block triggers; the view
+    // must stay where the student left it, or every drag would yank the camera.
+    fireEvent.click(screen.getByRole("button", { name: "medir" }))
+    expect(fitView).not.toHaveBeenCalled()
+
     fireEvent.click(screen.getByRole("button", { name: "limpar" }))
     fireEvent.click(screen.getByRole("button", { name: "carregar" }))
+    fireEvent.click(screen.getByRole("button", { name: "medir" }))
 
     expect(fitView).toHaveBeenCalledTimes(1)
   })

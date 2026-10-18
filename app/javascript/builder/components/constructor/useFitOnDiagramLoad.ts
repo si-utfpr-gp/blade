@@ -18,9 +18,18 @@ const DEFAULT_VIEWPORT = { x: 0, y: 0, zoom: 1 } as const
 export function useFitOnDiagramLoad(loadCount: number): void {
   const { fitView, setViewport } = useReactFlow()
   const { nodes } = useConstructor()
-  // fitView reads the nodes React Flow has measured, so it has to run after the
-  // diagram is committed, not in the same render.
+  // React Flow reports each block's size once it has drawn it, and a freshly
+  // loaded block arrives without one, so this only turns true for the new
+  // diagram. React Flow's own "initialized" flag still reads the previous
+  // diagram in the render right after a load.
+  const nodesMeasured =
+    nodes.length > 0 &&
+    nodes.every((node) => Boolean(node.measured?.width && node.measured?.height))
   const firstRun = useRef(true)
+  // A load asks for a fit; the fit waits until React Flow has measured the new
+  // blocks. Fitting earlier frames only the few already measured, and the
+  // camera zoomed all the way in on them.
+  const fitPending = useRef(false)
 
   useEffect(() => {
     if (firstRun.current) {
@@ -30,10 +39,17 @@ export function useFitOnDiagramLoad(loadCount: number): void {
     }
 
     if (nodes.length === 0) {
+      fitPending.current = false
       setViewport(DEFAULT_VIEWPORT)
       return
     }
 
+    fitPending.current = true
+  }, [loadCount, nodes.length, setViewport])
+
+  useEffect(() => {
+    if (!fitPending.current || !nodesMeasured) return
+    fitPending.current = false
     fitView({ padding: 0.2, duration: 300, maxZoom: 1.5 })
-  }, [loadCount, nodes.length, fitView, setViewport])
+  }, [loadCount, nodesMeasured, fitView])
 }
