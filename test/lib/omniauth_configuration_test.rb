@@ -20,11 +20,12 @@ class OmniauthConfigurationTest < ActiveSupport::TestCase
     assert_includes strategies, "OmniAuth::Builder"
   end
 
-  test "credentials come from the environment and are never hardcoded" do
+  test "credentials come from the environment or Rails credentials, never hardcoded" do
     initializer = Rails.root.join("config/initializers/omniauth.rb").read
 
-    assert_includes initializer, "ENV[\"GOOGLE_CLIENT_ID\"]"
-    assert_includes initializer, "ENV[\"GOOGLE_CLIENT_SECRET\"]"
+    assert_includes initializer, "\"GOOGLE_CLIENT_ID\""
+    assert_includes initializer, "\"GOOGLE_CLIENT_SECRET\""
+    assert_includes initializer, "credentials.dig(:google, credentials_key)"
   end
 
   test "no client secret is committed in the repository" do

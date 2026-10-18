@@ -7,12 +7,18 @@ OmniAuth.config.allowed_request_methods = [ :post ]
 OmniAuth.config.logger = Rails.logger
 OmniAuth.config.path_prefix = "/auth"
 
-# The credentials live in the environment: .env during development and the
-# Rails credentials on the VPS. Nothing secret is committed.
+# The environment wins, so .env keeps working in development and a deploy can
+# override a value without re-encrypting anything. When it is blank (Kamal
+# passes unset secrets as empty strings) the encrypted Rails credentials are
+# used instead, under google.client_id and google.client_secret.
+google_setting = lambda do |env_key, credentials_key|
+  ENV[env_key].presence || Rails.application.credentials.dig(:google, credentials_key)
+end
+
 Rails.application.config.middleware.use OmniAuth::Builder do
   provider :google_oauth2,
-           ENV["GOOGLE_CLIENT_ID"],
-           ENV["GOOGLE_CLIENT_SECRET"],
+           google_setting.call("GOOGLE_CLIENT_ID", :client_id),
+           google_setting.call("GOOGLE_CLIENT_SECRET", :client_secret),
            scope: "email profile",
            prompt: "select_account",
            name: "google_oauth2"

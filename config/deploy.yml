@@ -47,6 +47,9 @@ env:
   secret:
     - RAILS_MASTER_KEY
     - BLADE_DATABASE_PASSWORD
+    # Login com Google (OAuth client do Google Cloud Console).
+    - GOOGLE_CLIENT_ID
+    - GOOGLE_CLIENT_SECRET
   clear:
     # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.
     # When you start using multiple servers, you should split out job processing to a dedicated machine.
@@ -66,6 +69,10 @@ env:
     # O database.yml do Blade utiliza DATABASE_HOST.
     DATABASE_HOST: blade-db
     DATABASE_PORT: 5432
+
+    # Restringe o login a esses domínios de e-mail (separados por vírgula).
+    # Vazio ou ausente aceita qualquer conta Google.
+    # GOOGLE_ALLOWED_DOMAINS: utfpr.edu.br
 
     # Log everything from Rails
     # RAILS_LOG_LEVEL: debug
