@@ -32,7 +32,15 @@ Rails.application.routes.draw do
   # DELETE is accepted too, for callers that can set the method.
   match "/logout", to: "sessions#destroy", via: [ :post, :delete ], as: :logout
 
-  resources :algorithms, only: [ :index, :create, :show, :update, :destroy ]
+  resources :algorithms, only: [ :index, :create, :show, :update, :destroy ] do
+    # The owner turns the public link on (POST) and off (DELETE).
+    resource :share, only: [ :create, :destroy ], controller: "algorithm_shares"
+  end
+
+  # Public, read-only views of a shared algorithm, reached by its token. Only
+  # /embed may be framed by other sites.
+  get "/s/:token", to: "shared_algorithms#show", as: :shared_algorithm
+  get "/embed/:token", to: "shared_algorithms#embed", as: :embedded_algorithm
 
   # Everything else, whatever the method, is a 404 from ErrorsController, so
   # an unknown or probing path never reaches another controller. It has to be

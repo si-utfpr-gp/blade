@@ -1,0 +1,15 @@
+<% content_for :title, "#{@algorithm.name} · Blade" %>
+<%# Shared links are meant for the pages that cite them, not for search. %>
+<% content_for :head do %>
+  <meta name="robots" content="noindex">
+<% end %>
+<%# The same React app as the builder, in a read-only mode. The diagram rides
+    in the page, so the viewer needs no API call and no account. Only the
+    name and the diagram go out: nothing about the owner. %>
+<div
+  id="builder"
+  style="height: 100vh; position: relative;"
+  data-mode="<%= @mode %>"
+  data-algorithm-name="<%= @algorithm.name %>"
+  data-diagram="<%= @algorithm.diagram.to_json %>"
+></div>
