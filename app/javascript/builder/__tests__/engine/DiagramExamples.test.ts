@@ -49,6 +49,11 @@ const EXPECTED: Record<string, string[]> = {
   "Média de Duas Notas": ["1"],
   "Menu de opções": ["Carregar jogo"],
   "Conceito da Nota": ["Conceito inválido"],
+  "Números por Extenso": ["Dois"],
+  "Calculadora": [
+    "Escolha a operação: + para somar, - para subtrair, * para multiplicar, / para dividir. Depois digite dois valores.",
+    "Operador inválido!",
+  ],
 }
 
 describe("exemplos de diagramas", () => {
@@ -67,6 +72,8 @@ describe("exemplos de diagramas", () => {
       "maior-de-tres",
       "menu-de-opcoes",
       "conceito-da-nota",
+      "numeros-por-extenso",
+      "calculadora",
       "fatorial",
       "soma-ate-zero",
       "media-de-valores",

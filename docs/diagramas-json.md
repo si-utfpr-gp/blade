@@ -59,7 +59,7 @@ com `initialValue` interrompe a execução com erro.
 **Tipos de bloco:** `startEnd` (com `variant: "start"|"end"`), `memory`, `input`, `process`,
 `output`, `decision`, `selection`, `subroutine`, `connector`.
 
-**Sub-rotinas:** o campo opcional `subroutines` define diagramas internos chamados por blocos `subroutine`. Cada item deve conter `id`, `name`, `parameters`, `returnVariable`, `nodes` e `edges`. A chamada no bloco usa o formato `resultado = nome(argumento)`, e `nome` precisa existir em `subroutines[].name`. O resumo acima é ilustrativo; para copiar e executar, use o exemplo completo de sub-rotina na seção 12.
+**Sub-rotinas:** o campo opcional `subroutines` define diagramas internos chamados por blocos `subroutine`. Cada item deve conter `id`, `name`, `parameters`, `returnVariable`, `nodes` e `edges`. A chamada no bloco usa o formato `resultado = nome(argumento)`, e `nome` precisa existir em `subroutines[].name`. O resumo acima é ilustrativo; para copiar e executar, use o exemplo completo de sub-rotina na seção 14.
 
 **Campos de layout:** `position`, `width`, `height`, `selected` e outros metadados do React Flow são
 opcionais para execução. Eles podem aparecer no JSON exportado pelo construtor, mas não devem ser
@@ -352,7 +352,126 @@ aspas simples (`'A'`). Sem aspas, `A` seria lido como o nome de uma variável.
 
 ---
 
-# 8. Fatorial — ENQUANTO (while)
+# 8. Números por Extenso — ESCOLHA/CASO COM INTEIRO
+
+Lê um número inteiro entre 0 e 6 e o escreve por extenso. Um número fora do intervalo segue o caso
+Falso (o "Padrão" da estrutura caso) e é avisado como inválido. É o primeiro exemplo de escolha/caso
+do material da disciplina.
+
+**Entradas:** `numero` (inteiro).
+**Saída esperada:** o número por extenso (ex.: `0` → `Zero`), ou `Número inválido!` fora de 0 a 6.
+
+```json
+{
+  "nodes": [
+    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "numero" } ] } },
+    { "id": "n3", "type": "input", "data": { "label": "numero" } },
+    { "id": "n4", "type": "selection", "data": { "label": "numero", "cases": [ "0", "1", "2", "3", "4", "5", "6" ] } },
+    { "id": "n5", "type": "output", "data": { "label": "'Zero'" } },
+    { "id": "n6", "type": "output", "data": { "label": "'Um'" } },
+    { "id": "n7", "type": "output", "data": { "label": "'Dois'" } },
+    { "id": "n8", "type": "output", "data": { "label": "'Três'" } },
+    { "id": "n9", "type": "output", "data": { "label": "'Quatro'" } },
+    { "id": "n10", "type": "output", "data": { "label": "'Cinco'" } },
+    { "id": "n11", "type": "output", "data": { "label": "'Seis'" } },
+    { "id": "n12", "type": "output", "data": { "label": "'Número inválido!'" } },
+    { "id": "n13", "type": "connector", "data": { "label": "Fim da escolha" } },
+    { "id": "n14", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n1", "target": "n2" },
+    { "id": "e2", "source": "n2", "target": "n3" },
+    { "id": "e3", "source": "n3", "target": "n4" },
+    { "id": "e4", "source": "n4", "target": "n5", "sourceHandle": "case-0" },
+    { "id": "e5", "source": "n4", "target": "n6", "sourceHandle": "case-1" },
+    { "id": "e6", "source": "n4", "target": "n7", "sourceHandle": "case-2" },
+    { "id": "e7", "source": "n4", "target": "n8", "sourceHandle": "case-3" },
+    { "id": "e8", "source": "n4", "target": "n9", "sourceHandle": "case-4" },
+    { "id": "e9", "source": "n4", "target": "n10", "sourceHandle": "case-5" },
+    { "id": "e10", "source": "n4", "target": "n11", "sourceHandle": "case-6" },
+    { "id": "e11", "source": "n4", "target": "n12", "sourceHandle": "default", "label": "FALSO" },
+    { "id": "e12", "source": "n5", "target": "n13", "targetHandle": "left-in" },
+    { "id": "e13", "source": "n6", "target": "n13", "targetHandle": "left-in" },
+    { "id": "e14", "source": "n7", "target": "n13", "targetHandle": "left-in" },
+    { "id": "e15", "source": "n8", "target": "n13", "targetHandle": "top-in" },
+    { "id": "e16", "source": "n9", "target": "n13", "targetHandle": "right-in" },
+    { "id": "e17", "source": "n10", "target": "n13", "targetHandle": "right-in" },
+    { "id": "e18", "source": "n11", "target": "n13", "targetHandle": "right-in" },
+    { "id": "e19", "source": "n12", "target": "n13", "targetHandle": "left-in" },
+    { "id": "e20", "source": "n13", "target": "n14", "sourceHandle": "bottom-out" }
+  ]
+}
+```
+
+No teste de mesa do número `0`, a escolha aparece como `Condição (numero)` seguida do subpasso
+`Caso 0`; com `10`, o subpasso é `Caso Falso`.
+
+---
+
+# 9. Calculadora — ESCOLHA/CASO COM CARACTERE
+
+Mostra as operações, lê um operador (`+`, `-`, `*` ou `/`) e dois números, e faz a conta
+escolhida. O caso `/` verifica antes se o divisor é zero; qualquer outro caractere segue o caso
+Falso, `Operador inválido!`.
+
+**Entradas:** `op` (caractere), `a` e `b` (reais), no mesmo bloco de entrada.
+**Saída esperada:** a mensagem das operações e a conta (ex.: `*`, `5`, `3` → `5 * 3 = 15`).
+
+```json
+{
+  "nodes": [
+    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "caractere", "variables": "op" }, { "type": "real", "variables": "a, b, r" } ] } },
+    { "id": "n3", "type": "output", "data": { "label": "'Escolha a operação: + para somar, - para subtrair, * para multiplicar, / para dividir. Depois digite dois valores.'" } },
+    { "id": "n4", "type": "input", "data": { "label": "op, a, b" } },
+    { "id": "n5", "type": "selection", "data": { "label": "op", "cases": [ "'+'", "'-'", "'*'", "'/'" ] } },
+    { "id": "n6", "type": "process", "data": { "label": "r = a + b" } },
+    { "id": "n7", "type": "output", "data": { "label": "a + ' + ' + b + ' = ' + r" } },
+    { "id": "n8", "type": "process", "data": { "label": "r = a - b" } },
+    { "id": "n9", "type": "output", "data": { "label": "a + ' - ' + b + ' = ' + r" } },
+    { "id": "n10", "type": "process", "data": { "label": "r = a * b" } },
+    { "id": "n11", "type": "output", "data": { "label": "a + ' * ' + b + ' = ' + r" } },
+    { "id": "n12", "type": "decision", "data": { "label": "b != 0" } },
+    { "id": "n13", "type": "process", "data": { "label": "r = a / b" } },
+    { "id": "n14", "type": "output", "data": { "label": "a + ' / ' + b + ' = ' + r" } },
+    { "id": "n15", "type": "output", "data": { "label": "'Divisão por zero!'" } },
+    { "id": "n16", "type": "connector", "data": { "label": "Fim do se" } },
+    { "id": "n17", "type": "output", "data": { "label": "'Operador inválido!'" } },
+    { "id": "n18", "type": "connector", "data": { "label": "Fim da escolha" } },
+    { "id": "n19", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n1", "target": "n2" },
+    { "id": "e2", "source": "n2", "target": "n3" },
+    { "id": "e3", "source": "n3", "target": "n4" },
+    { "id": "e4", "source": "n4", "target": "n5" },
+    { "id": "e5", "source": "n5", "target": "n6", "sourceHandle": "case-0" },
+    { "id": "e6", "source": "n6", "target": "n7" },
+    { "id": "e7", "source": "n5", "target": "n8", "sourceHandle": "case-1" },
+    { "id": "e8", "source": "n8", "target": "n9" },
+    { "id": "e9", "source": "n5", "target": "n10", "sourceHandle": "case-2" },
+    { "id": "e10", "source": "n10", "target": "n11" },
+    { "id": "e11", "source": "n5", "target": "n12", "sourceHandle": "case-3" },
+    { "id": "e12", "source": "n12", "target": "n13", "sourceHandle": "yes", "label": "VERDADEIRO" },
+    { "id": "e13", "source": "n13", "target": "n14" },
+    { "id": "e14", "source": "n14", "target": "n16", "targetHandle": "right-in" },
+    { "id": "e15", "source": "n12", "target": "n15", "sourceHandle": "no", "label": "FALSO" },
+    { "id": "e16", "source": "n15", "target": "n16", "targetHandle": "left-in" },
+    { "id": "e17", "source": "n5", "target": "n17", "sourceHandle": "default", "label": "FALSO" },
+    { "id": "e18", "source": "n17", "target": "n18", "targetHandle": "left-in" },
+    { "id": "e19", "source": "n7", "target": "n18", "targetHandle": "left-in" },
+    { "id": "e20", "source": "n9", "target": "n18", "targetHandle": "top-in" },
+    { "id": "e21", "source": "n11", "target": "n18", "targetHandle": "right-in" },
+    { "id": "e22", "source": "n16", "target": "n18", "sourceHandle": "bottom-out", "targetHandle": "right-in" },
+    { "id": "e23", "source": "n18", "target": "n19", "sourceHandle": "bottom-out" }
+  ]
+}
+```
+
+---
+
+# 10. Fatorial — ENQUANTO (while)
 
 Calcula o fatorial de `n` com laço `enquanto`: o conector "Início do laço" recebe a entrada pelo topo e o retorno do corpo pela lateral, e a decisão logo abaixo dele controla a repetição.
 
@@ -392,7 +511,7 @@ Calcula o fatorial de `n` com laço `enquanto`: o conector "Início do laço" re
 
 ---
 
-# 9. Soma até Zero — FAÇA-ENQUANTO (do-while)
+# 11. Soma até Zero — FAÇA-ENQUANTO (do-while)
 
 Soma números fornecidos até que o valor informado seja `0` (o `0` não altera a soma).
 
@@ -445,7 +564,7 @@ do {
 
 ---
 
-# 10. Média de Valores — ENQUANTO (while)
+# 12. Média de Valores — ENQUANTO (while)
 
 Lê `n` valores e calcula a média. Laço com contador `i`.
 
@@ -489,7 +608,7 @@ Lê `n` valores e calcula a média. Laço com contador `i`.
 
 ---
 
-# 11. Média de Notas com Vetor — VARIÁVEIS INDEXADAS
+# 13. Média de Notas com Vetor — VARIÁVEIS INDEXADAS
 
 Armazena as notas em um vetor `notas[5]` e calcula a média. Usa atribuição indexada `notas[i] = nota`.
 
@@ -536,7 +655,7 @@ Armazena as notas em um vetor `notas[5]` e calcula a média. Usa atribuição in
 
 ---
 
-# 12. Sub-rotina Visual — FATORIAL COM RETORNO
+# 14. Sub-rotina Visual — FATORIAL COM RETORNO
 
 Exemplo completo de sub-rotina visual. O algoritmo principal lê `n`, chama `resultado = fatorial(n)` e recebe o retorno calculado no diagrama interno `fatorial`. As variáveis `retorno` e `i` pertencem à memória local da sub-rotina e não aparecem na memória global do algoritmo principal.
 

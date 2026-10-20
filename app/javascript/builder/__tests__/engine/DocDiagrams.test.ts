@@ -35,11 +35,13 @@ const SCENARIOS: Record<number, Array<[string[], string[]]>> = {
   5: [[["3", "7", "5"], ["O maior é: 7"]], [["9", "2", "4"], ["O maior é: 9"]], [["1", "2", "8"], ["O maior é: 8"]], [["5", "5", "5"], ["O maior é: 5"]]],
   6: [[["1"], ["Novo jogo"]], [["2"], ["Carregar jogo"]], [["3"], ["Sair"]], [["7"], ["Opção inválida"]]],
   7: [[["A"], ["Acima de 9"]], [["B"], ["Entre 7 e 9"]], [["C"], ["Entre 5 e 7"]], [["Z"], ["Conceito inválido"]], [["a"], ["Conceito inválido"]]],
-  8: [[["5"], ["O fatorial de 5 é 120"]], [["0"], ["O fatorial de 0 é 1"]], [["1"], ["O fatorial de 1 é 1"]]],
-  9: [[["5", "3", "0"], ["A soma é: 8"]], [["2", "7", "14", "0"], ["A soma é: 23"]], [["0"], ["A soma é: 0"]]],
-  10: [[["3", "10", "20", "30"], ["A média é: 20"]], [["4", "7.5", "8", "6.5", "9"], ["A média é: 7.75"]], [["3", "1", "1", "2"], ["A média é: 1.33333333333333"]]],
-  11: [[["3", "10", "20", "30"], ["A média das notas é: 20"]], [["2", "8.5", "7"], ["A média das notas é: 7.75"]]],
-  12: [[["5"], ["Fatorial: 120"]], [["0"], ["Fatorial: 1"]]],
+  8: [[["0"], ["Zero"]], [["6"], ["Seis"]], [["10"], ["Número inválido!"]]],
+  9: [[["*", "5", "3"], ["Escolha a operação: + para somar, - para subtrair, * para multiplicar, / para dividir. Depois digite dois valores.", "5 * 3 = 15"]], [["/", "7", "0"], ["Escolha a operação: + para somar, - para subtrair, * para multiplicar, / para dividir. Depois digite dois valores.", "Divisão por zero!"]], [["%", "1", "1"], ["Escolha a operação: + para somar, - para subtrair, * para multiplicar, / para dividir. Depois digite dois valores.", "Operador inválido!"]]],
+  10: [[["5"], ["O fatorial de 5 é 120"]], [["0"], ["O fatorial de 0 é 1"]], [["1"], ["O fatorial de 1 é 1"]]],
+  11: [[["5", "3", "0"], ["A soma é: 8"]], [["2", "7", "14", "0"], ["A soma é: 23"]], [["0"], ["A soma é: 0"]]],
+  12: [[["3", "10", "20", "30"], ["A média é: 20"]], [["4", "7.5", "8", "6.5", "9"], ["A média é: 7.75"]], [["3", "1", "1", "2"], ["A média é: 1.33333333333333"]]],
+  13: [[["3", "10", "20", "30"], ["A média das notas é: 20"]], [["2", "8.5", "7"], ["A média das notas é: 7.75"]]],
+  14: [[["5"], ["Fatorial: 120"]], [["0"], ["Fatorial: 1"]]],
 }
 
 const sections = docSections()
