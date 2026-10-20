@@ -74,10 +74,15 @@ describe("BuilderPage — menu de blocos no celular", () => {
   })
 
   // The four corner groups crowded a 390px canvas; on a phone they share one
-  // bar along the bottom, within thumb reach.
-  it("reúne as ações do canvas numa barra inferior", () => {
+  // bar along the top of the canvas. At the bottom, mobile browsers kept
+  // covering it with their own toolbar, hiding undo and redo.
+  it("reúne as ações do canvas numa barra no topo", () => {
     render(<BuilderPage />)
     const bar = screen.getByTestId("canvas-toolbar-mobile")
+
+    expect(bar).toHaveClass("absolute", "top-3", "z-50")
+    expect(bar).not.toHaveClass("fixed")
+    expect(bar.className).not.toMatch(/\bbottom-/)
 
     for (const name of [/desfazer/i, /refazer/i, /salvar algoritmo/i, /exportar algoritmo/i, /executar/i, /mostrar depurador/i]) {
       expect(within(bar).getByRole("button", { name })).toBeInTheDocument()

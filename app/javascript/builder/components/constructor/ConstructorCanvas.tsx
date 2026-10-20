@@ -244,10 +244,13 @@ export default function ConstructorCanvas({
         </>
       ) : (
         // On a phone the four corner groups crowded the canvas; they share one
-        // bar along the bottom instead, within reach of the thumb.
+        // bar along the top instead. At the bottom it fought the browser's own
+        // toolbar, which Chrome and Brave show and hide over the page and which
+        // kept covering undo and redo. The top of the canvas sits under our
+        // header, where no browser draws anything.
         <div
           data-testid="canvas-toolbar-mobile"
-          className="absolute inset-x-2 bottom-2 z-10 flex items-center gap-1 rounded-xl border border-border bg-card/95 p-1.5 shadow-md backdrop-blur"
+          className="absolute inset-x-2 top-3 z-50 flex items-center gap-1 rounded-xl border border-border bg-card/95 p-1.5 shadow-md backdrop-blur"
         >
           {!viewer && (
             <>

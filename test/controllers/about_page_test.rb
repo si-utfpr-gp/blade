@@ -31,6 +31,14 @@ class AboutPageTest < ActionController::TestCase
     assert_select "a[href=?]", "https://github.com/emanuel-o-dev", /Emanuel Oliveira Andrade/
   end
 
+  test "credits the project advisors" do
+    get :show
+
+    assert_select "body", /Pensamento Computacional e Linguagem de Programação Visual/
+    assert_select "body", /Prof\. Dr\. Diego Marczal/
+    assert_select "body", /Profª\. Drª\. Renata Luiza Stange/
+  end
+
   test "points to the repository and its contributors" do
     get :show
 
