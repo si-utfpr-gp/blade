@@ -223,8 +223,8 @@ export function ExamplesSection() {
   )
 
   const handleSelect = (example: IDiagramExample) => {
-    const { nodes, edges } = layoutExampleDiagram(example)
-    loadCanvasNodes(nodes, edges)
+    const { nodes, edges, centers } = layoutExampleDiagram(example)
+    loadCanvasNodes(nodes, edges, { centers })
     reset()
     onAlgorithmNameChange(example.title)
     markExample(example.id)

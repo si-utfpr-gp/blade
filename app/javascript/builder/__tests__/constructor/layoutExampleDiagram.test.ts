@@ -69,6 +69,17 @@ describe("layoutExampleDiagram", () => {
     expect(touching).toEqual([])
   })
 
+  // The canvas re-centres each block on these once it knows the real sizes.
+  it.each(examplesOnCanvas)("'$title' informa o centro planejado de cada bloco", (example: IDiagramExample) => {
+    const { nodes, centers } = layoutExampleDiagram(example)
+    expect([...centers.keys()].sort()).toEqual(nodes.map((node) => node.id).sort())
+    for (const node of nodes) {
+      const center = centers.get(node.id)
+      expectAligned(center?.x ?? NaN, centerX(node))
+      expectAligned(center?.y ?? NaN, centerY(node))
+    }
+  })
+
   it("empilha um fluxo linear numa coluna reta, centralizada", () => {
     const { nodes } = layout("soma-dois-valores")
     expect(nodes.map((node) => node.id)).toEqual(["n1", "n2", "n3", "n4", "n5", "n6"])

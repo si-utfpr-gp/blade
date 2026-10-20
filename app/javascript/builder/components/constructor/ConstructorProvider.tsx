@@ -15,6 +15,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -38,6 +39,7 @@ import {
 } from "./connectionRules"
 import { diagramSignature } from "./diagramSignature"
 import { serializeDiagramForSave } from "./serializeDiagram"
+import { recenterOnMeasuredSize, type PlannedCenters } from "./recenterOnMeasuredSize"
 import {
   edgesFromDiagram,
   isHistoryWorthy,
@@ -119,7 +121,13 @@ interface ConstructorContextValue {
 
   duplicateNode: (id: string) => void
 
-  loadCanvasNodes: (nodes: CanvasNodeInput[], edges: CanvasEdgeInput[]) => void
+  // `centers` is for a generated layout: once the canvas has measured the
+  // blocks, each one is moved so its centre lands where the layout planned it.
+  loadCanvasNodes: (
+    nodes: CanvasNodeInput[],
+    edges: CanvasEdgeInput[],
+    options?: { centers?: PlannedCenters },
+  ) => void
 
   resetCanvas: () => void
 
@@ -163,6 +171,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
 
   const [connectionError, setConnectionError] = useState<string | null>(null)
   const edgeReconnectSuccessful = useRef(true)
+  const pendingCenters = useRef<PlannedCenters | null>(null)
 
   // The dirty check compares the current diagram against the state it had when
   // it was loaded or last saved. Comparing fingerprints instead of toggling a
@@ -465,7 +474,11 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
   )
 
   const loadCanvasNodes = useCallback(
-    (inputNodes: CanvasNodeInput[], inputEdges: CanvasEdgeInput[]) => {
+    (
+      inputNodes: CanvasNodeInput[],
+      inputEdges: CanvasEdgeInput[],
+      options?: { centers?: PlannedCenters },
+    ) => {
       const nextNodes: AlgorithmNode[] = inputNodes
         .filter((node) => isBlockType(node.type))
         .map((node) => ({
@@ -502,6 +515,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
         markerEnd: { type: MarkerType.ArrowClosed },
       }))
 
+      pendingCenters.current = options?.centers ?? null
       setNodes(nextNodes)
       setEdges(nextEdges)
       setSelectedNodeId(null)
@@ -516,7 +530,21 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
     [setNodes, setEdges, resetHistory],
   )
 
+  // React Flow reports the real size of each block only after drawing it, so
+  // the move to the planned centres waits for every block to be measured. It
+  // is part of loading, not an edit: no history step and still clean.
+  useEffect(() => {
+    const centers = pendingCenters.current
+    if (!centers || nodes.length === 0) return
+    if (!nodes.every((node) => node.measured?.width && node.measured?.height)) return
+    pendingCenters.current = null
+    const centered = recenterOnMeasuredSize(nodes, centers)
+    setNodes(centered)
+    setCleanSignature(diagramSignature(centered, edges))
+  }, [nodes, edges, setNodes])
+
   const resetCanvas = useCallback(() => {
+    pendingCenters.current = null
     setNodes(initialNodes)
     setEdges(initialEdges)
     setSelectedNodeId(null)
@@ -526,6 +554,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
   }, [setNodes, setEdges, resetHistory])
 
   const clearCanvas = useCallback(() => {
+    pendingCenters.current = null
     setNodes([])
     setEdges([])
     setSelectedNodeId(null)

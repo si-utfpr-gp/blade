@@ -20,6 +20,9 @@ export interface PositionedExampleEdge {
 export interface LaidOutExample {
   nodes: PositionedExampleNode[]
   edges: PositionedExampleEdge[]
+  // Where each block's centre should sit. Positions come from estimated sizes,
+  // so the canvas re-centres the blocks on these once it has measured them.
+  centers: Map<string, { x: number; y: number }>
 }
 
 type RawNode = IDiagramExample["diagram"]["nodes"][number]
@@ -90,11 +93,16 @@ export function layoutExampleDiagram(example: IDiagramExample): LaidOutExample {
       raw,
       row,
       width,
+      height,
       left: CENTER_X + (columnOf.get(id) ?? 0) * LANE_WIDTH - width / 2,
       top: rowTop[row] + (rowHeight[row] - height) / 2,
     }
   })
   separateWithinRows(placed)
+
+  const centers = new Map(
+    placed.map(({ raw, left, top, width, height }) => [raw.id, { x: left + width / 2, y: top + height / 2 }]),
+  )
 
   const nodes: PositionedExampleNode[] = placed.map(({ raw, left, top }) => ({
     id: raw.id,
@@ -112,7 +120,7 @@ export function layoutExampleDiagram(example: IDiagramExample): LaidOutExample {
     ...(edge.label !== undefined ? { label: edge.label } : {}),
   }))
 
-  return { nodes, edges }
+  return { nodes, edges, centers }
 }
 
 /** Size a block renders at, close enough to keep blocks apart. */
