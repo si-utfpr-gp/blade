@@ -12,6 +12,7 @@ import {
   followOffsetY,
 } from "./canvasSync"
 import { nodeTypes } from "./nodes"
+import { edgeTypes } from "./edges/FlowStepEdge"
 import {
   DRAG_DATA_KEY,
   DRAG_VARIANT_KEY,
@@ -282,6 +283,7 @@ export default function ConstructorCanvas({
         }}
         onNodeContextMenu={handleNodeContextMenu}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         fitView
       >
         <PlacementHint />
