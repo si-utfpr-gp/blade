@@ -100,6 +100,8 @@ export function isHistoryWorthy(
 ): boolean {
   return changes.some((change) => {
     if (change.type === "select") return false
+    // Blocks are not resizable, so a new size is the canvas measuring them.
+    if (change.type === "dimensions") return false
     if (change.type === "position") return !change.dragging
     return true
   })
