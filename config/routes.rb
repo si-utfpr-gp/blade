@@ -26,6 +26,8 @@ Rails.application.routes.draw do
   # back to the application once it has the credentials, and Rails needs a route
   # to turn that into a controller action.
   get "/auth/:provider/callback", to: "sessions#create", as: :auth_callback
+  # Where OmniAuth sends a sign in that did not finish at Google.
+  get "/auth/failure", to: "sessions#failure"
   # POST works without JavaScript, which is what the header form relies on.
   # DELETE is accepted too, for callers that can set the method.
   match "/logout", to: "sessions#destroy", via: [ :post, :delete ], as: :logout

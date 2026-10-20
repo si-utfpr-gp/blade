@@ -38,6 +38,15 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
       response.location.to_s.include?("/auth/google_oauth2")
   end
 
+  # Google sends the student back here when the sign in does not finish:
+  # they cancelled, or the request expired. It used to land on a 404.
+  test "a sign in that fails at Google returns to the login page with a message" do
+    get "/auth/failure", params: { message: "access_denied", strategy: "google_oauth2" }
+
+    assert_redirected_to login_path
+    assert_match(/não foi concluído/i, flash[:alert])
+  end
+
   test "signing in creates the user and records the session" do
     sign_in_as
 

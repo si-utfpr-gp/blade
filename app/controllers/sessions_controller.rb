@@ -27,6 +27,12 @@ class SessionsController < ApplicationController
                 alert: "Não foi possível criar seu acesso. Fale com o suporte."
   end
 
+  # The student cancelled at Google, or the request expired. OmniAuth's own
+  # message is not shown: it is technical and says nothing useful to them.
+  def failure
+    redirect_to login_path, alert: "O login com o Google não foi concluído. Tente novamente."
+  end
+
   def destroy
     sign_out
     redirect_to root_path
