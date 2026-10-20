@@ -204,4 +204,36 @@ class AlgorithmsNameUniquenessTest < ActionDispatch::IntegrationTest
 
     assert_response :success
   end
+
+  test "create explains a name that is too long without the attribute prefix" do
+    post algorithms_url, as: :json,
+      params: { name: "a" * (Algorithm::NAME_MAX_LENGTH + 1), diagram: diagram }
+
+    assert_response :unprocessable_entity
+    assert_equal [ "O nome pode ter no máximo #{Algorithm::NAME_MAX_LENGTH} caracteres" ],
+      response.parsed_body["errors"]
+  end
+
+  test "create refuses a diagram with too many blocks" do
+    nodes = Array.new(Algorithm::DIAGRAM_MAX_NODES + 1) { |i| { id: "n#{i}" } }
+
+    assert_no_difference("Algorithm.count") do
+      post algorithms_url, as: :json, params: { name: "Enorme", diagram: { nodes: nodes, edges: [] } }
+    end
+
+    assert_response :unprocessable_entity
+    assert_equal [ "O diagrama pode ter no máximo #{Algorithm::DIAGRAM_MAX_NODES} blocos" ],
+      response.parsed_body["errors"]
+  end
+
+  test "create refuses a new algorithm once the student reached the limit" do
+    Algorithm::MAX_PER_USER.times { |i| Algorithm.create!(user: @user, name: "Algoritmo #{i}", diagram: diagram) }
+
+    assert_no_difference("Algorithm.count") do
+      post algorithms_url, as: :json, params: { name: "Um a mais", diagram: diagram }
+    end
+
+    assert_response :unprocessable_entity
+    assert_match(/apague algum/i, response.parsed_body["errors"].join)
+  end
 end

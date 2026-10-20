@@ -31,7 +31,7 @@ class AlgorithmsController < ApplicationController
     if algorithm.save
       render json: algorithm, status: :created
     else
-      render json: { errors: algorithm.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: error_messages(algorithm) }, status: :unprocessable_entity
     end
   end
 
@@ -47,7 +47,7 @@ class AlgorithmsController < ApplicationController
     if algorithm.save
       render json: algorithm
     else
-      render json: { errors: algorithm.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: error_messages(algorithm) }, status: :unprocessable_entity
     end
   end
 
@@ -60,6 +60,12 @@ class AlgorithmsController < ApplicationController
   end
 
   private
+
+  # Only the messages: full_messages would put "Name" or "Diagram" in front of
+  # sentences the builder shows in Portuguese.
+  def error_messages(algorithm)
+    algorithm.errors.map { |error| error.message.upcase_first }
+  end
 
   # Scoping the lookup by the current user means another user's algorithm is
   # simply not found, instead of being exposed or raising.
