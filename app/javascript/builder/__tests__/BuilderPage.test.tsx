@@ -73,36 +73,35 @@ describe("BuilderPage — menu de blocos no celular", () => {
     })) as unknown as typeof window.matchMedia
   })
 
-  // The four corner groups crowded a 390px canvas; on a phone they share one
-  // bar along the top of the canvas. At the bottom, mobile browsers kept
-  // covering it with their own toolbar, hiding undo and redo.
-  it("reúne as ações do canvas numa barra no topo", () => {
+  // On a phone the canvas tools live behind one floating button, like the
+  // assistive button of a phone, which the student can drag out of the way.
+  it("reúne as ações do canvas no menu do botão flutuante", () => {
     render(<BuilderPage />)
-    const bar = screen.getByTestId("canvas-toolbar-mobile")
+    fireEvent.click(screen.getByRole("button", { name: /^ferramentas$/i }))
+    const menu = screen.getByRole("group", { name: /ferramentas do canvas/i })
 
-    expect(bar).toHaveClass("absolute", "top-3", "z-50")
-    expect(bar).not.toHaveClass("fixed")
-    expect(bar.className).not.toMatch(/\bbottom-/)
-
-    for (const name of [/desfazer/i, /refazer/i, /salvar algoritmo/i, /exportar algoritmo/i, /executar/i, /mostrar depurador/i]) {
-      expect(within(bar).getByRole("button", { name })).toBeInTheDocument()
+    for (const name of [/desfazer/i, /refazer/i, /centralizar diagrama/i, /salvar algoritmo/i, /exportar algoritmo/i, /executar/i, /mostrar depurador/i]) {
+      expect(within(menu).getByRole("button", { name })).toBeInTheDocument()
     }
     expect(screen.queryByTestId("canvas-toolbar-save")).not.toBeInTheDocument()
     expect(screen.queryByTestId("canvas-toolbar-export")).not.toBeInTheDocument()
   })
 
-  it("só mostra o botão do depurador na barra, sem a faixa lateral", () => {
+  it("só mostra o botão do depurador no menu, sem a faixa lateral", () => {
     render(<BuilderPage />)
+    fireEvent.click(screen.getByRole("button", { name: /^ferramentas$/i }))
 
     expect(screen.getAllByRole("button", { name: /mostrar depurador/i })).toHaveLength(1)
   })
 
-  it("abre o depurador pela barra inferior", () => {
+  it("abre o depurador pelo menu do botão flutuante", () => {
     render(<BuilderPage />)
-    fireEvent.click(within(screen.getByTestId("canvas-toolbar-mobile")).getByRole("button", { name: /mostrar depurador/i }))
+    fireEvent.click(screen.getByRole("button", { name: /^ferramentas$/i }))
+    fireEvent.click(screen.getByRole("button", { name: /mostrar depurador/i }))
 
     expect(screen.getAllByText(/iniciar execução/i).length).toBeGreaterThan(0)
-    expect(within(screen.getByTestId("canvas-toolbar-mobile")).getByRole("button", { name: /esconder depurador/i })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: /^ferramentas$/i }))
+    expect(screen.getByRole("button", { name: /esconder depurador/i })).toBeInTheDocument()
   })
 
   it("deixa o zoom para o gesto de pinça", () => {

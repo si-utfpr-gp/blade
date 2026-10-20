@@ -25,6 +25,7 @@ import { CanvasSaveButton } from "./CanvasSaveButton"
 import { CanvasExportButton } from "./CanvasExportButton"
 import { ShareButton } from "./ShareButton"
 import { CanvasHistoryControls } from "./CanvasHistoryControls"
+import { CenterDiagramButton, FloatingTools } from "./FloatingTools"
 import { useFitOnDiagramLoad } from "./useFitOnDiagramLoad"
 import { usePanePlacement } from "./usePanePlacement"
 import { PlacementHint } from "./PlacementHint"
@@ -243,38 +244,48 @@ export default function ConstructorCanvas({
           )}
         </>
       ) : (
-        // On a phone the four corner groups crowded the canvas; they share one
-        // bar along the top instead. At the bottom it fought the browser's own
-        // toolbar, which Chrome and Brave show and hide over the page and which
-        // kept covering undo and redo. The top of the canvas sits under our
-        // header, where no browser draws anything.
-        <div
-          data-testid="canvas-toolbar-mobile"
-          className="absolute inset-x-2 top-3 z-50 flex items-center gap-1 rounded-xl border border-border bg-card/95 p-1.5 shadow-md backdrop-blur"
-        >
-          {!viewer && (
+        // On a phone the tools sit behind one floating ball the student can
+        // drag anywhere; see FloatingTools for why not a fixed bar.
+        <FloatingTools>
+          {(close) => (
             <>
-              <CanvasHistoryControls locked={locked} />
-              <span aria-hidden="true" className="mx-0.5 h-6 w-px bg-border" />
-              <CanvasSaveButton />
-              <ShareButton />
-              <CanvasExportButton />
+              {!viewer && (
+                <>
+                  <div className="col-span-2">
+                    <CanvasHistoryControls locked={locked} />
+                  </div>
+                  <div onClick={close}>
+                    <CenterDiagramButton />
+                  </div>
+                  {inspector && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        inspector.toggle()
+                        close()
+                      }}
+                      aria-label={inspector.collapsed ? "Mostrar depurador" : "Esconder depurador"}
+                      className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card/95 text-primary"
+                    >
+                      <TerminalSquare className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                  )}
+                  <CanvasSaveButton />
+                  <ShareButton />
+                  <CanvasExportButton />
+                </>
+              )}
+              {viewer && (
+                <div onClick={close}>
+                  <CenterDiagramButton />
+                </div>
+              )}
+              <div className="col-span-4" onClick={close}>
+                <RunDiagramButton onDiagramLoaded={onDiagramLoaded} />
+              </div>
             </>
           )}
-          {inspector && (
-            <button
-              type="button"
-              onClick={inspector.toggle}
-              aria-label={inspector.collapsed ? "Mostrar depurador" : "Esconder depurador"}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card/95 text-primary"
-            >
-              <TerminalSquare className="h-5 w-5" aria-hidden="true" />
-            </button>
-          )}
-          <div className="ml-auto">
-            <RunDiagramButton onDiagramLoaded={onDiagramLoaded} />
-          </div>
-        </div>
+        </FloatingTools>
       )}
 
       <ReactFlow
