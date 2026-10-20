@@ -296,7 +296,7 @@ interface Node {
     rows?: Array<{        // Apenas para type = "memory"
       type: string        // "inteiro" | "real" | "caractere" | "logico"
       variables: string   // "num1, num2, soma" ou "notas[5], i"
-      initialValue?: string // expressão opcional para inicializar as variáveis da linha
+      initialValue?: string // recusado pelo motor: a memória só declara, valores vão em blocos process
     }>
   }
 }
@@ -448,7 +448,7 @@ Tipos de blocos interpretados:
 | Node `type` | Tipo | `variant` | Gera passo? | Operação |
 |--------------|------|-----------|-------------|----------|
 | `startEnd` | Início | `'start'` | Sim | Marca o ponto de partida |
-| `memory` | Memória | — | **Sim** | Declara variáveis, pode inicializá-las por `initialValue` e registra um passo didático |
+| `memory` | Memória | — | **Sim** | Declara variáveis com o tipo (sem valor inicial) e registra um passo didático |
 | `input` | Entrada | — | Sim | Solicita valor ao usuário e armazena em variável |
 | `process` | Processo | — | Sim | Executa expressão de atribuição (pode conter múltiplos statements separados por `;`) |
 | `decision` | Decisão | — | Sim | Avalia condição booleana; saídas pelos handles `'yes'` (VERDADEIRO) e `'no'` (FALSO) |
@@ -459,7 +459,7 @@ Tipos de blocos interpretados:
 
 ### Gerenciador de Memória
 
-Mantém o estado atual de todas as variáveis do algoritmo durante a execução. As variáveis são **declaradas** no bloco `memory` (com tipo e nome) e podem ser **inicializadas** no próprio bloco com `initialValue`, ou posteriormente via blocos `input` ou `process`.
+Mantém o estado atual de todas as variáveis do algoritmo durante a execução. As variáveis são **declaradas** no bloco `memory` (com tipo e nome) e são **inicializadas** depois, via blocos `input` ou `process` — nunca no próprio bloco de memória.
 
 Variáveis indexadas (vetores) são declaradas como `nome[tamanho]` (ex: `notas[5]`) e acessadas via índice (ex: `notas[i]`).
 
@@ -484,7 +484,7 @@ Estrutura:
 
 Operações:
 - **Declarar variável**: registra variável a partir do bloco `memory` (nome, tipo, e se é vetor);
-- **Inicializar variável**: atribui valor pela primeira vez (via `initialValue`, `input` ou `process`);
+- **Inicializar variável**: atribui valor pela primeira vez (via `input` ou `process`);
 - **Atualizar variável**: modifica o valor de uma variável existente;
 - **Consultar variável**: retorna o valor corrente de uma variável;
 - **Verificar inicialização**: valida se a variável foi inicializada antes do uso.
@@ -606,7 +606,7 @@ Cada snapshot inclui uma explicação textual gerada automaticamente. A explica�
 - **startEnd (end)**: "Algoritmo finalizado.";
 - **input**: "Solicitando ao usuário um valor para a variável 'n'.";
 - **process**: "Calculando a expressão 'soma = n + 10': substituindo 'n' por 10, obtendo soma = 20.";
-- **process (múltiplos)**: "Executando: soma = 0; i = 1. Variáveis atualizadas.";
+- **process**: um bloco por instrução; "soma = 0; i = 1" no mesmo bloco interrompe a execução pedindo para separar;
 - **decision**: "Avaliando condição 'n > 5': como 10 > 5 é verdadeiro, seguindo pelo ramo VERDADEIRO (handle 'yes').";
 - **output**: "Exibindo o valor da variável 'soma': 20.";
 - **subroutine**: "Chamando sub-rotina 'fatorial(n)' com n = 5.";

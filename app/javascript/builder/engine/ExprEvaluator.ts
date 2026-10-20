@@ -101,7 +101,7 @@ export class ExprEvaluator {
     }
   }
 
-  private splitStatements(source: string, blockId: string | null): string[] {
+  splitStatements(source: string, blockId: string | null): string[] {
     const statements: string[] = []
     let start = 0
     let quote: "'" | '"' | null = null

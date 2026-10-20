@@ -96,7 +96,7 @@ describe("memória tipada (RN08)", () => {
   it("inteiro aceita uma divisão exata e real aceita um inteiro", () => {
     const engine = linear(
       [{ type: "inteiro", variables: "x" }, { type: "real", variables: "y" }],
-      [{ type: "process", label: "x = 8 / 2; y = 5" }],
+      [{ type: "process", label: "x = 8 / 2" }, { type: "process", label: "y = 5" }],
     )
     run(engine)
     expect(valueOf(engine, "x")).toBe("4")
@@ -115,7 +115,7 @@ describe("memória tipada (RN08)", () => {
   it("não faz conta com texto", () => {
     const engine = linear(
       [{ type: "caractere", variables: "a" }, { type: "inteiro", variables: "x" }],
-      [{ type: "process", label: "a = '12'; x = a * 2" }],
+      [{ type: "process", label: "a = '12'" }, { type: "process", label: "x = a * 2" }],
     )
     expect(errorOf(() => run(engine)).type).toBe(ERROR_TYPES.TYPE_MISMATCH)
   })
@@ -140,13 +140,15 @@ describe("memória tipada (RN08)", () => {
   it("exige uma condição lógica na decisão", () => {
     const nodes: Node[] = [
       { id: "start", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "start" } },
-      { id: "memory", type: "memory", position: { x: 0, y: 0 }, data: { rows: [{ type: "inteiro", variables: "x", initialValue: "1" }] } },
+      { id: "memory", type: "memory", position: { x: 0, y: 0 }, data: { rows: [{ type: "inteiro", variables: "x" }] } },
+      { id: "init", type: "process", position: { x: 0, y: 0 }, data: { label: "x = 1" } },
       { id: "if", type: "decision", position: { x: 0, y: 0 }, data: { label: "x" } },
       { id: "end", type: "startEnd", position: { x: 0, y: 0 }, data: { variant: "end" } },
     ]
     const edges: Edge[] = [
       { id: "e1", source: "start", target: "memory" },
-      { id: "e2", source: "memory", target: "if" },
+      { id: "e2", source: "memory", target: "init" },
+      { id: "e2b", source: "init", target: "if" },
       { id: "e3", source: "if", target: "end", sourceHandle: "yes" },
       { id: "e4", source: "if", target: "end", sourceHandle: "no" },
     ]

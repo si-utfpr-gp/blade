@@ -27,7 +27,7 @@ motor de execução ignoram esse campo.
       "data": { "label": "Início", "variant": "start" } },
     { "id": "n2", "type": "memory", "data": { "rows": [
         { "type": "inteiro", "variables": "n, i" },
-        { "type": "inteiro", "variables": "contador", "initialValue": "0" },
+        { "type": "inteiro", "variables": "contador" },
         { "type": "real", "variables": "notas[5], soma" } ] } },
     { "id": "n3", "type": "input", "data": { "label": "n" } },
     { "id": "n4", "type": "process","data": { "label": "soma = 0" } },
@@ -52,9 +52,9 @@ motor de execução ignoram esse campo.
 }
 ```
 
-Em um bloco `memory`, `initialValue` é opcional. Quando informado, o motor inicializa cada variável
-daquela linha na própria declaração; use linhas separadas quando as variáveis precisarem de valores
-iniciais diferentes.
+O bloco `memory` só declara variáveis com o tipo. Valores iniciais são dados em blocos `process`
+(por exemplo `contador = 0`), para que cada valor apareça como um passo no teste de mesa; uma linha
+com `initialValue` interrompe a execução com erro.
 
 **Tipos de bloco:** `startEnd` (com `variant: "start"|"end"`), `memory`, `input`, `process`,
 `output`, `decision`, `selection`, `subroutine`, `connector`.
@@ -72,7 +72,7 @@ necessários nos JSONs de teste de mesa.
 | Aritmética | `+ - * /` `%` `()` | `soma = n1 + n2` |
 | Comparação | `= == != < > <= >=` | `i <= n` |
 | Lógica (Portugol) | `e` `ou` `nao` | `nota >= 0 e nota <= 10` |
-| Múltiplas atribuições | separar com `;` (os exemplos usam uma instrução por bloco de processo) | `soma = 0; i = 0` |
+| Atribuição | uma instrução por bloco `process`; duas instruções com `;` interrompem a execução | `soma = 0` |
 | Texto (string) | aspas simples | `'A média é: ' + media` |
 | Vetor | `nome[indice]` | `notas[i] = nota` |
 | Tipos | `inteiro real caractere logico` | bloco `memory` |

@@ -3,8 +3,13 @@ import { parse } from "../../parser/parser"
 import { ExecutionEngine } from "../../engine/ExecutionEngine"
 import { ExecutionError } from "../../engine/errors"
 import type { Node, Edge } from "@xyflow/react"
+import { oneInstructionPerBlock } from "./runDiagram"
 
-function g(nodes: Node[], edges: Edge[]) { return parse(nodes, edges) }
+// The fixtures predate the block rules, so they are redrawn under them.
+function g(nodes: Node[], edges: Edge[]) {
+  const drawn = oneInstructionPerBlock(nodes, edges)
+  return parse(drawn.nodes, drawn.edges)
+}
 
 function processEngine(label: string, processId = "process-1") {
   return new ExecutionEngine(g(
@@ -168,6 +173,7 @@ describe("ExecutionEngine", () => {
     expect(e.getSteps().map((step) => step.nodeType)).toEqual([
       "startEnd",
       "memory",
+      "process",
       "connector",
       "input",
       "process",
@@ -198,10 +204,14 @@ describe("ExecutionEngine", () => {
       "Caso Verdadeiro.",
       "Caso Falso.",
     ])
-    expect(e.getSteps().filter((step) => step.nodeType !== "branch")).toHaveLength(21)
+    expect(e.getSteps().filter((step) => step.nodeType !== "branch")).toHaveLength(22)
     expect(e.getCurrentOutputs()).toEqual(["Soma: 23"])
+    // The memory declares soma empty; the process block right after gives it 0.
     expect(e.getSteps()[1].variables).toEqual(expect.arrayContaining([
       expect.objectContaining({ name: "n", value: null }),
+      expect.objectContaining({ name: "soma", value: null }),
+    ]))
+    expect(e.getSteps()[2].variables).toEqual(expect.arrayContaining([
       expect.objectContaining({ name: "soma", value: "0" }),
     ]))
   })
@@ -268,6 +278,8 @@ describe("ExecutionEngine", () => {
     e.start()
     e.step()
 
+    // One block per instruction: the text first, then the counter.
+    e.step()
     const step = e.step()
 
     expect(step?.variables.find((v) => v.name === "mensagem")?.value).toBe("a; b = c")
@@ -762,7 +774,9 @@ describe("ExecutionEngine", () => {
 
     e.start()
     e.step()
-    const process = e.step()
+    // Four instructions, four process blocks; the last one computes total.
+    let process = e.step()
+    for (let block = 1; block < 4; block++) process = e.step()
     expect(process?.variables.find((variable) => variable.name === "total")?.value).toBe("30")
     expect(e.step()?.output).toBe("30")
   })

@@ -154,3 +154,77 @@ function graphIssues(graph: string, rawNodes: RawNode[], rawEdges: RawEdge[]): s
 
   return issues
 }
+
+/** Splits on the ';' between instructions, leaving the ones inside texts alone. */
+export function statementsOf(label: string): string[] {
+  const statements: string[] = []
+  let quote: string | null = null
+  let current = ""
+  for (const char of label) {
+    if (quote) {
+      if (char === quote) quote = null
+    } else if (char === "'" || char === '"') {
+      quote = char
+    } else if (char === ";") {
+      if (current.trim()) statements.push(current.trim())
+      current = ""
+      continue
+    }
+    current += char
+  }
+  if (current.trim()) statements.push(current.trim())
+  return statements
+}
+
+/**
+ * Redraws a hand-written test diagram under the block rules: a process block
+ * holding several instructions becomes a chain of blocks, one per
+ * instruction, and a memory row's initial value becomes process blocks right
+ * after the memory. The first block keeps the original id, so arrows into it
+ * still arrive; arrows out of it leave from the last block of the chain.
+ */
+export function oneInstructionPerBlock<N extends RawNode, E extends RawEdge>(nodes: N[], edges: E[]): { nodes: N[]; edges: E[] } {
+  const outNodes: N[] = []
+  const outEdges: E[] = [...edges]
+  const chainEnd = new Map<string, string>()
+
+  const chain = (head: N, labels: string[], keepHead: boolean) => {
+    let previous = head.id
+    labels.forEach((label, index) => {
+      if (keepHead && index === 0) return
+      const id = `${head.id}~${index + 1}`
+      outNodes.push({ ...head, id, type: "process", data: { ...head.data, label } } as N)
+      outEdges.push({ id: `${id}-in`, source: previous, target: id } as E)
+      previous = id
+    })
+    if (previous !== head.id) chainEnd.set(head.id, previous)
+  }
+
+  for (const node of nodes) {
+    if (node.type === "process") {
+      const statements = statementsOf(String(node.data?.label ?? ""))
+      outNodes.push(statements.length > 1 ? ({ ...node, data: { ...node.data, label: statements[0] } } as N) : node)
+      if (statements.length > 1) chain(node, statements, true)
+    } else if (node.type === "memory") {
+      const rows = (node.data?.rows as Array<{ type: string; variables: string; initialValue?: string }> | undefined) ?? []
+      const initializations = rows.flatMap((row) =>
+        row.initialValue === undefined
+          ? []
+          : row.variables.split(",").map((variable) => `${variable.trim()} = ${row.initialValue}`),
+      )
+      outNodes.push({ ...node, data: { ...node.data, rows: rows.map(({ type, variables }) => ({ type, variables })) } } as N)
+      chain(node, initializations, false)
+    } else {
+      outNodes.push(node)
+    }
+  }
+
+  // Arrows that left a rewritten block now leave from the end of its chain.
+  const added = new Set(outEdges.slice(edges.length).map((edge) => edge.id))
+  return {
+    nodes: outNodes,
+    edges: outEdges.map((edge) =>
+      !added.has(edge.id) && chainEnd.has(edge.source) ? { ...edge, source: chainEnd.get(edge.source) as string } : edge,
+    ),
+  }
+}

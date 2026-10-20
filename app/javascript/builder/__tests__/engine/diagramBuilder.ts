@@ -2,6 +2,7 @@ import { expect } from "vitest"
 import {
   constructorIssues,
   runDiagram,
+  statementsOf,
   type DiagramRun,
   type RawDiagram,
   type RawEdge,
@@ -70,7 +71,10 @@ export const block = (type: string, label: string): Stmt => (d, from) => {
   return { id }
 }
 export const input = (label: string) => block("input", label)
-export const proc = (label: string) => block("process", label)
+// A process block holds one instruction, so "a = 1; b = 2" is drawn the way
+// a student has to: one process block per instruction, in order.
+export const proc = (label: string): Stmt => (d, from) =>
+  d.run(from, statementsOf(label).map((statement) => block("process", statement)))
 export const out = (label: string) => block("output", label)
 export const call = (label: string) => block("subroutine", label)
 
@@ -121,11 +125,18 @@ export const choose = (expression: string, cases: Array<[string, Stmt[]]>, other
 function graph(prefix: string, rows: Row[], stmts: Stmt[]): { nodes: RawNode[]; edges: RawEdge[] } {
   const d = new DiagramBuilder(prefix)
   const start = d.add("startEnd", "Início", { variant: "start" })
+  // The memory block only declares. A row's initial value becomes a process
+  // block right after it, which is where a student gives a starting value.
   const memory = d.add("memory", "Memória", {
-    rows: rows.map(([type, variables, initialValue]) => ({ type, variables, ...(initialValue !== undefined ? { initialValue } : {}) })),
+    rows: rows.map(([type, variables]) => ({ type, variables })),
   })
   d.link({ id: start }, memory)
-  const last = d.run({ id: memory }, stmts)
+  const initializations = rows.flatMap(([, variables, initialValue]) =>
+    initialValue === undefined
+      ? []
+      : variables.split(",").map((variable) => proc(`${variable.trim()} = ${initialValue}`)),
+  )
+  const last = d.run({ id: memory }, [...initializations, ...stmts])
   const end = d.add("startEnd", "Fim", { variant: "end" })
   d.link(last, end)
   return { nodes: d.nodes, edges: d.edges }

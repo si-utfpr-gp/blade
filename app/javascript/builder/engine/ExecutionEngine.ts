@@ -343,7 +343,17 @@ export class ExecutionEngine {
             }
 
             case "process": {
-                const changes = frame.expr.assign(node.label ?? "", node.id);
+                // Classroom rule: one instruction per process block, so each
+                // change gets its own row in the desk check.
+                const label = node.label ?? ""
+                if (frame.expr.splitStatements(label, node.id).length > 1) {
+                    throw new ExecutionError(
+                        ERROR_TYPES.INVALID_EXPRESSION,
+                        `Um bloco de processo aceita uma única instrução. Separe '${label}' em um bloco para cada instrução.`,
+                        node.id,
+                    )
+                }
+                const changes = frame.expr.assign(label, node.id);
                 const text = this.explanations.generate({
                     nodeType: node.type,
                     nodeLabel: node.label ?? "",
@@ -434,6 +444,16 @@ export class ExecutionEngine {
         const frame = this.requireActiveFrame()
         const changes: string[] = []
         node.rows?.forEach(row => {
+            // Classroom rule: the memory block declares; values are given in
+            // process blocks, where the desk check shows them.
+            if (row.initialValue !== undefined && row.initialValue.trim() !== "") {
+                const [first = "variavel"] = row.variables.split(",").map(variable => variable.trim()).filter(Boolean)
+                throw new ExecutionError(
+                    ERROR_TYPES.INVALID_EXPRESSION,
+                    `A memória só declara variáveis. Inicialize '${first}' em um bloco de processo, como '${first} = ${row.initialValue.trim()}'.`,
+                    node.id,
+                )
+            }
             row.variables
                 .split(",")
                 .map(variable => variable.trim())
@@ -441,9 +461,6 @@ export class ExecutionEngine {
                 .forEach(variable => {
                     this.declare(frame, variable, row.type, node.id)
                     changes.push(`Declarada: ${variable}`)
-                    if (row.initialValue !== undefined) {
-                        changes.push(...frame.expr.assign(`${variable} = ${row.initialValue}`, node.id))
-                    }
                 })
         })
         return changes

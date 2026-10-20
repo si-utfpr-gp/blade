@@ -200,7 +200,7 @@ describe("bateria — enquanto (while)", () => {
 
   it("não executa o corpo quando a condição já começa falsa", () => {
     const run = runToEnd(somaAteN(), ["0"])
-    expect(run.steps.filter((step) => step.nodeType === "process")).toHaveLength(1)
+    expect(run.steps.filter((step) => step.nodeType === "process" && step.log.startsWith("s = s + i"))).toHaveLength(0)
   })
 
   it("contagem regressiva exibe cada volta", () => {

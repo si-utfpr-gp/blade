@@ -268,7 +268,8 @@ describe("teste de mesa — laços", () => {
     const run = runToEnd(diagram, ["4", "5", "6", "-1"])
     expect(run.outputs).toEqual(["15"])
     expect(column(run, "v")).toEqual(["null", "4", "5", "6", "-1"])
-    expect(column(run, "s")).toEqual(["0", "4", "9", "15"])
+    // Declared empty in the memory, then 0 in its own process block.
+    expect(column(run, "s")).toEqual(["null", "0", "4", "9", "15"])
   })
 
   it("laços aninhados montam a tabuada com a coluna do contador interno", () => {
@@ -285,8 +286,8 @@ describe("teste de mesa — laços", () => {
     const run = runToEnd(program([["inteiro", "i", "0"]], [whileLoop("i < 1", [proc("i = i + 1")])]))
     const numbers = run.steps.map((_, index) => displayStepNumber(run.steps, index))
     const decisions = run.steps.flatMap((step, index) => (step.nodeType === "branch" ? [numbers[index]] : []))
-    // 1 início, 2 memória, 3 conector, 4 decisão, 5 processo, 6 conector, 7 decisão
-    expect(decisions).toEqual(["4.1", "7.1"])
+    // 1 início, 2 memória, 3 processo (i = 0), 4 conector, 5 decisão, 6 processo, 7 conector, 8 decisão
+    expect(decisions).toEqual(["5.1", "8.1"])
   })
 })
 
@@ -302,8 +303,9 @@ describe("teste de mesa — retrocesso", () => {
 
     expect(engine.goToStep(secondTurn)).toBe(true)
     const variables = Object.fromEntries(engine.getCurrentState().variables)
+    // i = i + 1 is the next block, so i still holds the second turn's value.
     expect(variables.s.value).toBe("3")
-    expect(variables.i.value).toBe("3")
+    expect(variables.i.value).toBe("2")
     expect(engine.getCurrentState().finished).toBe(false)
 
     drive(engine)
@@ -443,7 +445,7 @@ describe("teste de mesa — processo de erros", () => {
     const broken = withoutEdges(diagram, (source, handle) => source === decision && handle === "no")
     const run = expectError(broken, [], "MISSING_CONNECTION", "Decisão 'x > 5': caso Falso sem ligação")
     expect(run.error?.blockId).toBe(decision)
-    expect(runToEnd({ ...broken, nodes: broken.nodes.map((node) => node.id === nodeId(diagram, "memory") ? { ...node, data: { ...node.data, rows: [{ type: "inteiro", variables: "x", initialValue: "9" }] } } : node) }).outputs).toEqual(["grande"])
+    expect(runToEnd({ ...broken, nodes: broken.nodes.map((node) => node.id === nodeId(diagram, "process", "x = 1") ? { ...node, data: { ...node.data, label: "x = 9" } } : node) }).outputs).toEqual(["grande"])
   })
 
   it("conector sem saída para com erro", () => {
