@@ -93,9 +93,9 @@ describe("layoutExampleDiagram", () => {
 
   it("põe o corpo do laço ao lado e a saída abaixo do corpo inteiro", () => {
     const { byId } = layout("media-de-valores")
-    const decision = byId("n6")
-    const body = [byId("n7"), byId("n8")]
-    const exit = byId("n9")
+    const decision = byId("n7")
+    const body = [byId("n8"), byId("n9"), byId("n10")]
+    const exit = byId("n11")
 
     body.forEach((node) => expect(centerX(node)).toBeGreaterThan(centerX(decision)))
     body.forEach((node) => expect(exit.position.y).toBeGreaterThan(box(node).bottom))

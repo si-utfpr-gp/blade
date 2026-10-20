@@ -30,7 +30,7 @@ motor de execução ignoram esse campo.
         { "type": "inteiro", "variables": "contador", "initialValue": "0" },
         { "type": "real", "variables": "notas[5], soma" } ] } },
     { "id": "n3", "type": "input", "data": { "label": "n" } },
-    { "id": "n4", "type": "process","data": { "label": "soma = 0; i = 0" } },
+    { "id": "n4", "type": "process","data": { "label": "soma = 0" } },
     { "id": "n5", "type": "decision","data": { "label": "i < n" } },
     { "id": "n6", "type": "output", "data": { "label": "'Média: ' + media" } },
     { "id": "n7", "type": "subroutine", "data": { "label": "resultado = dobro(n)" } }
@@ -72,7 +72,7 @@ necessários nos JSONs de teste de mesa.
 | Aritmética | `+ - * /` `%` `()` | `soma = n1 + n2` |
 | Comparação | `= == != < > <= >=` | `i <= n` |
 | Lógica (Portugol) | `e` `ou` `nao` | `nota >= 0 e nota <= 10` |
-| Múltiplas atribuições | separar com `;` | `soma = 0; i = 0` |
+| Múltiplas atribuições | separar com `;` (os exemplos usam uma instrução por bloco de processo) | `soma = 0; i = 0` |
 | Texto (string) | aspas simples | `'A média é: ' + media` |
 | Vetor | `nome[indice]` | `notas[i] = nota` |
 | Tipos | `inteiro real caractere logico` | bloco `memory` |
@@ -216,23 +216,27 @@ Calcula o fatorial de `n` com laço `enquanto`: o conector "Início do laço" re
     { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
     { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "n, fatorial, i" } ] } },
     { "id": "n3", "type": "input", "data": { "label": "n" } },
-    { "id": "n4", "type": "process", "data": { "label": "fatorial = 1; i = 1" } },
-    { "id": "n5", "type": "connector", "data": { "label": "Início do laço" } },
-    { "id": "n6", "type": "decision", "data": { "label": "i <= n" } },
-    { "id": "n7", "type": "process", "data": { "label": "fatorial = fatorial * i; i = i + 1" } },
-    { "id": "n8", "type": "output", "data": { "label": "'O fatorial de ' + n + ' é ' + fatorial" } },
-    { "id": "n9", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n4", "type": "process", "data": { "label": "fatorial = 1" } },
+    { "id": "n5", "type": "process", "data": { "label": "i = 1" } },
+    { "id": "n6", "type": "connector", "data": { "label": "Início do laço" } },
+    { "id": "n7", "type": "decision", "data": { "label": "i <= n" } },
+    { "id": "n8", "type": "process", "data": { "label": "fatorial = fatorial * i" } },
+    { "id": "n9", "type": "process", "data": { "label": "i = i + 1" } },
+    { "id": "n10", "type": "output", "data": { "label": "'O fatorial de ' + n + ' é ' + fatorial" } },
+    { "id": "n11", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
     { "id": "e2", "source": "n2", "target": "n3" },
     { "id": "e3", "source": "n3", "target": "n4" },
-    { "id": "e4", "source": "n4", "target": "n5", "targetHandle": "top-in" },
-    { "id": "e5", "source": "n5", "target": "n6", "sourceHandle": "bottom-out" },
-    { "id": "e6", "source": "n6", "target": "n7", "sourceHandle": "yes", "label": "VERDADEIRO" },
-    { "id": "e7", "source": "n7", "target": "n5", "targetHandle": "right-in" },
-    { "id": "e8", "source": "n6", "target": "n8", "sourceHandle": "no", "label": "FALSO" },
-    { "id": "e9", "source": "n8", "target": "n9" }
+    { "id": "e4", "source": "n4", "target": "n5" },
+    { "id": "e5", "source": "n5", "target": "n6", "targetHandle": "top-in" },
+    { "id": "e6", "source": "n6", "target": "n7", "sourceHandle": "bottom-out" },
+    { "id": "e7", "source": "n7", "target": "n8", "sourceHandle": "yes", "label": "VERDADEIRO" },
+    { "id": "e8", "source": "n8", "target": "n9" },
+    { "id": "e9", "source": "n9", "target": "n6", "targetHandle": "right-in" },
+    { "id": "e10", "source": "n7", "target": "n10", "sourceHandle": "no", "label": "FALSO" },
+    { "id": "e11", "source": "n10", "target": "n11" }
   ]
 }
 ```
@@ -250,40 +254,39 @@ Soma números fornecidos até que o valor informado seja `0` (o `0` não altera 
 {
   "nodes": [
     { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
-    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "num" }, { "type": "inteiro", "variables": "soma", "initialValue": "0" } ] } },
-    { "id": "n3", "type": "connector", "data": { "label": "Iniciar leitura" } },
-    { "id": "n4", "type": "input", "data": { "label": "num" } },
-    { "id": "n5", "type": "process", "data": { "label": "soma = soma + num" } },
-    { "id": "n6", "type": "decision", "data": { "label": "num != 0" } },
-    { "id": "n7", "type": "connector", "data": { "label": "Ler próximo número" } },
-    { "id": "n8", "type": "connector", "data": { "label": "Exibir soma" } },
-    { "id": "n9", "type": "output", "data": { "label": "'A soma é: ' + soma" } },
-    { "id": "n10", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "num, soma" } ] } },
+    { "id": "n3", "type": "process", "data": { "label": "soma = 0" } },
+    { "id": "n4", "type": "connector", "data": { "label": "Iniciar leitura" } },
+    { "id": "n5", "type": "input", "data": { "label": "num" } },
+    { "id": "n6", "type": "process", "data": { "label": "soma = soma + num" } },
+    { "id": "n7", "type": "decision", "data": { "label": "num != 0" } },
+    { "id": "n8", "type": "output", "data": { "label": "'A soma é: ' + soma" } },
+    { "id": "n9", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
-    { "id": "e2", "source": "n2", "target": "n3", "targetHandle": "top-in" },
-    { "id": "e3", "source": "n3", "target": "n4", "sourceHandle": "bottom-out" },
-    { "id": "e4", "source": "n4", "target": "n5" },
+    { "id": "e2", "source": "n2", "target": "n3" },
+    { "id": "e3", "source": "n3", "target": "n4", "targetHandle": "top-in" },
+    { "id": "e4", "source": "n4", "target": "n5", "sourceHandle": "bottom-out" },
     { "id": "e5", "source": "n5", "target": "n6" },
-    { "id": "e6", "source": "n6", "target": "n7", "sourceHandle": "yes", "label": "VERDADEIRO", "targetHandle": "left-in" },
-    { "id": "e7", "source": "n7", "target": "n3", "sourceHandle": "bottom-out", "targetHandle": "right-in" },
-    { "id": "e8", "source": "n6", "target": "n8", "sourceHandle": "no", "label": "FALSO", "targetHandle": "left-in" },
-    { "id": "e9", "source": "n8", "target": "n9", "sourceHandle": "bottom-out" },
-    { "id": "e10", "source": "n9", "target": "n10" }
+    { "id": "e6", "source": "n6", "target": "n7" },
+    { "id": "e7", "source": "n7", "target": "n4", "sourceHandle": "yes", "label": "VERDADEIRO", "targetHandle": "right-in" },
+    { "id": "e8", "source": "n7", "target": "n8", "sourceHandle": "no", "label": "FALSO" },
+    { "id": "e9", "source": "n8", "target": "n9" }
   ]
 }
 ```
 
-Com as entradas `2`, `7`, `14`, `0`, os passos principais são: conector `3`, entrada `4`,
-processo `5`, condição `6`, caso `6.1`, conector `7` ("Ler próximo número"), que volta ao conector
-`8` ("Iniciar leitura"), e entrada `9`. No fim, o caso falso `21.1` segue pelo conector `22`, pela
-saída `23` e encerra no passo `24`.
+A soma começa em `0` em um bloco de processo, antes do conector "Iniciar leitura". O conector
+recebe o fluxo pelo topo e o ramo Verdadeiro de `num != 0` pela lateral direita, fechando o laço.
+O ramo Falso segue direto para a saída, sem conector, porque é o único caminho que chega até ela.
 
 O gerador converte esse ciclo para um `do...while`, preservando a leitura e a soma dentro do
 laço e a saída somente após o valor `0`:
 
 ```js
+soma = 0;
+
 do {
   num = Number(prompt("Digite o valor de num:"));
 
@@ -340,27 +343,31 @@ Lê `n` valores e calcula a média. Laço com contador `i`.
     { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
     { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "n, i" }, { "type": "real", "variables": "valor, soma, media" } ] } },
     { "id": "n3", "type": "input", "data": { "label": "n" } },
-    { "id": "n4", "type": "process", "data": { "label": "soma = 0; i = 0" } },
-    { "id": "n5", "type": "connector", "data": { "label": "Início do laço" } },
-    { "id": "n6", "type": "decision", "data": { "label": "i < n" } },
-    { "id": "n7", "type": "input", "data": { "label": "valor" } },
-    { "id": "n8", "type": "process", "data": { "label": "soma = soma + valor; i = i + 1" } },
-    { "id": "n9", "type": "process", "data": { "label": "media = soma / n" } },
-    { "id": "n10", "type": "output", "data": { "label": "'A média é: ' + media" } },
-    { "id": "n11", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n4", "type": "process", "data": { "label": "soma = 0" } },
+    { "id": "n5", "type": "process", "data": { "label": "i = 0" } },
+    { "id": "n6", "type": "connector", "data": { "label": "Início do laço" } },
+    { "id": "n7", "type": "decision", "data": { "label": "i < n" } },
+    { "id": "n8", "type": "input", "data": { "label": "valor" } },
+    { "id": "n9", "type": "process", "data": { "label": "soma = soma + valor" } },
+    { "id": "n10", "type": "process", "data": { "label": "i = i + 1" } },
+    { "id": "n11", "type": "process", "data": { "label": "media = soma / n" } },
+    { "id": "n12", "type": "output", "data": { "label": "'A média é: ' + media" } },
+    { "id": "n13", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
     { "id": "e2", "source": "n2", "target": "n3" },
     { "id": "e3", "source": "n3", "target": "n4" },
-    { "id": "e4", "source": "n4", "target": "n5", "targetHandle": "top-in" },
-    { "id": "e5", "source": "n5", "target": "n6", "sourceHandle": "bottom-out" },
-    { "id": "e6", "source": "n6", "target": "n7", "sourceHandle": "yes", "label": "VERDADEIRO" },
-    { "id": "e7", "source": "n7", "target": "n8" },
-    { "id": "e8", "source": "n8", "target": "n5", "targetHandle": "right-in" },
-    { "id": "e9", "source": "n6", "target": "n9", "sourceHandle": "no", "label": "FALSO" },
-    { "id": "e10", "source": "n9", "target": "n10" },
-    { "id": "e11", "source": "n10", "target": "n11" }
+    { "id": "e4", "source": "n4", "target": "n5" },
+    { "id": "e5", "source": "n5", "target": "n6", "targetHandle": "top-in" },
+    { "id": "e6", "source": "n6", "target": "n7", "sourceHandle": "bottom-out" },
+    { "id": "e7", "source": "n7", "target": "n8", "sourceHandle": "yes", "label": "VERDADEIRO" },
+    { "id": "e8", "source": "n8", "target": "n9" },
+    { "id": "e9", "source": "n9", "target": "n10" },
+    { "id": "e10", "source": "n10", "target": "n6", "targetHandle": "right-in" },
+    { "id": "e11", "source": "n7", "target": "n11", "sourceHandle": "no", "label": "FALSO" },
+    { "id": "e12", "source": "n11", "target": "n12" },
+    { "id": "e13", "source": "n12", "target": "n13" }
   ]
 }
 ```
@@ -381,27 +388,33 @@ Armazena as notas em um vetor `notas[5]` e calcula a média. Usa atribuição in
     { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
     { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "n, i" }, { "type": "real", "variables": "notas[5], soma, media, nota" } ] } },
     { "id": "n3", "type": "input", "data": { "label": "n" } },
-    { "id": "n4", "type": "process", "data": { "label": "soma = 0; i = 0" } },
-    { "id": "n5", "type": "connector", "data": { "label": "Início do laço" } },
-    { "id": "n6", "type": "decision", "data": { "label": "i < n" } },
-    { "id": "n7", "type": "input", "data": { "label": "nota" } },
-    { "id": "n8", "type": "process", "data": { "label": "notas[i] = nota; soma = soma + nota; i = i + 1" } },
-    { "id": "n9", "type": "process", "data": { "label": "media = soma / n" } },
-    { "id": "n10", "type": "output", "data": { "label": "'A média das notas é: ' + media" } },
-    { "id": "n11", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+    { "id": "n4", "type": "process", "data": { "label": "soma = 0" } },
+    { "id": "n5", "type": "process", "data": { "label": "i = 0" } },
+    { "id": "n6", "type": "connector", "data": { "label": "Início do laço" } },
+    { "id": "n7", "type": "decision", "data": { "label": "i < n" } },
+    { "id": "n8", "type": "input", "data": { "label": "nota" } },
+    { "id": "n9", "type": "process", "data": { "label": "notas[i] = nota" } },
+    { "id": "n10", "type": "process", "data": { "label": "soma = soma + nota" } },
+    { "id": "n11", "type": "process", "data": { "label": "i = i + 1" } },
+    { "id": "n12", "type": "process", "data": { "label": "media = soma / n" } },
+    { "id": "n13", "type": "output", "data": { "label": "'A média das notas é: ' + media" } },
+    { "id": "n14", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
   ],
   "edges": [
     { "id": "e1", "source": "n1", "target": "n2" },
     { "id": "e2", "source": "n2", "target": "n3" },
     { "id": "e3", "source": "n3", "target": "n4" },
-    { "id": "e4", "source": "n4", "target": "n5", "targetHandle": "top-in" },
-    { "id": "e5", "source": "n5", "target": "n6", "sourceHandle": "bottom-out" },
-    { "id": "e6", "source": "n6", "target": "n7", "sourceHandle": "yes", "label": "VERDADEIRO" },
-    { "id": "e7", "source": "n7", "target": "n8" },
-    { "id": "e8", "source": "n8", "target": "n5", "targetHandle": "right-in" },
-    { "id": "e9", "source": "n6", "target": "n9", "sourceHandle": "no", "label": "FALSO" },
-    { "id": "e10", "source": "n9", "target": "n10" },
-    { "id": "e11", "source": "n10", "target": "n11" }
+    { "id": "e4", "source": "n4", "target": "n5" },
+    { "id": "e5", "source": "n5", "target": "n6", "targetHandle": "top-in" },
+    { "id": "e6", "source": "n6", "target": "n7", "sourceHandle": "bottom-out" },
+    { "id": "e7", "source": "n7", "target": "n8", "sourceHandle": "yes", "label": "VERDADEIRO" },
+    { "id": "e8", "source": "n8", "target": "n9" },
+    { "id": "e9", "source": "n9", "target": "n10" },
+    { "id": "e10", "source": "n10", "target": "n11" },
+    { "id": "e11", "source": "n11", "target": "n6", "targetHandle": "right-in" },
+    { "id": "e12", "source": "n7", "target": "n12", "sourceHandle": "no", "label": "FALSO" },
+    { "id": "e13", "source": "n12", "target": "n13" },
+    { "id": "e14", "source": "n13", "target": "n14" }
   ]
 }
 ```
@@ -441,20 +454,24 @@ Exemplo completo de sub-rotina visual. O algoritmo principal lê `n`, chama `res
       "nodes": [
         { "id": "r1", "type": "startEnd", "data": { "label": "Início fatorial", "variant": "start" } },
         { "id": "r2", "type": "memory", "data": { "label": "Memória local", "rows": [ { "type": "inteiro", "variables": "retorno, i" } ] } },
-        { "id": "r3", "type": "process", "data": { "label": "retorno = 1; i = 1" } },
-        { "id": "r4", "type": "connector", "data": { "label": "Início do laço" } },
-        { "id": "r5", "type": "decision", "data": { "label": "i <= valor" } },
-        { "id": "r6", "type": "process", "data": { "label": "retorno = retorno * i; i = i + 1" } },
-        { "id": "r7", "type": "startEnd", "data": { "label": "Fim fatorial", "variant": "end" } }
+        { "id": "r3", "type": "process", "data": { "label": "retorno = 1" } },
+        { "id": "r4", "type": "process", "data": { "label": "i = 1" } },
+        { "id": "r5", "type": "connector", "data": { "label": "Início do laço" } },
+        { "id": "r6", "type": "decision", "data": { "label": "i <= valor" } },
+        { "id": "r7", "type": "process", "data": { "label": "retorno = retorno * i" } },
+        { "id": "r8", "type": "process", "data": { "label": "i = i + 1" } },
+        { "id": "r9", "type": "startEnd", "data": { "label": "Fim fatorial", "variant": "end" } }
       ],
       "edges": [
         { "id": "re1", "source": "r1", "target": "r2" },
         { "id": "re2", "source": "r2", "target": "r3" },
-        { "id": "re3", "source": "r3", "target": "r4", "targetHandle": "top-in" },
-        { "id": "re4", "source": "r4", "target": "r5", "sourceHandle": "bottom-out" },
-        { "id": "re5", "source": "r5", "target": "r6", "sourceHandle": "yes", "label": "VERDADEIRO" },
-        { "id": "re6", "source": "r6", "target": "r4", "targetHandle": "right-in" },
-        { "id": "re7", "source": "r5", "target": "r7", "sourceHandle": "no", "label": "FALSO" }
+        { "id": "re3", "source": "r3", "target": "r4" },
+        { "id": "re4", "source": "r4", "target": "r5", "targetHandle": "top-in" },
+        { "id": "re5", "source": "r5", "target": "r6", "sourceHandle": "bottom-out" },
+        { "id": "re6", "source": "r6", "target": "r7", "sourceHandle": "yes", "label": "VERDADEIRO" },
+        { "id": "re7", "source": "r7", "target": "r8" },
+        { "id": "re8", "source": "r8", "target": "r5", "targetHandle": "right-in" },
+        { "id": "re9", "source": "r6", "target": "r9", "sourceHandle": "no", "label": "FALSO" }
       ]
     }
   ]

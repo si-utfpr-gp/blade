@@ -4,6 +4,7 @@ import { DIAGRAM_EXAMPLES, type IDiagramExample } from "../../interfaces/diagram
 import { parse } from "../../parser/parser"
 import { ExecutionEngine } from "../../engine/ExecutionEngine"
 import { constructorIssues, type RawDiagram } from "./runDiagram"
+import { getConnectorRole } from "../../components/constructor/nodes/connectorRole"
 
 type RawRoutine = { nodes: Omit<Node, "position">[]; edges: Edge[] } & Record<string, unknown>
 
@@ -62,4 +63,43 @@ describe("exemplos de diagramas", () => {
   it.each(DIAGRAM_EXAMPLES)("'$title' pode ser desenhado no construtor, conectores incluídos", (example) => {
     expect(constructorIssues(example.diagram as RawDiagram)).toEqual([])
   })
+
+  // The examples are what a student copies, so they follow the classroom rules.
+  it.each(DIAGRAM_EXAMPLES)("'$title' tem uma única instrução por bloco de processo", (example) => {
+    const processes = flowsOf(example)
+      .flatMap((flow) => flow.nodes)
+      .filter((node) => node.type === "process")
+      .map((node) => String(node.data.label))
+    expect(processes.filter((label) => label.includes(";"))).toEqual([])
+  })
+
+  // An initial value set in the memory block does not show on the canvas, so a
+  // student reading the diagram would not know where the value came from.
+  it.each(DIAGRAM_EXAMPLES)("'$title' inicializa as variáveis em blocos de processo, não na memória", (example) => {
+    const rows = flowsOf(example)
+      .flatMap((flow) => flow.nodes)
+      .filter((node) => node.type === "memory")
+      .flatMap((node) => (node.data.rows as Array<Record<string, unknown>> | undefined) ?? [])
+    expect(rows.filter((row) => row.initialValue !== undefined)).toEqual([])
+  })
+
+  // A connector exists to bring paths together; one with a single way in is
+  // just an extra circle on the arrow.
+  it.each(DIAGRAM_EXAMPLES)("'$title' só usa conectores que juntam caminhos", (example) => {
+    for (const flow of flowsOf(example)) {
+      const roles = flow.nodes
+        .filter((node) => node.type === "connector")
+        .map((node) => `${node.data.label}: ${getConnectorRole(node.id, flow.edges as Edge[], flow.nodes as Node[])}`)
+      expect(roles.filter((role) => !/: (loopStart|decisionJoin|selectionJoin)$/.test(role))).toEqual([])
+    }
+  })
 })
+
+/** The main flow and the flow of each subroutine. */
+function flowsOf(example: IDiagramExample): Array<{ nodes: Array<{ id: string; type: string; data: Record<string, unknown> }>; edges: unknown[] }> {
+  const routines = (example.diagram.subroutines as RawRoutine[] | undefined) ?? []
+  return [
+    example.diagram,
+    ...routines.map((routine) => ({ nodes: routine.nodes as never, edges: routine.edges })),
+  ]
+}
