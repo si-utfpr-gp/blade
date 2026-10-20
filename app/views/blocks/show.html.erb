@@ -1,0 +1,189 @@
+<% content_for :title, "Blocos · Blade" %>
+<%
+  # The same outlines the builder's block panel draws (BlockShapePreview), so
+  # the student recognises each block here and on the canvas.
+  shapes = {
+    terminal:   '<ellipse cx="32" cy="20" rx="27" ry="14"/>',
+    memory:     '<rect x="6" y="6" width="52" height="28" rx="4"/><line x1="6" y1="17" x2="58" y2="17" stroke-width="1.5"/>',
+    io:         '<polygon points="15,5 59,5 49,35 5,35" stroke-linejoin="round"/>',
+    process:    '<rect x="6" y="7" width="52" height="26"/>',
+    decision:   '<polygon points="32,3 61,20 32,37 3,20" stroke-linejoin="round"/>',
+    selection:  '<polygon points="32,3 55,15 32,27 9,15" stroke-linejoin="round"/><path d="M32 27 V31 M14 31 H50 M14 31 V37 M32 31 V37 M50 31 V37" fill="none" stroke-width="2"/>',
+    subroutine: '<rect x="8" y="7" width="48" height="26" rx="3"/><line x1="14" y1="7" x2="14" y2="33" stroke-width="2"/><line x1="50" y1="7" x2="50" y2="33" stroke-width="2"/>',
+    connector:  '<circle cx="32" cy="20" r="18"/>'
+  }
+
+  # One entry per block, in the order the builder lists them. "write" says what
+  # goes inside the block; "examples" are labels exactly as typed on the canvas.
+  blocks = [
+    { id: "inicio", name: "Início", token: "--node-start", shape: :terminal,
+      does: "Marca onde o algoritmo começa. A execução parte sempre dele.",
+      write: "Nada: o bloco já vem com o texto Início.",
+      examples: [ "Início" ],
+      tips: [ "Todo algoritmo tem exatamente um Início.", "Ele só tem saída, pela parte de baixo." ] },
+    { id: "fim", name: "Fim", token: "--node-end", shape: :terminal,
+      does: "Marca onde o algoritmo termina. Ao chegar nele a execução para.",
+      write: "Nada: o bloco já vem com o texto Fim.",
+      examples: [ "Fim" ],
+      tips: [ "Ele só tem entrada, pela parte de cima." ] },
+    { id: "memoria", name: "Memória", token: "--node-memory", shape: :memory,
+      does: "Declara as variáveis que o algoritmo vai usar, cada uma com o seu tipo. Fica logo depois do Início.",
+      write: "Uma linha por tipo: escolha o tipo e escreva os nomes das variáveis separados por vírgula. Para um vetor, informe o tamanho entre colchetes.",
+      examples: [ "inteiro: n, i", "real: soma, media", "real: notas[5]" ],
+      tips: [ "Tipos disponíveis: inteiro, real, caractere e logico.", "Uma variável só pode ser usada depois de declarada aqui.", "Os valores guardados aparecem no teste de mesa a cada passo." ] },
+    { id: "entrada", name: "Entrada", token: "--node-input", shape: :io,
+      does: "Lê valores digitados pelo usuário e guarda nas variáveis indicadas.",
+      write: "Os nomes das variáveis que vão receber os valores, separados por vírgula.",
+      examples: [ "n", "num1, num2" ],
+      tips: [ "Ao executar, o Blade pede um valor para cada variável.", "O valor digitado é guardado de acordo com o tipo declarado na Memória." ] },
+    { id: "processo", name: "Processo", token: "--node-process", shape: :process,
+      does: "Executa um cálculo e guarda o resultado em uma variável (atribuição).",
+      write: "Uma instrução por bloco: a variável, o sinal de igual e a expressão.",
+      examples: [ "soma = num1 + num2", "i = i + 1", "notas[i] = nota" ],
+      tips: [ "Use um bloco de Processo para cada instrução. Duas atribuições pedem dois blocos.", "A variável à esquerda recebe o valor calculado à direita." ] },
+    { id: "saida", name: "Saída", token: "--node-output", shape: :io,
+      does: "Mostra uma mensagem ou um valor para o usuário.",
+      write: "Uma expressão. Textos vão entre aspas simples e se juntam a valores com +.",
+      examples: [ "'A soma é: ' + soma", "media", "'Fim do programa'" ],
+      tips: [ "Tudo o que é exibido aparece no console do simulador." ] },
+    { id: "decisao", name: "Decisão", token: "--node-decision", shape: :decision,
+      does: "Testa uma condição e escolhe um entre dois caminhos. É com ela que se monta o se/senão e as repetições.",
+      write: "Uma condição que resulte em verdadeiro ou falso.",
+      examples: [ "n % 2 == 0", "nota >= 0 e nota <= 10", "i <= n" ],
+      tips: [ "A saída da direita é o caminho Verdadeiro; a da esquerda, o Falso.", "Para repetir, leve um dos caminhos de volta a um Conector antes da Decisão." ] },
+    { id: "escolha", name: "Escolha", token: "--node-selection", shape: :selection,
+      does: "Compara um valor com uma lista de casos e segue pelo caminho do caso igual. Equivale ao escolha/caso (switch).",
+      write: "No losango, a expressão comparada. Em cada caso, o valor esperado.",
+      examples: [ "opcao", "casos: 1, 2, 3" ],
+      tips: [ "Cada caso tem a sua saída na parte de baixo; a saída da esquerda é o Falso (outrocaso), quando nenhum caso bate.", "A comparação é exata: o número 1 é diferente do texto '1'.", "Os caminhos se juntam de novo em um Conector." ] },
+    { id: "conector", name: "Conector", token: "--node-connector", shape: :connector,
+      does: "Junta caminhos do fluxograma em um ponto só. É usado no fim de um se/senão, no início e no fim de uma repetição e na junção de uma Escolha.",
+      write: "Um nome curto que explique o ponto de junção (opcional).",
+      examples: [ "Início do laço", "Fim do se" ],
+      tips: [ "Cada bloco recebe uma única seta; quando dois caminhos chegam ao mesmo ponto, passe por um Conector.", "As setas chegam pelo topo ou pelas laterais e saem por baixo." ] },
+    { id: "sub-rotina", name: "Sub-rotina", token: "--node-subroutine", shape: :subroutine,
+      does: "Chama outro diagrama, com a própria memória, e recebe o valor que ele devolve. Equivale a chamar uma função.",
+      write: "A variável que recebe o retorno, o sinal de igual e a chamada com os argumentos.",
+      examples: [ "resultado = fatorial(n)" ],
+      tips: [ "As variáveis da sub-rotina são locais e não aparecem na memória do algoritmo principal.", "Veja o exemplo Fatorial com sub-rotina no builder." ] }
+  ]
+
+  operators = [
+    [ "Aritmética", "+  -  *  /  %  ( )", "soma = n1 + n2" ],
+    [ "Comparação", "==  !=  <  >  <=  >=", "i <= n" ],
+    [ "Lógica", "e  ou  nao", "nota >= 0 e nota <= 10" ],
+    [ "Texto", "'entre aspas simples'", "'A média é: ' + media" ],
+    [ "Vetor", "nome[indice]", "notas[i] = nota" ],
+    [ "Valores lógicos", "verdadeiro  falso", "achou = falso" ]
+  ]
+%>
+
+<div class="landing relative overflow-hidden bg-background text-foreground">
+  <%# ---------------------------------------------------------------- nav %>
+  <header class="relative z-20 mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-6">
+    <div class="flex items-center gap-10">
+      <a href="/" class="flex items-center gap-2" aria-label="Blade, página inicial">
+        <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M12 14l9-5-9-5-9 5 9 5z" />
+          <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+        </svg>
+        <span class="text-2xl font-bold tracking-tight">Blade</span>
+      </a>
+      <nav class="hidden gap-1 text-base text-slate-700 md:flex" aria-label="Seções">
+        <a href="/" class="rounded-lg px-3 py-1.5 hover:bg-slate-100">Início</a>
+        <a href="/blocks" class="rounded-lg bg-slate-100 px-3 py-1.5" aria-current="page">Blocos</a>
+        <a href="/about" class="rounded-lg px-3 py-1.5 hover:bg-slate-100">Sobre</a>
+      </nav>
+    </div>
+
+    <a href="/builder" class="rounded-full bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-500 sm:px-5 sm:text-base">
+      Abrir o builder
+    </a>
+  </header>
+
+  <%# --------------------------------------------------------------- intro %>
+  <section class="relative z-10 mx-auto max-w-6xl px-4 pb-12 pt-12 sm:px-6 lg:pt-20">
+    <div aria-hidden="true" class="landing-grid pointer-events-none absolute inset-x-0 -top-24 bottom-0 -z-10"></div>
+
+    <p class="font-mono text-sm text-blue-600">/blocks</p>
+    <h1 class="mt-2 text-4xl font-medium tracking-tight text-slate-900 sm:text-6xl">Os blocos do fluxograma</h1>
+    <p class="mt-6 max-w-3xl text-lg text-slate-700 sm:text-xl">
+      Cada bloco é uma instrução do algoritmo. Aqui está o que cada um faz, o que escrever dentro dele e um exemplo,
+      na mesma ordem do painel de blocos do builder.
+    </p>
+
+    <nav aria-label="Índice dos blocos" class="mt-10 flex flex-wrap gap-2">
+      <% blocks.each do |block| %>
+        <a href="#<%= block[:id] %>" class="inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-sm font-medium text-slate-700 ring-1 ring-slate-200 hover:text-slate-900 hover:ring-slate-400">
+          <span class="h-2.5 w-2.5 rounded-full" style="background: hsl(var(<%= block[:token] %>))"></span><%= block[:name] %>
+        </a>
+      <% end %>
+      <a href="#expressoes" class="inline-flex items-center rounded-full px-3.5 py-1.5 text-sm font-medium text-blue-600 ring-1 ring-blue-200 hover:ring-blue-400">Expressões</a>
+    </nav>
+  </section>
+
+  <%# -------------------------------------------------------------- blocks %>
+  <section aria-label="Blocos" class="mx-auto grid max-w-6xl gap-5 px-4 pb-16 sm:px-6">
+    <% blocks.each do |block| %>
+      <article id="<%= block[:id] %>" data-block class="landing-access scroll-mt-6 rounded-2xl bg-white p-6 ring-1 ring-slate-200 sm:p-8" style="--c: var(<%= block[:token] %>)">
+        <div class="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-10">
+          <div>
+            <div class="flex items-center gap-4">
+              <svg width="64" height="40" viewBox="0 0 64 40" aria-hidden="true" class="shrink-0"
+                   fill="white" stroke="hsl(var(<%= block[:token] %>))" stroke-width="3"><%= shapes[block[:shape]].html_safe %></svg>
+              <h2 class="text-2xl font-semibold tracking-tight text-slate-900"><%= block[:name] %></h2>
+            </div>
+            <p class="mt-4 text-base leading-7 text-slate-700"><%= block[:does] %></p>
+            <ul class="mt-4 space-y-2 text-sm leading-6 text-slate-600">
+              <% block[:tips].each do |tip| %>
+                <li class="landing-check"><%= tip %></li>
+              <% end %>
+            </ul>
+          </div>
+
+          <div class="rounded-xl bg-slate-50 p-5 ring-1 ring-slate-200">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500">O que escrever</h3>
+            <p class="mt-2 text-sm leading-6 text-slate-700"><%= block[:write] %></p>
+            <h3 class="mt-5 text-xs font-semibold uppercase tracking-wider text-slate-500">Exemplos</h3>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <% block[:examples].each do |example| %>
+                <code data-example class="rounded-lg bg-white px-3 py-1.5 font-mono text-sm text-slate-800 ring-1 ring-slate-200"><%= example %></code>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </article>
+    <% end %>
+  </section>
+
+  <%# --------------------------------------------------------- expressions %>
+  <section id="expressoes" aria-labelledby="expressoes-titulo" class="mx-auto max-w-6xl scroll-mt-6 px-4 pb-20 sm:px-6 sm:pb-28">
+    <h2 id="expressoes-titulo" class="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">Expressões</h2>
+    <p class="mt-3 max-w-3xl text-base text-slate-700 sm:text-lg">
+      O que pode ser escrito dentro de Processo, Saída, Decisão e Escolha.
+    </p>
+
+    <div class="mt-8 overflow-x-auto rounded-2xl ring-1 ring-slate-200">
+      <table class="w-full min-w-[32rem] text-left text-sm">
+        <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+          <tr>
+            <th scope="col" class="px-5 py-3 font-semibold">Recurso</th>
+            <th scope="col" class="px-5 py-3 font-semibold">Sintaxe</th>
+            <th scope="col" class="px-5 py-3 font-semibold">Exemplo</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200 bg-white">
+          <% operators.each do |name, syntax, example| %>
+            <tr>
+              <th scope="row" class="px-5 py-3 font-medium text-slate-900"><%= name %></th>
+              <td class="px-5 py-3"><code class="whitespace-pre font-mono text-slate-800"><%= syntax %></code></td>
+              <td class="px-5 py-3"><code class="font-mono text-slate-600"><%= example %></code></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <%= render "shared/site_footer" %>
+</div>
