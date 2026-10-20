@@ -4,6 +4,15 @@ interface ParseOptions {
     subroutines?: IRawSubroutineDefinition[]
 }
 
+/**
+ * A line break in a block's text only lays it out on the canvas, so a long
+ * message fits its block. The algorithm reads it as one space, also inside a
+ * string, which keeps the generated code valid.
+ */
+function layoutOnly(label: string | undefined): string | undefined {
+    return label?.replace(/[ \t]*\r?\n\s*/g, " ")
+}
+
 export function parse(nodes: IParserInputNode[], edges: IParserInputEdge[], options?: ParseOptions): IParserData {
     const nodeMap = new Map<string, IParserNode>();
     let startNodeId: string | null = null;
@@ -15,7 +24,7 @@ export function parse(nodes: IParserInputNode[], edges: IParserInputEdge[], opti
             id: node.id,
             type: node.type ?? "",
             variant: data?.variant as "start" | "end" | undefined,
-            label: data?.label as string | undefined,
+            label: layoutOnly(data?.label as string | undefined),
             rows: data?.rows as Array<{ type: string; variables: string; initialValue?: string }> | undefined,
             cases: Array.isArray(data?.cases) ? (data.cases as unknown[]).map(String) : undefined,
         }

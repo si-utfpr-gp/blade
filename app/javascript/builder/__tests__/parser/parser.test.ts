@@ -97,4 +97,13 @@ describe("parse", () => {
     expect(routine?.graph.getNextNode("r-process")).toBe("r-end")
   })
 
+
+  // A line break in a block's text only lays it out; see LineBreakLabels.
+  it("lê as quebras de linha do rótulo como um espaço", () => {
+    const nodes: Node[] = [
+      { id: "n1", type: "output", position: { x: 0, y: 0 }, data: { label: "'uma\n   linha' +\r\n  x" } },
+    ]
+
+    expect(parse(nodes, []).nodes.get("n1")?.label).toBe("'uma linha' + x")
+  })
 })

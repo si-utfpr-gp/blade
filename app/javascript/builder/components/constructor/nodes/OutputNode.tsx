@@ -6,7 +6,7 @@ import EditableLabel from "./EditableLabel"
 
 const OutputNode = memo(({ id, data, selected }: NodeProps<AlgorithmNode>) => {
   const { editing, label, setLabel, startEditing, commit, onKeyDown } =
-    useEditableLabel(id, data.label)
+    useEditableLabel(id, data.label, { multiline: true })
 
   const borderColor = data.hasError
     ? "hsl(var(--node-error))"
@@ -46,7 +46,9 @@ const OutputNode = memo(({ id, data, selected }: NodeProps<AlgorithmNode>) => {
           color: "hsl(var(--foreground))",
           border: `2.5px solid ${borderColor}`,
           padding: "12px 36px",
-          clipPath: "polygon(12% 0%, 100% 0%, 88% 100%, 0% 100%)",
+          // A fixed slant, smaller than the side padding: a percentage grew
+          // with a long message until it cut into the text.
+          clipPath: "polygon(24px 0%, 100% 0%, calc(100% - 24px) 100%, 0% 100%)",
           boxShadow: "none",
           minWidth: "160px",
           position: "relative",
@@ -65,6 +67,7 @@ const OutputNode = memo(({ id, data, selected }: NodeProps<AlgorithmNode>) => {
           onChange={setLabel}
           onBlur={commit}
           onKeyDown={onKeyDown}
+          multiline
           displayClassName="text-sm font-medium"
         />
 
