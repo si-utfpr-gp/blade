@@ -29,17 +29,17 @@ function docSections(): DocSection[] {
 // Scenarios per section: inputs typed in the dialog → outputs expected.
 const SCENARIOS: Record<number, Array<[string[], string[]]>> = {
   1: [[["10", "20"], ["A soma é: 30"]], [["-4", "4"], ["A soma é: 0"]]],
-  2: [[["4"], ["O número é PAR"]], [["7"], ["O número é ÍMPAR"]], [["0"], ["O número é PAR"]], [["-3"], ["O número é ÍMPAR"]]],
-  3: [[["3", "7", "5"], ["O maior é: 7"]], [["9", "2", "4"], ["O maior é: 9"]], [["1", "2", "8"], ["O maior é: 8"]], [["5", "5", "5"], ["O maior é: 5"]]],
-  4: [[["5"], ["O fatorial de 5 é 120"]], [["0"], ["O fatorial de 0 é 1"]], [["1"], ["O fatorial de 1 é 1"]]],
-  5: [[["5", "3", "0"], ["A soma é: 8"]], [["2", "7", "14", "0"], ["A soma é: 23"]], [["0"], ["A soma é: 0"]]],
-  6: [[["7.5"], ["NOTA VÁLIDA"]], [["10"], ["NOTA VÁLIDA"]], [["0"], ["NOTA VÁLIDA"]], [["10.5"], ["NOTA INVÁLIDA"]], [["-0.5"], ["NOTA INVÁLIDA"]]],
-  7: [[["3", "10", "20", "30"], ["A média é: 20"]], [["4", "7.5", "8", "6.5", "9"], ["A média é: 7.75"]], [["3", "1", "1", "2"], ["A média é: 1.33333333333333"]]],
-  8: [[["3", "10", "20", "30"], ["A média das notas é: 20"]], [["2", "8.5", "7"], ["A média das notas é: 7.75"]]],
-  9: [[["5"], ["Fatorial: 120"]], [["0"], ["Fatorial: 1"]]],
-  10: [[["8", "6"], ["7"]], [["7.5", "8"], ["7.75"]], [["9.9", "0.1"], ["5"]]],
-  11: [[["1"], ["Novo jogo"]], [["2"], ["Carregar jogo"]], [["3"], ["Sair"]], [["7"], ["Opção inválida"]]],
-  12: [[["A"], ["Acima de 9"]], [["B"], ["Entre 7 e 9"]], [["C"], ["Entre 5 e 7"]], [["Z"], ["Conceito inválido"]], [["a"], ["Conceito inválido"]]],
+  2: [[["8", "6"], ["7"]], [["7.5", "8"], ["7.75"]], [["9.9", "0.1"], ["5"]]],
+  3: [[["4"], ["O número é PAR"]], [["7"], ["O número é ÍMPAR"]], [["0"], ["O número é PAR"]], [["-3"], ["O número é ÍMPAR"]]],
+  4: [[["7.5"], ["NOTA VÁLIDA"]], [["10"], ["NOTA VÁLIDA"]], [["0"], ["NOTA VÁLIDA"]], [["10.5"], ["NOTA INVÁLIDA"]], [["-0.5"], ["NOTA INVÁLIDA"]]],
+  5: [[["3", "7", "5"], ["O maior é: 7"]], [["9", "2", "4"], ["O maior é: 9"]], [["1", "2", "8"], ["O maior é: 8"]], [["5", "5", "5"], ["O maior é: 5"]]],
+  6: [[["1"], ["Novo jogo"]], [["2"], ["Carregar jogo"]], [["3"], ["Sair"]], [["7"], ["Opção inválida"]]],
+  7: [[["A"], ["Acima de 9"]], [["B"], ["Entre 7 e 9"]], [["C"], ["Entre 5 e 7"]], [["Z"], ["Conceito inválido"]], [["a"], ["Conceito inválido"]]],
+  8: [[["5"], ["O fatorial de 5 é 120"]], [["0"], ["O fatorial de 0 é 1"]], [["1"], ["O fatorial de 1 é 1"]]],
+  9: [[["5", "3", "0"], ["A soma é: 8"]], [["2", "7", "14", "0"], ["A soma é: 23"]], [["0"], ["A soma é: 0"]]],
+  10: [[["3", "10", "20", "30"], ["A média é: 20"]], [["4", "7.5", "8", "6.5", "9"], ["A média é: 7.75"]], [["3", "1", "1", "2"], ["A média é: 1.33333333333333"]]],
+  11: [[["3", "10", "20", "30"], ["A média das notas é: 20"]], [["2", "8.5", "7"], ["A média das notas é: 7.75"]]],
+  12: [[["5"], ["Fatorial: 120"]], [["0"], ["Fatorial: 1"]]],
 }
 
 const sections = docSections()

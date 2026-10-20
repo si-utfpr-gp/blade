@@ -59,7 +59,7 @@ iniciais diferentes.
 **Tipos de bloco:** `startEnd` (com `variant: "start"|"end"`), `memory`, `input`, `process`,
 `output`, `decision`, `selection`, `subroutine`, `connector`.
 
-**Sub-rotinas:** o campo opcional `subroutines` define diagramas internos chamados por blocos `subroutine`. Cada item deve conter `id`, `name`, `parameters`, `returnVariable`, `nodes` e `edges`. A chamada no bloco usa o formato `resultado = nome(argumento)`, e `nome` precisa existir em `subroutines[].name`. O resumo acima é ilustrativo; para copiar e executar, use o exemplo completo de sub-rotina na seção 9.
+**Sub-rotinas:** o campo opcional `subroutines` define diagramas internos chamados por blocos `subroutine`. Cada item deve conter `id`, `name`, `parameters`, `returnVariable`, `nodes` e `edges`. A chamada no bloco usa o formato `resultado = nome(argumento)`, e `nome` precisa existir em `subroutines[].name`. O resumo acima é ilustrativo; para copiar e executar, use o exemplo completo de sub-rotina na seção 12.
 
 **Campos de layout:** `position`, `width`, `height`, `selected` e outros metadados do React Flow são
 opcionais para execução. Eles podem aparecer no JSON exportado pelo construtor, mas não devem ser
@@ -126,7 +126,37 @@ Soma dois inteiros e exibe o resultado. Fluxo linear, sem desvios.
 
 ---
 
-# 2. Par ou Ímpar — SE COMPOSTA (if/else)
+# 2. Média de Duas Notas — SEQUENCIAL
+
+Lê duas notas reais, calcula a média aritmética e exibe o resultado em um fluxo linear de seis passos.
+
+**Entradas:** `notaUm` e `notaDois` (reais).
+**Saída esperada:** a média das duas notas (ex.: `notaUm=8` e `notaDois=6` → `7`).
+No teste de mesa, as leituras do único bloco de entrada aparecem como passos `3` e `3.1`; o processo permanece no passo `4`.
+
+```json
+{
+  "nodes": [
+    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "real", "variables": "notaUm, notaDois, media" } ] } },
+    { "id": "n3", "type": "input", "data": { "label": "notaUm, notaDois" } },
+    { "id": "n4", "type": "process", "data": { "label": "media = (notaUm + notaDois) / 2" } },
+    { "id": "n5", "type": "output", "data": { "label": "media" } },
+    { "id": "n6", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n1", "target": "n2" },
+    { "id": "e2", "source": "n2", "target": "n3" },
+    { "id": "e3", "source": "n3", "target": "n4" },
+    { "id": "e4", "source": "n4", "target": "n5" },
+    { "id": "e5", "source": "n5", "target": "n6" }
+  ]
+}
+```
+
+---
+
+# 3. Par ou Ímpar — SE COMPOSTA (if/else)
 
 Testa se um número é par ou ímpar usando `n % 2 == 0` em um bloco `decision`, com dois ramos de saída.
 
@@ -160,7 +190,41 @@ Testa se um número é par ou ímpar usando `n % 2 == 0` em um bloco `decision`,
 
 ---
 
-# 3. Maior de Três — SE ANINHADA
+# 4. Validação de Nota — SE COMPOSTA (condição composta)
+
+Valida se a nota está no intervalo `[0, 10]` usando uma condição composta com `e`.
+
+**Entradas:** `nota` (real).
+**Saída esperada:** `NOTA VÁLIDA` (se `0 <= nota <= 10`) ou `NOTA INVÁLIDA`.
+
+```json
+{
+  "nodes": [
+    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "real", "variables": "nota" } ] } },
+    { "id": "n3", "type": "input", "data": { "label": "nota" } },
+    { "id": "n4", "type": "decision", "data": { "label": "nota >= 0 e nota <= 10" } },
+    { "id": "n5", "type": "output", "data": { "label": "'NOTA VÁLIDA'" } },
+    { "id": "n6", "type": "output", "data": { "label": "'NOTA INVÁLIDA'" } },
+    { "id": "n7", "type": "connector", "data": { "label": "Fim do se" } },
+    { "id": "n8", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n1", "target": "n2" },
+    { "id": "e2", "source": "n2", "target": "n3" },
+    { "id": "e3", "source": "n3", "target": "n4" },
+    { "id": "e4", "source": "n4", "target": "n5", "sourceHandle": "yes", "label": "VERDADEIRO" },
+    { "id": "e5", "source": "n4", "target": "n6", "sourceHandle": "no", "label": "FALSO" },
+    { "id": "e6", "source": "n5", "target": "n7", "targetHandle": "right-in" },
+    { "id": "e7", "source": "n6", "target": "n7", "targetHandle": "left-in" },
+    { "id": "e8", "source": "n7", "target": "n8", "sourceHandle": "bottom-out" }
+  ]
+}
+```
+
+---
+
+# 5. Maior de Três — SE ANINHADA
 
 Encontra o maior entre três números usando decisões aninhadas (if dentro de if).
 
@@ -203,7 +267,92 @@ Encontra o maior entre três números usando decisões aninhadas (if dentro de i
 
 ---
 
-# 4. Fatorial — ENQUANTO (while)
+# 6. Menu de opções — ESCOLHA/CASO
+
+Lê o número de uma opção e exibe a mensagem do caso correspondente, ou `Opção inválida` pelo ramo Falso.
+
+**Entrada:** `opcao` (inteiro).
+**Saída esperada:** `opcao=2` → `Carregar jogo`; `opcao=7` → `Opção inválida`.
+
+```json
+{
+  "nodes": [
+    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "opcao" } ] } },
+    { "id": "n3", "type": "input", "data": { "label": "opcao" } },
+    { "id": "n4", "type": "selection", "data": { "label": "opcao", "cases": [ "1", "2", "3" ] } },
+    { "id": "n5", "type": "output", "data": { "label": "'Novo jogo'" } },
+    { "id": "n6", "type": "output", "data": { "label": "'Carregar jogo'" } },
+    { "id": "n7", "type": "output", "data": { "label": "'Sair'" } },
+    { "id": "n8", "type": "output", "data": { "label": "'Opção inválida'" } },
+    { "id": "n9", "type": "connector", "data": { "label": "Fim da escolha" } },
+    { "id": "n10", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n1", "target": "n2" },
+    { "id": "e2", "source": "n2", "target": "n3" },
+    { "id": "e3", "source": "n3", "target": "n4" },
+    { "id": "e4", "source": "n4", "target": "n5", "sourceHandle": "case-0", "label": "1" },
+    { "id": "e5", "source": "n4", "target": "n6", "sourceHandle": "case-1", "label": "2" },
+    { "id": "e6", "source": "n4", "target": "n7", "sourceHandle": "case-2", "label": "3" },
+    { "id": "e7", "source": "n4", "target": "n8", "sourceHandle": "default", "label": "FALSO" },
+    { "id": "e8", "source": "n5", "target": "n9", "targetHandle": "left-in" },
+    { "id": "e9", "source": "n6", "target": "n9", "targetHandle": "top-in" },
+    { "id": "e10", "source": "n7", "target": "n9", "targetHandle": "right-in" },
+    { "id": "e11", "source": "n8", "target": "n9", "targetHandle": "left-in" },
+    { "id": "e12", "source": "n9", "target": "n10", "sourceHandle": "bottom-out" }
+  ]
+}
+```
+
+---
+
+# 7. Conceito da Nota — ESCOLHA/CASO COM CARACTERE
+
+Lê um conceito (`caractere`) e exibe a faixa da nota. Os valores dos casos são textos, então vão entre
+aspas simples (`'A'`). Sem aspas, `A` seria lido como o nome de uma variável.
+
+**Entrada:** `conceito` (caractere).
+**Saída esperada:** `conceito=B` → `Entre 7 e 9`; `conceito=Z` → `Conceito inválido`.
+
+> **Aba Código:** o gerador ainda não converte escolha/caso. No lugar do losango aparece o comentário
+> `// escolha/caso (conceito) ainda não é convertida para código`, e o código gerado termina ali. O
+> teste de mesa e a execução passo a passo funcionam normalmente.
+
+```json
+{
+  "nodes": [
+    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
+    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "caractere", "variables": "conceito" } ] } },
+    { "id": "n3", "type": "input", "data": { "label": "conceito" } },
+    { "id": "n4", "type": "selection", "data": { "label": "conceito", "cases": [ "'A'", "'B'", "'C'" ] } },
+    { "id": "n5", "type": "output", "data": { "label": "'Acima de 9'" } },
+    { "id": "n6", "type": "output", "data": { "label": "'Entre 7 e 9'" } },
+    { "id": "n7", "type": "output", "data": { "label": "'Entre 5 e 7'" } },
+    { "id": "n8", "type": "output", "data": { "label": "'Conceito inválido'" } },
+    { "id": "n9", "type": "connector", "data": { "label": "Fim da escolha" } },
+    { "id": "n10", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n1", "target": "n2" },
+    { "id": "e2", "source": "n2", "target": "n3" },
+    { "id": "e3", "source": "n3", "target": "n4" },
+    { "id": "e4", "source": "n4", "target": "n5", "sourceHandle": "case-0", "label": "'A'" },
+    { "id": "e5", "source": "n4", "target": "n6", "sourceHandle": "case-1", "label": "'B'" },
+    { "id": "e6", "source": "n4", "target": "n7", "sourceHandle": "case-2", "label": "'C'" },
+    { "id": "e7", "source": "n4", "target": "n8", "sourceHandle": "default", "label": "FALSO" },
+    { "id": "e8", "source": "n5", "target": "n9", "targetHandle": "left-in" },
+    { "id": "e9", "source": "n6", "target": "n9", "targetHandle": "top-in" },
+    { "id": "e10", "source": "n7", "target": "n9", "targetHandle": "right-in" },
+    { "id": "e11", "source": "n8", "target": "n9", "targetHandle": "left-in" },
+    { "id": "e12", "source": "n9", "target": "n10", "sourceHandle": "bottom-out" }
+  ]
+}
+```
+
+---
+
+# 8. Fatorial — ENQUANTO (while)
 
 Calcula o fatorial de `n` com laço `enquanto`: o conector "Início do laço" recebe a entrada pelo topo e o retorno do corpo pela lateral, e a decisão logo abaixo dele controla a repetição.
 
@@ -243,7 +392,7 @@ Calcula o fatorial de `n` com laço `enquanto`: o conector "Início do laço" re
 
 ---
 
-# 5. Soma até Zero — FAÇA-ENQUANTO (do-while)
+# 9. Soma até Zero — FAÇA-ENQUANTO (do-while)
 
 Soma números fornecidos até que o valor informado seja `0` (o `0` não altera a soma).
 
@@ -296,41 +445,7 @@ do {
 
 ---
 
-# 6. Validação de Nota — SE COMPOSTA (condição composta)
-
-Valida se a nota está no intervalo `[0, 10]` usando uma condição composta com `e`.
-
-**Entradas:** `nota` (real).
-**Saída esperada:** `NOTA VÁLIDA` (se `0 <= nota <= 10`) ou `NOTA INVÁLIDA`.
-
-```json
-{
-  "nodes": [
-    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
-    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "real", "variables": "nota" } ] } },
-    { "id": "n3", "type": "input", "data": { "label": "nota" } },
-    { "id": "n4", "type": "decision", "data": { "label": "nota >= 0 e nota <= 10" } },
-    { "id": "n5", "type": "output", "data": { "label": "'NOTA VÁLIDA'" } },
-    { "id": "n6", "type": "output", "data": { "label": "'NOTA INVÁLIDA'" } },
-    { "id": "n7", "type": "connector", "data": { "label": "Fim do se" } },
-    { "id": "n8", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
-  ],
-  "edges": [
-    { "id": "e1", "source": "n1", "target": "n2" },
-    { "id": "e2", "source": "n2", "target": "n3" },
-    { "id": "e3", "source": "n3", "target": "n4" },
-    { "id": "e4", "source": "n4", "target": "n5", "sourceHandle": "yes", "label": "VERDADEIRO" },
-    { "id": "e5", "source": "n4", "target": "n6", "sourceHandle": "no", "label": "FALSO" },
-    { "id": "e6", "source": "n5", "target": "n7", "targetHandle": "right-in" },
-    { "id": "e7", "source": "n6", "target": "n7", "targetHandle": "left-in" },
-    { "id": "e8", "source": "n7", "target": "n8", "sourceHandle": "bottom-out" }
-  ]
-}
-```
-
----
-
-# 7. Média de Valores — ENQUANTO (while)
+# 10. Média de Valores — ENQUANTO (while)
 
 Lê `n` valores e calcula a média. Laço com contador `i`.
 
@@ -374,7 +489,7 @@ Lê `n` valores e calcula a média. Laço com contador `i`.
 
 ---
 
-# 8. Média de Notas com Vetor — VARIÁVEIS INDEXADAS
+# 11. Média de Notas com Vetor — VARIÁVEIS INDEXADAS
 
 Armazena as notas em um vetor `notas[5]` e calcula a média. Usa atribuição indexada `notas[i] = nota`.
 
@@ -421,7 +536,7 @@ Armazena as notas em um vetor `notas[5]` e calcula a média. Usa atribuição in
 
 ---
 
-# 9. Sub-rotina Visual — FATORIAL COM RETORNO
+# 12. Sub-rotina Visual — FATORIAL COM RETORNO
 
 Exemplo completo de sub-rotina visual. O algoritmo principal lê `n`, chama `resultado = fatorial(n)` e recebe o retorno calculado no diagrama interno `fatorial`. As variáveis `retorno` e `i` pertencem à memória local da sub-rotina e não aparecem na memória global do algoritmo principal.
 
@@ -474,121 +589,6 @@ Exemplo completo de sub-rotina visual. O algoritmo principal lê `n`, chama `res
         { "id": "re9", "source": "r6", "target": "r9", "sourceHandle": "no", "label": "FALSO" }
       ]
     }
-  ]
-}
-```
-
----
-
-# 10. Média de Duas Notas — SEQUENCIAL
-
-Lê duas notas reais, calcula a média aritmética e exibe o resultado em um fluxo linear de seis passos.
-
-**Entradas:** `notaUm` e `notaDois` (reais).
-**Saída esperada:** a média das duas notas (ex.: `notaUm=8` e `notaDois=6` → `7`).
-No teste de mesa, as leituras do único bloco de entrada aparecem como passos `3` e `3.1`; o processo permanece no passo `4`.
-
-```json
-{
-  "nodes": [
-    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
-    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "real", "variables": "notaUm, notaDois, media" } ] } },
-    { "id": "n3", "type": "input", "data": { "label": "notaUm, notaDois" } },
-    { "id": "n4", "type": "process", "data": { "label": "media = (notaUm + notaDois) / 2" } },
-    { "id": "n5", "type": "output", "data": { "label": "media" } },
-    { "id": "n6", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
-  ],
-  "edges": [
-    { "id": "e1", "source": "n1", "target": "n2" },
-    { "id": "e2", "source": "n2", "target": "n3" },
-    { "id": "e3", "source": "n3", "target": "n4" },
-    { "id": "e4", "source": "n4", "target": "n5" },
-    { "id": "e5", "source": "n5", "target": "n6" }
-  ]
-}
-```
-
----
-
-# 11. Menu de opções — ESCOLHA/CASO
-
-Lê o número de uma opção e exibe a mensagem do caso correspondente, ou `Opção inválida` pelo ramo Falso.
-
-**Entrada:** `opcao` (inteiro).
-**Saída esperada:** `opcao=2` → `Carregar jogo`; `opcao=7` → `Opção inválida`.
-
-```json
-{
-  "nodes": [
-    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
-    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "inteiro", "variables": "opcao" } ] } },
-    { "id": "n3", "type": "input", "data": { "label": "opcao" } },
-    { "id": "n4", "type": "selection", "data": { "label": "opcao", "cases": [ "1", "2", "3" ] } },
-    { "id": "n5", "type": "output", "data": { "label": "'Novo jogo'" } },
-    { "id": "n6", "type": "output", "data": { "label": "'Carregar jogo'" } },
-    { "id": "n7", "type": "output", "data": { "label": "'Sair'" } },
-    { "id": "n8", "type": "output", "data": { "label": "'Opção inválida'" } },
-    { "id": "n9", "type": "connector", "data": { "label": "Fim da escolha" } },
-    { "id": "n10", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
-  ],
-  "edges": [
-    { "id": "e1", "source": "n1", "target": "n2" },
-    { "id": "e2", "source": "n2", "target": "n3" },
-    { "id": "e3", "source": "n3", "target": "n4" },
-    { "id": "e4", "source": "n4", "target": "n5", "sourceHandle": "case-0", "label": "1" },
-    { "id": "e5", "source": "n4", "target": "n6", "sourceHandle": "case-1", "label": "2" },
-    { "id": "e6", "source": "n4", "target": "n7", "sourceHandle": "case-2", "label": "3" },
-    { "id": "e7", "source": "n4", "target": "n8", "sourceHandle": "default", "label": "FALSO" },
-    { "id": "e8", "source": "n5", "target": "n9", "targetHandle": "left-in" },
-    { "id": "e9", "source": "n6", "target": "n9", "targetHandle": "top-in" },
-    { "id": "e10", "source": "n7", "target": "n9", "targetHandle": "right-in" },
-    { "id": "e11", "source": "n8", "target": "n9", "targetHandle": "left-in" },
-    { "id": "e12", "source": "n9", "target": "n10", "sourceHandle": "bottom-out" }
-  ]
-}
-```
-
----
-
-# 12. Conceito da Nota — ESCOLHA/CASO COM CARACTERE
-
-Lê um conceito (`caractere`) e exibe a faixa da nota. Os valores dos casos são textos, então vão entre
-aspas simples (`'A'`). Sem aspas, `A` seria lido como o nome de uma variável.
-
-**Entrada:** `conceito` (caractere).
-**Saída esperada:** `conceito=B` → `Entre 7 e 9`; `conceito=Z` → `Conceito inválido`.
-
-> **Aba Código:** o gerador ainda não converte escolha/caso. No lugar do losango aparece o comentário
-> `// escolha/caso (conceito) ainda não é convertida para código`, e o código gerado termina ali. O
-> teste de mesa e a execução passo a passo funcionam normalmente.
-
-```json
-{
-  "nodes": [
-    { "id": "n1", "type": "startEnd", "data": { "label": "Início", "variant": "start" } },
-    { "id": "n2", "type": "memory", "data": { "label": "Memória", "rows": [ { "type": "caractere", "variables": "conceito" } ] } },
-    { "id": "n3", "type": "input", "data": { "label": "conceito" } },
-    { "id": "n4", "type": "selection", "data": { "label": "conceito", "cases": [ "'A'", "'B'", "'C'" ] } },
-    { "id": "n5", "type": "output", "data": { "label": "'Acima de 9'" } },
-    { "id": "n6", "type": "output", "data": { "label": "'Entre 7 e 9'" } },
-    { "id": "n7", "type": "output", "data": { "label": "'Entre 5 e 7'" } },
-    { "id": "n8", "type": "output", "data": { "label": "'Conceito inválido'" } },
-    { "id": "n9", "type": "connector", "data": { "label": "Fim da escolha" } },
-    { "id": "n10", "type": "startEnd", "data": { "label": "Fim", "variant": "end" } }
-  ],
-  "edges": [
-    { "id": "e1", "source": "n1", "target": "n2" },
-    { "id": "e2", "source": "n2", "target": "n3" },
-    { "id": "e3", "source": "n3", "target": "n4" },
-    { "id": "e4", "source": "n4", "target": "n5", "sourceHandle": "case-0", "label": "'A'" },
-    { "id": "e5", "source": "n4", "target": "n6", "sourceHandle": "case-1", "label": "'B'" },
-    { "id": "e6", "source": "n4", "target": "n7", "sourceHandle": "case-2", "label": "'C'" },
-    { "id": "e7", "source": "n4", "target": "n8", "sourceHandle": "default", "label": "FALSO" },
-    { "id": "e8", "source": "n5", "target": "n9", "targetHandle": "left-in" },
-    { "id": "e9", "source": "n6", "target": "n9", "targetHandle": "top-in" },
-    { "id": "e10", "source": "n7", "target": "n9", "targetHandle": "right-in" },
-    { "id": "e11", "source": "n8", "target": "n9", "targetHandle": "left-in" },
-    { "id": "e12", "source": "n9", "target": "n10", "sourceHandle": "bottom-out" }
   ]
 }
 ```

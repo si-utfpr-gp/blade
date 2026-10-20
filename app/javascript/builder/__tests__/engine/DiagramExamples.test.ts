@@ -56,6 +56,25 @@ describe("exemplos de diagramas", () => {
     expect(DIAGRAM_EXAMPLES.map((example) => example.title).sort()).toEqual(Object.keys(EXPECTED).sort())
   })
 
+  // The list is a path through the course: input and output first, then
+  // conditions, selection, loops, vectors and finally sub-routines.
+  it("vão do mais simples ao mais difícil", () => {
+    expect(DIAGRAM_EXAMPLES.map((example) => example.id)).toEqual([
+      "soma-dois-valores",
+      "media-de-duas-notas",
+      "par-ou-impar",
+      "validacao-de-nota",
+      "maior-de-tres",
+      "menu-de-opcoes",
+      "conceito-da-nota",
+      "fatorial",
+      "soma-ate-zero",
+      "media-de-valores",
+      "media-de-notas-com-vetor",
+      "subrotina-visual-fatorial",
+    ])
+  })
+
   it.each(DIAGRAM_EXAMPLES)("executa '$title' até o fim", (example) => {
     expect(runToEnd(engineFor(example), ["2"])).toEqual(EXPECTED[example.title])
   })
