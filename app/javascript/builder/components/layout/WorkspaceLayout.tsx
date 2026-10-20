@@ -6,7 +6,8 @@ import { InspectorProvider } from "./InspectorContext"
 
 export interface IWorkspaceLayoutProps {
   header: ReactNode
-  sidebar: ReactNode
+  // Left out by the read-only viewer, which has no blocks to offer.
+  sidebar?: ReactNode
   canvas: ReactNode
   inspector: ReactNode
   inspectorCollapsed?: boolean
@@ -68,34 +69,39 @@ export default function WorkspaceLayout({
     : "w-[40%] min-w-[240px] max-w-[900px] max-md:fixed max-md:bottom-0 max-md:inset-x-0 max-md:z-40 max-md:h-[55dvh] max-md:w-full max-md:min-w-0 max-md:max-w-none max-md:rounded-t-2xl max-md:border-t max-md:shadow-2xl"
 
   return (
-    <DrawerProvider value={drawer}>
+    // Without a sidebar there is no drawer, so the header shows no menu button.
+    <DrawerProvider value={sidebar !== undefined ? drawer : null}>
       <InspectorProvider value={inspectorControl}>
       <div className="h-full flex flex-col">
         <div className="shrink-0">{header}</div>
 
         <div className="flex flex-1 min-h-0">
-          <aside
-            id={SIDEBAR_ID}
-            aria-label="Blocos e exemplos"
-            aria-hidden={isDesktop ? undefined : !drawerVisible ? true : undefined}
-            inert={!isDesktop && !drawerVisible ? true : undefined}
-            // Fixed width: a percentage of the viewport ranged from 154px to
-            // 384px for the same app, which squeezed the dropdowns shut.
-            className={`w-64 shrink-0 border-r overflow-auto bg-card transition-transform duration-200 max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 max-md:shadow-xl md:relative md:translate-x-0 ${
-              drawerVisible ? "translate-x-0" : "-translate-x-full"
-            }`}
-          >
-            {sidebar}
-          </aside>
+          {sidebar !== undefined && (
+            <>
+            <aside
+              id={SIDEBAR_ID}
+              aria-label="Blocos e exemplos"
+              aria-hidden={isDesktop ? undefined : !drawerVisible ? true : undefined}
+              inert={!isDesktop && !drawerVisible ? true : undefined}
+              // Fixed width: a percentage of the viewport ranged from 154px to
+              // 384px for the same app, which squeezed the dropdowns shut.
+              className={`w-64 shrink-0 border-r overflow-auto bg-card transition-transform duration-200 max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 max-md:shadow-xl md:relative md:translate-x-0 ${
+                drawerVisible ? "translate-x-0" : "-translate-x-full"
+              }`}
+            >
+              {sidebar}
+            </aside>
 
-          {!isDesktop && drawerVisible && (
-            <button
-              type="button"
-              data-testid="sidebar-backdrop"
-              aria-label="Fechar menu"
-              onClick={() => setDrawerOpen(false)}
-              className="fixed inset-0 z-30 bg-foreground/20 md:hidden"
-            />
+            {!isDesktop && drawerVisible && (
+              <button
+                type="button"
+                data-testid="sidebar-backdrop"
+                aria-label="Fechar menu"
+                onClick={() => setDrawerOpen(false)}
+                className="fixed inset-0 z-30 bg-foreground/20 md:hidden"
+              />
+            )}
+            </>
           )}
 
           <div className="flex-1 min-w-0 min-h-0 relative">{canvas}</div>

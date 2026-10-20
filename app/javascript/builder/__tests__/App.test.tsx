@@ -8,6 +8,12 @@ vi.mock("../BuilderPage", () => ({
     builderPageMock(props),
 }))
 
+const viewerMock = vi.fn(() => <div data-testid="viewer-page" />)
+
+vi.mock("../SharedViewerPage", () => ({
+  default: (props: { mode: string; name: string; diagramJson: string }) => viewerMock(props),
+}))
+
 import App from "../App"
 
 function renderWithDataset(dataset: Record<string, string>) {
@@ -25,6 +31,15 @@ function renderWithDataset(dataset: Record<string, string>) {
 describe("App", () => {
   beforeEach(() => {
     builderPageMock.mockClear()
+    viewerMock.mockClear()
+  })
+
+  // /s/:token and /embed/:token render the same root in a read-only mode.
+  it("opens the read-only viewer for a shared link", () => {
+    renderWithDataset({ mode: "embed", algorithmName: "Soma", diagram: "{}" })
+
+    expect(viewerMock).toHaveBeenCalledWith({ mode: "embed", name: "Soma", diagramJson: "{}" })
+    expect(builderPageMock).not.toHaveBeenCalled()
   })
 
   it("passes the user name read from the root element", () => {

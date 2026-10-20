@@ -34,10 +34,14 @@ import { TerminalSquare } from "lucide-react"
 
 interface IConstructorCanvasProps {
   onDiagramLoaded?: () => void
+  // The read-only viewer of a public link: running is all there is to do, so
+  // saving, exporting and the undo history stay out.
+  viewer?: boolean
 }
 
 export default function ConstructorCanvas({
   onDiagramLoaded,
+  viewer = false,
 }: IConstructorCanvasProps) {
   const {
     nodes,
@@ -196,14 +200,16 @@ export default function ConstructorCanvas({
         <>
           {/* Save sits on the left edge, run on the right, so a click never
               lands on the wrong one. */}
-          <div
-            data-testid="canvas-toolbar-save"
-            // The padding follows the button: the touch target is taller on small
-            // screens, and a fixed padding would clip it.
-            className="absolute left-3 top-3 z-10 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
-          >
-            <CanvasSaveButton />
-          </div>
+          {!viewer && (
+            <div
+              data-testid="canvas-toolbar-save"
+              // The padding follows the button: the touch target is taller on small
+              // screens, and a fixed padding would clip it.
+              className="absolute left-3 top-3 z-10 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
+            >
+              <CanvasSaveButton />
+            </div>
+          )}
 
           <div
             data-testid="canvas-toolbar"
@@ -215,20 +221,24 @@ export default function ConstructorCanvas({
           {/* Bottom right, away from save on the top left, run on the top right and
               the zoom controls on the bottom left. The error notice holds the
               bottom centre, so the four corners never crowd each other. */}
-          <div
-            data-testid="canvas-toolbar-export"
-            className="absolute bottom-3 right-3 z-10 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
-          >
-            <CanvasExportButton />
-          </div>
+          {!viewer && (
+            <>
+              <div
+                data-testid="canvas-toolbar-export"
+                className="absolute bottom-3 right-3 z-10 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
+              >
+                <CanvasExportButton />
+              </div>
 
-          {/* Bottom left, right of the zoom controls that own the corner. */}
-          <div
-            data-testid="canvas-toolbar-undo"
-            className="absolute bottom-3 left-14 z-10 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
-          >
-            <CanvasHistoryControls locked={locked} />
-          </div>
+              {/* Bottom left, right of the zoom controls that own the corner. */}
+              <div
+                data-testid="canvas-toolbar-undo"
+                className="absolute bottom-3 left-14 z-10 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
+              >
+                <CanvasHistoryControls locked={locked} />
+              </div>
+            </>
+          )}
         </>
       ) : (
         // On a phone the four corner groups crowded the canvas; they share one
@@ -237,10 +247,14 @@ export default function ConstructorCanvas({
           data-testid="canvas-toolbar-mobile"
           className="absolute inset-x-2 bottom-2 z-10 flex items-center gap-1 rounded-xl border border-border bg-card/95 p-1.5 shadow-md backdrop-blur"
         >
-          <CanvasHistoryControls locked={locked} />
-          <span aria-hidden="true" className="mx-0.5 h-6 w-px bg-border" />
-          <CanvasSaveButton />
-          <CanvasExportButton />
+          {!viewer && (
+            <>
+              <CanvasHistoryControls locked={locked} />
+              <span aria-hidden="true" className="mx-0.5 h-6 w-px bg-border" />
+              <CanvasSaveButton />
+              <CanvasExportButton />
+            </>
+          )}
           {inspector && (
             <button
               type="button"
