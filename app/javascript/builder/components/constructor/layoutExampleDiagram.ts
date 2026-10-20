@@ -137,7 +137,7 @@ export function estimatedSize(node: RawNode): { width: number; height: number } 
       return { width: 48, height: 48 }
     case "selection": {
       const cases = (node.data.cases as unknown[] | undefined)?.length ?? 0
-      return { width: Math.max(160, (cases + 1) * 64), height: 130 }
+      return { width: Math.max(160, (cases + 1) * 64), height: 136 }
     }
     default:
       return { width: Math.max(160, 40 + 8.5 * label.length), height: 50 }

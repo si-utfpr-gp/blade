@@ -23,7 +23,7 @@ function renderedSize(node: PositionedExampleNode): { w: number; h: number } {
     case "memory": return { w: 330, h: 60 + 35 * ((node.data.rows as unknown[] | undefined)?.length ?? 1) }
     case "decision": return { w: 140, h: 100 }
     case "connector": return { w: 48, h: 48 }
-    case "selection": return { w: Math.max(160, (((node.data.cases as unknown[]) ?? []).length + 1) * 64), h: 130 }
+    case "selection": return { w: Math.max(160, (((node.data.cases as unknown[]) ?? []).length + 1) * 64), h: 136 }
     default: return { w: Math.max(160, 40 + 8.5 * label.length), h: 50 }
   }
 }
