@@ -3,7 +3,6 @@ import type { AlgorithmNode } from "./ConstructorProvider"
 import {
   getBlockCapabilities,
   SELECTION_DEFAULT_HANDLE,
-  selectionCaseIndex,
 } from "../blocks/blockCapabilities"
 import { getConnectorRole } from "./nodes/connectorRole"
 
@@ -36,9 +35,9 @@ export function branchLabel(
   sourceHandle?: string | null,
 ): string | undefined {
   if (source?.data.blockType === "selection") {
-    if (sourceHandle === SELECTION_DEFAULT_HANDLE) return "FALSO"
-    const index = selectionCaseIndex(sourceHandle)
-    return index === null ? undefined : source.data.cases?.[index]
+    // A case's value is drawn at its exit on the block, so its arrow carries
+    // no label; the Falso exit keeps one, like the decision's.
+    return sourceHandle === SELECTION_DEFAULT_HANDLE ? "FALSO" : undefined
   }
   return decisionBranchLabel(sourceHandle)
 }

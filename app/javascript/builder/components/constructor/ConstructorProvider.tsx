@@ -407,8 +407,8 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
         ),
       )
 
-      // An arrow keeps following its case when cases move, takes the case's
-      // new value as its label, and goes away with a removed case.
+      // An arrow keeps following its case when cases move and goes away with
+      // a removed case. It carries no label: the value shows on the block.
       setEdges((currentEdges) =>
         currentEdges.flatMap((edge) => {
           if (edge.source !== id) return [edge]
@@ -420,7 +420,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
             {
               ...edge,
               sourceHandle: selectionCaseHandle(next),
-              label: cases[next],
+              label: undefined,
             },
           ]
         }),
@@ -504,13 +504,21 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
           },
         }))
 
+      // Diagrams saved before case arrows lost their label still carry it.
+      const selections = new Set(
+        nextNodes.filter((node) => node.data.blockType === "selection").map((node) => node.id),
+      )
+      const keepsLabel = (edge: CanvasEdgeInput) =>
+        edge.label !== undefined &&
+        !(selections.has(edge.source) && selectionCaseIndex(edge.sourceHandle) !== null)
+
       const nextEdges: Edge[] = inputEdges.map((edge) => ({
         id: edge.id,
         source: edge.source,
         target: edge.target,
         ...(edge.sourceHandle !== undefined ? { sourceHandle: edge.sourceHandle } : {}),
         ...(edge.targetHandle !== undefined ? { targetHandle: edge.targetHandle } : {}),
-        ...(edge.label !== undefined ? { label: edge.label } : {}),
+        ...(keepsLabel(edge) ? { label: edge.label } : {}),
         type: "step",
         markerEnd: { type: MarkerType.ArrowClosed },
       }))

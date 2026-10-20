@@ -60,13 +60,14 @@ const branch = (id: string, source: string, target: string, sourceHandle: "yes" 
   ...(targetHandle ? { targetHandle } : {}),
 })
 
-// An arrow leaving a selection: it carries the case value as its label.
-const caseEdge = (id: string, source: string, target: string, sourceHandle: string, label: string, targetHandle?: string): DiagramEdge => ({
+// An arrow leaving a selection. A case's arrow carries no label, since the
+// value is drawn at its exit on the block; the Falso one reads FALSO.
+const caseEdge = (id: string, source: string, target: string, sourceHandle: string, targetHandle?: string): DiagramEdge => ({
   id,
   source,
   target,
   sourceHandle,
-  label,
+  ...(sourceHandle === "default" ? { label: "FALSO" } : {}),
   ...(targetHandle ? { targetHandle } : {}),
 })
 
@@ -230,10 +231,10 @@ export const DIAGRAM_EXAMPLES: IDiagramExample[] = [
         edge("e1", "n1", "n2"),
         edge("e2", "n2", "n3"),
         edge("e3", "n3", "n4"),
-        caseEdge("e4", "n4", "n5", "case-0", "1"),
-        caseEdge("e5", "n4", "n6", "case-1", "2"),
-        caseEdge("e6", "n4", "n7", "case-2", "3"),
-        caseEdge("e7", "n4", "n8", "default", "FALSO"),
+        caseEdge("e4", "n4", "n5", "case-0"),
+        caseEdge("e5", "n4", "n6", "case-1"),
+        caseEdge("e6", "n4", "n7", "case-2"),
+        caseEdge("e7", "n4", "n8", "default"),
         edge("e8", "n5", "n9", "left-in"),
         edge("e9", "n6", "n9", "top-in"),
         edge("e10", "n7", "n9", "right-in"),
@@ -264,10 +265,10 @@ export const DIAGRAM_EXAMPLES: IDiagramExample[] = [
         edge("e1", "n1", "n2"),
         edge("e2", "n2", "n3"),
         edge("e3", "n3", "n4"),
-        caseEdge("e4", "n4", "n5", "case-0", "'A'"),
-        caseEdge("e5", "n4", "n6", "case-1", "'B'"),
-        caseEdge("e6", "n4", "n7", "case-2", "'C'"),
-        caseEdge("e7", "n4", "n8", "default", "FALSO"),
+        caseEdge("e4", "n4", "n5", "case-0"),
+        caseEdge("e5", "n4", "n6", "case-1"),
+        caseEdge("e6", "n4", "n7", "case-2"),
+        caseEdge("e7", "n4", "n8", "default"),
         edge("e8", "n5", "n9", "left-in"),
         edge("e9", "n6", "n9", "top-in"),
         edge("e10", "n7", "n9", "right-in"),

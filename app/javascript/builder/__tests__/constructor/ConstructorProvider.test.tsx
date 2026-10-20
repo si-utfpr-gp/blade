@@ -233,7 +233,7 @@ describe("ConstructorProvider estado sujo", () => {
 })
 
 function SelectionProbe() {
-  const { nodes, edges, addNode, onConnect, updateSelectionCases } =
+  const { nodes, edges, addNode, onConnect, updateSelectionCases, loadCanvasNodes } =
     useConstructor()
   const selection = nodes.find((node) => node.data.blockType === "selection")
   const outputs = nodes.filter((node) => node.data.blockType === "output")
@@ -266,6 +266,24 @@ function SelectionProbe() {
       >
         remove-first-and-edit
       </button>
+      <button
+        type="button"
+        onClick={() =>
+          loadCanvasNodes(
+            [
+              { id: "s", type: "selection", position: { x: 0, y: 0 }, data: { label: "x", cases: ["1"] } },
+              { id: "a", type: "output", position: { x: 0, y: 0 }, data: { label: "'a'" } },
+              { id: "f", type: "output", position: { x: 0, y: 0 }, data: { label: "'f'" } },
+            ],
+            [
+              { id: "e1", source: "s", target: "a", sourceHandle: "case-0", label: "1" },
+              { id: "e2", source: "s", target: "f", sourceHandle: "default", label: "FALSO" },
+            ],
+          )
+        }
+      >
+        load-labelled
+      </button>
       <span data-testid="cases">{selection?.data.cases?.join(",")}</span>
       <span data-testid="label">{selection?.data.label}</span>
       <span data-testid="edges">
@@ -294,18 +312,27 @@ describe("ConstructorProvider escolha", () => {
     expect(screen.getByTestId("cases")).toHaveTextContent("1,2")
   })
 
-  it("rotula as setas pelo valor do caso e as acompanha quando os casos mudam", () => {
+  // The value shows once, at the case's exit on the block; repeating it on the
+  // arrow was noise.
+  it("não repete o valor do caso na seta e a acompanha quando os casos mudam", () => {
     renderSelection()
     fireEvent.click(screen.getByText("add-selection"))
     fireEvent.click(screen.getByText("add-output"))
     fireEvent.click(screen.getByText("add-output"))
     fireEvent.click(screen.getByText("connect-cases"))
 
-    expect(screen.getByTestId("edges")).toHaveTextContent("case-0:1,case-1:2")
+    expect(screen.getByTestId("edges")).toHaveTextContent("case-0:undefined,case-1:undefined")
 
     fireEvent.click(screen.getByText("remove-first-and-edit"))
 
     expect(screen.getByTestId("cases")).toHaveTextContent("20")
-    expect(screen.getByTestId("edges")).toHaveTextContent(/^case-0:20$/)
+    expect(screen.getByTestId("edges")).toHaveTextContent(/^case-0:undefined$/)
+  })
+
+  it("abre diagramas antigos sem o valor do caso na seta, mantendo o FALSO", () => {
+    renderSelection()
+    fireEvent.click(screen.getByText("load-labelled"))
+
+    expect(screen.getByTestId("edges")).toHaveTextContent("case-0:undefined,default:FALSO")
   })
 })

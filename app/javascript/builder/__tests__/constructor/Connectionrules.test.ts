@@ -320,13 +320,14 @@ describe("branchLabel", () => {
     expect(branchLabel(node("d", "decision"), "no")).toBe("FALSO")
   })
 
-  it("rotula a saída de um caso com o valor dele", () => {
+  // The case value is drawn at the exit on the block, so the arrow carries no
+  // label; only the Falso exit keeps one, like the decision.
+  it("deixa a seta de um caso sem rótulo e mantém FALSO no padrão", () => {
     const selection = node("s", "selection", { cases: ["1", "'a'"] })
 
-    expect(branchLabel(selection, "case-0")).toBe("1")
-    expect(branchLabel(selection, "case-1")).toBe("'a'")
+    expect(branchLabel(selection, "case-0")).toBeUndefined()
+    expect(branchLabel(selection, "case-1")).toBeUndefined()
     expect(branchLabel(selection, "default")).toBe("FALSO")
-    expect(branchLabel(selection, "case-5")).toBeUndefined()
   })
 })
 
