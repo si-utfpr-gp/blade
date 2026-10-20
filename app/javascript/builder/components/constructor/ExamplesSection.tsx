@@ -16,6 +16,7 @@ import { ConfirmDialog } from "../ui/ConfirmDialog"
 import { CanvasImportButton } from "./CanvasImportButton"
 import { useDiagramOrigin } from "./DiagramOrigin"
 import { useOpenSavedAlgorithm } from "./useOpenSavedAlgorithm"
+import { useDrawer } from "../layout/DrawerContext"
 
 const CATEGORY_COLOR: Record<string, string> = {
   "Entrada e saída": "var(--node-input)",
@@ -209,6 +210,9 @@ export function ExamplesSection() {
   } = useLocalAlgorithms()
   const { onAlgorithmNameChange } = useAlgorithmNameField()
   const { origin, markExample, markLocal } = useDiagramOrigin()
+  // On a phone the lists live in a drawer over the canvas; opening something
+  // closes it so the student sees what was opened.
+  const drawer = useDrawer()
   const { notify } = useToast()
   // Each list marks the diagram on the canvas, read from where it came from,
   // so anything else taking the canvas (an import, a new algorithm, a clear)
@@ -231,10 +235,12 @@ export function ExamplesSection() {
     reset()
     onAlgorithmNameChange(example.title)
     markExample(example.id)
+    drawer?.close()
   }
 
   const handleSelectUserAlgorithm = (id: string) => {
     void openSaved(Number(id))
+    drawer?.close()
   }
 
   const handleSelectLocalAlgorithm = (id: string) => {
@@ -244,6 +250,7 @@ export function ExamplesSection() {
     reset()
     onAlgorithmNameChange(stored.name)
     markLocal(stored.id)
+    drawer?.close()
   }
 
   // Deleting asks first and says which of the two stores is involved, since
