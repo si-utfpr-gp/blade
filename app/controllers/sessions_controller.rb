@@ -2,6 +2,11 @@ class SessionsController < ApplicationController
   # The callback and the login page must stay reachable without a session.
   skip_before_action :verify_authenticity_token, only: :create
 
+  # The callback creates sessions and users, so repeated hits from one address
+  # are cut off; a student signs in once.
+  rate_limit to: 10, within: 1.minute, only: :create, store: RATE_LIMIT_STORE,
+             with: -> { redirect_to login_path, alert: "Muitas tentativas de entrar. Espere um minuto e tente de novo." }
+
   # The login page: sign in as a student or open the builder as a guest. It is
   # shown signed in too, offering to continue rather than bouncing the visitor.
   def new

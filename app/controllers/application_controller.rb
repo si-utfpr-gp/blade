@@ -2,6 +2,12 @@ class ApplicationController < ActionController::Base
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.
   allow_browser versions: :modern
 
+  # Where rate limits count requests. The test environment turns Rails.cache
+  # off (null store), which would switch every limit off with it, so tests get
+  # a store of their own, cleared before each test.
+  RATE_LIMIT_STORE = Rails.env.test? ? ActiveSupport::Cache::MemoryStore.new : Rails.cache
+  TOO_MANY_REQUESTS = "muitas requisições, espere um minuto e tente de novo".freeze
+
   private
 
   # Authentication seam. It resolves to a development user so the builder works

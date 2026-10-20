@@ -1,6 +1,16 @@
 class AlgorithmsController < ApplicationController
   before_action :authenticate_user!
 
+  # A student saves a handful of times a minute; a script flooding the
+  # database with algorithms is stopped well before it matters. Counted per
+  # student, so classmates behind the same campus IP do not share a limit.
+  rate_limit to: 30, within: 1.minute, only: %i[create update destroy], name: "writes",
+             by: -> { current_user&.id || request.remote_ip }, store: RATE_LIMIT_STORE,
+             with: -> { render json: { error: TOO_MANY_REQUESTS }, status: :too_many_requests }
+  rate_limit to: 120, within: 1.minute, only: %i[index show], name: "reads",
+             by: -> { current_user&.id || request.remote_ip }, store: RATE_LIMIT_STORE,
+             with: -> { render json: { error: TOO_MANY_REQUESTS }, status: :too_many_requests }
+
   def index
     render json: current_user.algorithms.newest_first
   end
