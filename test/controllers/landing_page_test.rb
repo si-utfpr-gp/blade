@@ -63,6 +63,15 @@ class LandingPageTest < ActionController::TestCase
     assert_select "footer a[href=?]", "mailto:marczal@utfpr.edu.br"
   end
 
+  # The header stays at the top while the page scrolls, so the routes are
+  # always one tap away. An overflow-hidden ancestor would turn sticky off.
+  test "keeps the header at the top while scrolling" do
+    get :show
+
+    assert_select "div.sticky.top-0 > header"
+    assert_select ".landing.overflow-hidden", false
+  end
+
   # On a phone the section links do not fit the header, so they move into a
   # menu behind a hamburger button, together with the sign in.
   test "offers the site routes in a mobile menu" do
