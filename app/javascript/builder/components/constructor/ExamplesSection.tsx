@@ -208,11 +208,14 @@ export function ExamplesSection() {
     deleteAlgorithm: deleteLocalAlgorithm,
   } = useLocalAlgorithms()
   const { onAlgorithmNameChange } = useAlgorithmNameField()
-  const { markExample, markLocal } = useDiagramOrigin()
+  const { origin, markExample, markLocal } = useDiagramOrigin()
   const { notify } = useToast()
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
-  const [selectedLocalId, setSelectedLocalId] = useState<string | null>(null)
+  // Each list marks the diagram on the canvas, read from where it came from,
+  // so anything else taking the canvas (an import, a new algorithm, a clear)
+  // unmarks it without each of those having to remember the lists.
+  const selectedId = origin.kind === "example" ? origin.id : null
+  const selectedUserId = origin.kind === "saved" ? origin.id.toString() : null
+  const selectedLocalId = origin.kind === "local" ? origin.id : null
   const [pendingDelete, setPendingDelete] = useState<{
     name: string
     run: () => void
@@ -228,12 +231,10 @@ export function ExamplesSection() {
     reset()
     onAlgorithmNameChange(example.title)
     markExample(example.id)
-    setSelectedId(example.id)
   }
 
-  const handleSelectUserAlgorithm = async (id: string) => {
-    const saved = await openSaved(Number(id))
-    if (saved) setSelectedUserId(saved.id.toString())
+  const handleSelectUserAlgorithm = (id: string) => {
+    void openSaved(Number(id))
   }
 
   const handleSelectLocalAlgorithm = (id: string) => {
@@ -243,7 +244,6 @@ export function ExamplesSection() {
     reset()
     onAlgorithmNameChange(stored.name)
     markLocal(stored.id)
-    setSelectedLocalId(stored.id)
   }
 
   // Deleting asks first and says which of the two stores is involved, since
@@ -262,7 +262,6 @@ export function ExamplesSection() {
           : "Não foi possível excluir o algoritmo.",
         removed ? "success" : "error",
       )
-      if (removed) setSelectedUserId(null)
     })
   }
 
@@ -270,9 +269,7 @@ export function ExamplesSection() {
     const algorithm = localAlgorithms.find((item) => item.id === id)
     if (!algorithm) return
     confirmDelete(algorithm.name, () => {
-      const removed = deleteLocalAlgorithm(id)
-      if (!removed) return
-      setSelectedLocalId(null)
+      deleteLocalAlgorithm(id)
     })
   }
 
@@ -306,7 +303,7 @@ export function ExamplesSection() {
           }))}
           selectedId={selectedUserId}
           emptyText="Nenhum algoritmo salvo ainda."
-          onSelect={(id) => void handleSelectUserAlgorithm(id)}
+          onSelect={handleSelectUserAlgorithm}
           onDelete={handleDeleteSaved}
         />
       )}

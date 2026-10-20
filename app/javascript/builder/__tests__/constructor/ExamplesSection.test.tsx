@@ -10,14 +10,16 @@ import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvi
 import { LocalAlgorithmsProvider } from "../../components/constructor/LocalAlgorithmsProvider"
 import { ToastProvider } from "../../components/ui/Toast"
 import { AlgorithmNameProvider } from "../../components/constructor/AlgorithmNameProvider"
-import { DiagramOriginProvider } from "../../components/constructor/DiagramOrigin"
+import { DiagramOriginProvider, useDiagramOrigin } from "../../components/constructor/DiagramOrigin"
 import { DIAGRAM_EXAMPLES } from "../../interfaces/diagramExamples"
 
 function Probe() {
   const { nodes } = useConstructor()
   const { state } = useSimulator()
+  const { markBlank } = useDiagramOrigin()
   return (
     <div>
+      <button type="button" onClick={markBlank}>outro diagrama</button>
       <span data-testid="canvas-nodes">{nodes.length}</span>
       <span data-testid="sim-steps">{state.steps.length}</span>
     </div>
@@ -107,6 +109,20 @@ describe("ExamplesSection", () => {
     expect(
       screen.getByRole("button", { name: /^Exemplos:/ }),
     ).toHaveAttribute("aria-label", expect.stringContaining("Soma de dois valores"))
+  })
+
+  // An import, a new algorithm or a cleared canvas replace the example, so
+  // the list must stop pointing at it.
+  it("desmarca o exemplo quando outro diagrama toma o canvas", () => {
+    renderSection()
+    openExamplesDropdown()
+    fireEvent.click(screen.getByRole("button", { name: /soma de dois valores/i }))
+
+    fireEvent.click(screen.getByRole("button", { name: "outro diagrama" }))
+
+    expect(
+      screen.getByRole("button", { name: /^Exemplos:/ }),
+    ).toHaveAttribute("aria-label", "Exemplos: nenhum selecionado")
   })
 
   it("mostra o dropdown Meus algoritmos vazio acima do de Exemplos", () => {
