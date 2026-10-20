@@ -1,13 +1,5 @@
 <% content_for :title, "Blade · Algoritmos em blocos" %>
 <%
-  # The block palette in the order the builder lists it. The landing uses the
-  # canvas tokens so the colours a student meets here are the ones they draw with.
-  palette = [
-    ["Início", "--node-start"], ["Memória", "--node-memory"], ["Entrada", "--node-input"],
-    ["Processo", "--node-process"], ["Decisão", "--node-decision"], ["Escolha", "--node-selection"],
-    ["Saída", "--node-output"], ["Sub-rotina", "--node-subroutine"], ["Conector", "--node-connector"],
-    ["Fim", "--node-end"]
-  ]
   first_name = @user&.name.to_s.split.first
   arrow = '<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.64l-3.97-3.97a.75.75 0 111.06-1.06l5.25 5.25a.75.75 0 010 1.06l-5.25 5.25a.75.75 0 11-1.06-1.06l3.97-3.97H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>'.html_safe
 %>
@@ -27,6 +19,7 @@
         <a href="#recursos" class="rounded-lg px-3 py-1.5 hover:bg-slate-100">Recursos</a>
         <a href="#acessos" class="rounded-lg px-3 py-1.5 hover:bg-slate-100">Acessos</a>
         <a href="#perguntas" class="rounded-lg px-3 py-1.5 hover:bg-slate-100">Perguntas</a>
+        <a href="/about" class="rounded-lg px-3 py-1.5 hover:bg-slate-100">Sobre</a>
       </nav>
     </div>
 
@@ -234,19 +227,5 @@
     </div>
   </section>
 
-  <%# ------------------------------------------------------------- footer %>
-  <footer class="border-t border-slate-200 bg-slate-50">
-    <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <div class="flex flex-wrap items-center justify-center gap-2" aria-label="Cores dos blocos">
-        <% palette.each do |name, token| %>
-          <span class="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200">
-            <span class="h-2 w-2 rounded-full" style="background: hsl(var(<%= token %>))"></span><%= name %>
-          </span>
-        <% end %>
-      </div>
-      <p class="mt-8 text-center text-xs text-slate-500">
-        Blade · ferramenta de uso acadêmico. Ao entrar você concorda com o uso acadêmico da ferramenta.
-      </p>
-    </div>
-  </footer>
+  <%= render "shared/site_footer" %>
 </div>

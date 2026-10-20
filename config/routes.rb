@@ -16,6 +16,7 @@ Rails.application.routes.draw do
   # what saves work.
   root "landing#show"
   get "/login", to: "sessions#new", as: :login
+  get "/about", to: "about#show", as: :about
   get "/builder", to: "builder#index", as: :builder_index
   # The OmniAuth request phase has to be a POST with a CSRF token; OmniAuth 2
   # rejects GET on /auth/:provider (CVE-2015-9284).

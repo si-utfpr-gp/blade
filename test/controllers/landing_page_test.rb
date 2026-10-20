@@ -47,6 +47,22 @@ class LandingPageTest < ActionController::TestCase
     assert_select "a[href=?]", "/login", false
   end
 
+  test "links to the about page from the navigation and the footer" do
+    get :show
+
+    assert_select "header a[href=?]", "/about"
+    assert_select "footer a[href=?]", "/about"
+  end
+
+  # The footer carries the short version of the credits on every public page.
+  test "the footer credits the course, the repository and the contact" do
+    get :show
+
+    assert_select "footer", /UTFPR/
+    assert_select "footer a[href=?]", "https://github.com/si-utfpr-gp/blade"
+    assert_select "footer a[href=?]", "mailto:marczal@utfpr.edu.br"
+  end
+
   # Real screenshots of the builder, so the landing shows the product as it is.
   test "shows real screenshots of the builder, the desk check and the code" do
     get :show
