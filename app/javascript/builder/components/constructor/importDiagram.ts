@@ -22,7 +22,9 @@ export interface ImportedDiagram {
 }
 
 export type ImportResult =
-  | { ok: true; diagram: ImportedDiagram }
+  // `positioned` is false when any block came without a position: the file
+  // describes the diagram but not its drawing, and the canvas lays it out.
+  | { ok: true; diagram: ImportedDiagram; positioned: boolean }
   | { ok: false; reason: string }
 
 /**
@@ -53,7 +55,10 @@ export function parseImportedDiagram(input: unknown): ImportResult {
     toImportedEdge(edge, ids),
   )
 
-  return { ok: true, diagram: { nodes: keptNodes, edges: keptEdges } }
+  const positioned = nodes.every(
+    (node) => node === null || typeof node !== "object" || hasPosition((node as { position?: unknown }).position),
+  )
+  return { ok: true, diagram: { nodes: keptNodes, edges: keptEdges }, positioned }
 }
 
 /**
@@ -104,6 +109,12 @@ function toImportedNode(input: unknown): ImportedNode[] {
       data: toData(candidate.data),
     },
   ]
+}
+
+function hasPosition(input: unknown): boolean {
+  if (input === null || typeof input !== "object") return false
+  const { x, y } = input as { x?: unknown; y?: unknown }
+  return typeof x === "number" && Number.isFinite(x) && typeof y === "number" && Number.isFinite(y)
 }
 
 function toPosition(input: unknown): { x: number; y: number } {

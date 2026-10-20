@@ -39,6 +39,7 @@ function Probe() {
       <span data-testid="count">{nodes.length}</span>
       <span data-testid="labels">{nodes.map((n) => String(n.data.label)).join("|")}</span>
       <span data-testid="name">{algorithmName}</span>
+      <span data-testid="tops">{JSON.stringify(nodes.map((n) => n.position.y))}</span>
       <button type="button" onClick={() => addNode("process", { x: 0, y: 0 })}>
         sujar
       </button>
@@ -190,17 +191,37 @@ describe("CanvasImportButton", () => {
     )
   })
 
-  it("não mistura o nome atual com o conteúdo importado", async () => {
+  // The import starts a new algorithm, so it is named after its file rather
+  // than keeping the name of whatever was on the canvas before.
+  it("dá ao algoritmo o nome do arquivo", async () => {
     const { container } = renderImport()
-    // The name field keeps whatever the student typed: the file carries no
-    // name, and silently renaming would point the next save at the wrong
-    // algorithm.
-    pickFile(container, jsonFile(JSON.stringify(exported)))
+    pickFile(container, jsonFile(JSON.stringify(exported), "soma-ate-zero.json"))
 
     await waitFor(() =>
-      expect(screen.getByTestId("count").textContent).toBe("2"),
+      expect(screen.getByTestId("name").textContent).toBe("soma-ate-zero"),
     )
-    expect(screen.getByTestId("name").textContent).toBe("")
+  })
+
+  it("desenha o diagrama quando o arquivo não traz posições", async () => {
+    const { container } = renderImport()
+    const unplaced = {
+      nodes: [
+        { id: "n1", type: "startEnd", data: { label: "Início", variant: "start" } },
+        { id: "n2", type: "process", data: { label: "x = 1" } },
+        { id: "n3", type: "startEnd", data: { label: "Fim", variant: "end" } },
+      ],
+      edges: [
+        { id: "e1", source: "n1", target: "n2" },
+        { id: "e2", source: "n2", target: "n3" },
+      ],
+    }
+    pickFile(container, jsonFile(JSON.stringify(unplaced)))
+
+    await waitFor(() =>
+      expect(screen.getByTestId("count").textContent).toBe("3"),
+    )
+    const tops = JSON.parse(screen.getByTestId("tops").textContent ?? "[]") as number[]
+    expect(new Set(tops).size).toBe(3)
   })
 
   it("marca a origem como nova, para o salvamento criar em vez de atualizar", async () => {

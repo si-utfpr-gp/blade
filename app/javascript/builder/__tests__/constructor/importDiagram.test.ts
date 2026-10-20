@@ -101,6 +101,23 @@ describe("parseImportedDiagram", () => {
     expect(result.diagram.nodes[0].position).toEqual({ x: 0, y: 0 })
   })
 
+  // The diagrams in docs/diagramas-json.md carry no geometry; the canvas lays
+  // those out instead of piling every block on the origin.
+  it("informa que o arquivo não traz o desenho quando falta alguma posição", () => {
+    const result = parseImportedDiagram({
+      nodes: [node(), node({ id: "n2", position: undefined })],
+      edges: [],
+    })
+
+    expect(result.ok && result.positioned).toBe(false)
+  })
+
+  it("informa que o arquivo traz o desenho quando todo bloco tem posição", () => {
+    const result = parseImportedDiagram({ nodes: [node()], edges: [] })
+
+    expect(result.ok && result.positioned).toBe(true)
+  })
+
   it("garante o rótulo mesmo quando o arquivo não traz", () => {
     const result = parseImportedDiagram({
       nodes: [node({ data: {} })],
