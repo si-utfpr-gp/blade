@@ -16,7 +16,26 @@ function renderTrace() {
   )
 }
 
+// The row the desk check shows while the input dialog waits for a value.
+const waitingStep = {
+  nodeId: "n4",
+  nodeLabel: "num",
+  nodeType: "input",
+  variables: [{ name: "num", value: null as unknown as string, type: "inteiro", scope: "global" }],
+  log: "Solicitando num.",
+  explanation: "Aguardando valor para 'num'.",
+  changes: [],
+  nextHint: "Informe o valor.",
+  waitingForInput: true,
+  inputEntered: false,
+  inputVariable: "num",
+}
+
 describe("traceCellDisplay", () => {
+  it("marks the variable an input is waiting for", () => {
+    expect(traceCellDisplay(waitingStep, "num")).toBe("?")
+  })
+
   it("hides variable values when the step does not change them", () => {
     const value = traceCellDisplay({
       nodeId: "r4",
@@ -152,17 +171,23 @@ describe("traceInstruction", () => {
     })).toBe("Processo (soma += num)")
   })
 
-  it("uses the generic input label because its value is shown in the table", () => {
+  // The row names the variable it reads, so a block reading several
+  // variables shows which one each row is about.
+  it("names the variable an input row reads", () => {
     expect(traceInstruction({
       nodeId: "n4",
-      nodeLabel: "num",
+      nodeLabel: "num1, num2",
       nodeType: "input",
       variables: [],
-      log: "Lendo num.",
+      log: "Lendo num2.",
       explanation: "",
       changes: [],
       nextHint: "",
-    })).toBe("Entrada")
+    })).toBe("Entrada (num2)")
+  })
+
+  it("names the variable an input row is still waiting for", () => {
+    expect(traceInstruction(waitingStep)).toBe("Entrada (num)")
   })
 })
 

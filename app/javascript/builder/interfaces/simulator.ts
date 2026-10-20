@@ -31,7 +31,8 @@ export type ISimulatorAction =
   | { type: "SET_STEPS"; steps: IExecutionStep[] }
   | { type: "SYNC_EXECUTION"; steps: IExecutionStep[]; currentStepIndex: number; outputs: string[]; isFinished: boolean }
   | { type: "FINISH" }
-  | { type: "INPUT_REQUESTED"; prompt: string; variable: string; inputType: string }
+  // `step` is the row the desk check shows while the value is asked for.
+  | { type: "INPUT_REQUESTED"; prompt: string; variable: string; inputType: string; step?: IExecutionStep }
   | { type: "SUBMIT_INPUT" }
   | { type: "GO_TO_STEP"; index: number }
 
@@ -105,10 +106,24 @@ export function simulatorReducer(state: ISimulatorState, action: ISimulatorActio
       }
     case "FINISH":
       return { ...state, isFinished: true, isRunning: false }
-    case "INPUT_REQUESTED":
-      return { ...state, awaitingInput: true, inputPrompt: action.prompt, inputVariable: action.variable, inputType: action.inputType }
-    case "SUBMIT_INPUT":
-      return { ...state, awaitingInput: false, inputPrompt: "", inputVariable: "", inputType: "" }
+    case "INPUT_REQUESTED": {
+      const asked = { ...state, awaitingInput: true, inputPrompt: action.prompt, inputVariable: action.variable, inputType: action.inputType }
+      if (!action.step) return asked
+      // The waiting row follows the step being shown; anything after it was a
+      // future the new value is about to replace.
+      const steps = [...state.steps.slice(0, state.currentStepIndex + 1), action.step]
+      return { ...asked, steps, currentStepIndex: steps.length - 1 }
+    }
+    case "SUBMIT_INPUT": {
+      // The waiting row is a placeholder: the engine's own step replaces it.
+      const steps = state.steps.filter((step) => !isWaitingForInput(step))
+      return {
+        ...state,
+        steps,
+        currentStepIndex: Math.max(0, Math.min(state.currentStepIndex, steps.length - 1)),
+        awaitingInput: false, inputPrompt: "", inputVariable: "", inputType: "",
+      }
+    }
     case "GO_TO_STEP": {
       if (action.index < 0 || action.index >= state.steps.length) return state
       return { ...state, currentStepIndex: action.index }
@@ -116,4 +131,9 @@ export function simulatorReducer(state: ISimulatorState, action: ISimulatorActio
     default:
       return state
   }
+}
+
+/** The desk check row of an input still waiting for its value. */
+export function isWaitingForInput(step: IExecutionStep): boolean {
+  return step.waitingForInput === true && step.inputEntered === false
 }

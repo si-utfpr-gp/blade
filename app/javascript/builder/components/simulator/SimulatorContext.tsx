@@ -8,6 +8,7 @@ import {
   useRef,
   type ReactNode,
 } from "react"
+import type { IExecutionStep } from "../../interfaces/execution"
 import type {
   ISimulatorState,
   ISimulatorCallbacks,
@@ -58,6 +59,24 @@ interface ISimulatorContextValue {
 }
 
 const SimulatorContext = createContext<ISimulatorContextValue | null>(null)
+
+/**
+ * The desk check row for an input waiting for `variable`. A block reading
+ * several variables reports the one it just stored, so the row is rebuilt for
+ * the variable being asked for.
+ */
+function waitingRow(step: IExecutionStep, variable: string): IExecutionStep {
+  return {
+    ...step,
+    log: `Solicitando ${variable}.`,
+    explanation: `Aguardando valor para '${variable}'.`,
+    changes: [],
+    nextHint: "Informe o valor.",
+    waitingForInput: true,
+    inputEntered: false,
+    inputVariable: variable,
+  }
+}
 
 export function SimulatorProvider({
   children,
@@ -151,11 +170,13 @@ export function SimulatorProvider({
 
         if (step.waitingForInput) {
           if (step.inputEntered) syncFromEngine()
+          const variable = step.inputVariable ?? step.nodeLabel
           dispatch({
             type: "INPUT_REQUESTED",
             prompt: step.inputPrompt ?? `Valor para '${step.nodeLabel}':`,
-            variable: step.inputVariable ?? step.nodeLabel,
+            variable,
             inputType: step.inputType ?? "caractere",
+            step: waitingRow(step, variable),
           })
         } else {
           syncFromEngine()
@@ -211,9 +232,12 @@ export function SimulatorProvider({
 
   const cancelInput = useCallback(() => {
     dispatch({ type: "SUBMIT_INPUT" })
+    // Asking for a value may have hidden steps ahead in the history; the
+    // engine still has them.
+    syncFromEngine()
     dispatch({ type: "STOP" })
     callbacks?.onInputCancel?.()
-  }, [callbacks])
+  }, [callbacks, syncFromEngine])
 
   const stepBack = useCallback(() => {
     if (state.currentStepIndex <= 0) return

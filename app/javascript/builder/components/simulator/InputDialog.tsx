@@ -9,21 +9,36 @@ const TYPE_HINTS: Record<string, string> = {
   logico: "verdadeiro ou falso",
 }
 
+// How long the input block stays highlighted, with its row in the desk check,
+// before the dialog covers the screen to ask for the value.
+export const INPUT_DIALOG_DELAY_MS = 600
+
 export default function InputDialog() {
   const { state, submitInput, cancelInput } = useSimulator()
   const { awaitingInput, inputPrompt, inputType } = state
   const [value, setValue] = useState("")
   const [error, setError] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
+  // Each request has its own row in the desk check, so the row count tells
+  // requests apart even when a loop asks the same question again.
+  const request = awaitingInput ? `${state.steps.length}:${inputPrompt}` : null
+  const [shownRequest, setShownRequest] = useState<string | null>(null)
+  const visible = request !== null && shownRequest === request
 
   useEffect(() => {
-    if (awaitingInput) {
+    if (request === null) return
+    const t = setTimeout(() => setShownRequest(request), INPUT_DIALOG_DELAY_MS)
+    return () => clearTimeout(t)
+  }, [request])
+
+  useEffect(() => {
+    if (visible) {
       const t = setTimeout(() => inputRef.current?.focus(), 100)
       return () => clearTimeout(t)
     }
-  }, [awaitingInput])
+  }, [visible])
 
-  if (!awaitingInput) return null
+  if (!visible) return null
 
   const typeHint = TYPE_HINTS[inputType] ?? `Tipo: ${inputType}`
 

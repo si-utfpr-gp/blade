@@ -11,6 +11,7 @@ import { useSimulator } from "./SimulatorContext";
 import { nodeTypeLabel } from "./labels";
 import { displayStepNumber, mainStepCount } from "./tracePresentation";
 import type { IExecutionStep, IVariable } from "../../interfaces";
+import { isWaitingForInput } from "../../interfaces/simulator";
 
 function getAllVarNames(steps: IExecutionStep[], upTo: number): string[] {
   const names = new Set<string>();
@@ -38,6 +39,7 @@ function formatValue(v: IVariable | undefined): string {
 }
 
 export function traceCellDisplay(step: IExecutionStep, varName: string): string | null {
+  if (isWaitingForInput(step) && step.inputVariable === varName) return "?";
   if (!wasChanged(step, varName)) return null;
   const variable = step.variables.find((sv) => sv.name === varName);
   return variable ? formatValue(variable) : null;
@@ -45,7 +47,10 @@ export function traceCellDisplay(step: IExecutionStep, varName: string): string 
 
 export function traceInstruction(step: IExecutionStep): string {
   const log = step.log.replace(/\.$/, "");
-  if (step.nodeType === "input") return "Entrada";
+  if (step.nodeType === "input") {
+    const variable = log.match(/^(?:Solicitando|Lendo) (.+)$/)?.[1];
+    return variable ? `Entrada (${variable})` : "Entrada";
+  }
   if (step.nodeType === "process") {
     const selfAddition = log.match(/^([A-Za-z_]\w*(?:\[[^\]]+\])?)\s*=\s*\1\s*\+\s*([^;]+)$/);
     const expression = selfAddition
