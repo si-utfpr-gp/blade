@@ -4,6 +4,7 @@ import {
   getHighlightedNodeId,
   isCanvasLocked,
   getContextMenuPosition,
+  followOffsetY,
 } from "../../components/constructor/canvasSync"
 import type { IExecutionStep } from "../../interfaces/execution"
 
@@ -97,5 +98,19 @@ describe("canvasPermissions", () => {
   it("com a execução em andamento, trava tudo", () => {
     expect(canvasPermissions({ running: true, isExample: false })).toEqual({ canMove: false, canEdit: false })
     expect(canvasPermissions({ running: true, isExample: true })).toEqual({ canMove: false, canEdit: false })
+  })
+})
+
+// On a phone the open debugger is a sheet over the lower 55% of the screen,
+// so the block being run is centred in the strip left above it.
+describe("followOffsetY", () => {
+  it("não desloca no desktop nem com o depurador fechado", () => {
+    expect(followOffsetY({ isDesktop: true, sheetOpen: true, viewportHeight: 800, zoom: 2 })).toBe(0)
+    expect(followOffsetY({ isDesktop: false, sheetOpen: false, viewportHeight: 800, zoom: 2 })).toBe(0)
+  })
+
+  it("no celular com a folha aberta, sobe o bloco metade da folha, na escala do zoom", () => {
+    // Sheet = 0.55 × 800 = 440px; half of it is 220px, or 110 flow units at zoom 2.
+    expect(followOffsetY({ isDesktop: false, sheetOpen: true, viewportHeight: 800, zoom: 2 })).toBeCloseTo(110)
   })
 })

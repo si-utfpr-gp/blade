@@ -52,6 +52,7 @@ export default function BuilderPage({
                       />
                     }
                     inspectorCollapsed={debuggerCollapsed}
+                    onToggleInspector={() => setDebuggerCollapsed((value) => !value)}
                   />
                 </ConstructorProvider>
               </BlockPlacementProvider>

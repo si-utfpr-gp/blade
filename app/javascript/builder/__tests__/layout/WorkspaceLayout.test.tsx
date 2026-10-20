@@ -84,7 +84,8 @@ describe("WorkspaceLayout — gaveta em telas pequenas", () => {
     renderLayout("mobile")
 
     const inspector = screen.getByTestId("inspector-content").parentElement
-    expect(inspector).toHaveClass("max-md:top-12", "max-md:bottom-0")
+    // Anchored to the bottom with a bounded height, it never reaches the header.
+    expect(inspector).toHaveClass("max-md:bottom-0", "max-md:h-[55dvh]")
     expect(inspector).not.toHaveClass("max-md:inset-y-0")
   })
 
@@ -294,9 +295,9 @@ describe("botão do menu com header embrulhado", () => {
 })
 
 /**
- * At 338px the debugger was taking 90vw, leaving a 34px canvas. Collapsed it
- * stays a 56px rail in the flow; expanded it has to float over the canvas
- * instead of squeezing it.
+ * On a phone every pixel of width is canvas: collapsed, the debugger leaves
+ * no rail behind (its button lives in the canvas toolbar); expanded, it rises
+ * over the lower part of the screen at full width.
  */
 describe("depurador em tela estreita", () => {
   function renderInspector(viewport: "mobile" | "desktop", collapsed: boolean) {
@@ -312,20 +313,21 @@ describe("depurador em tela estreita", () => {
     )
   }
 
-  it("colapsado, vira a barrinha estreita que já existia", () => {
+  it("colapsado, não deixa a barrinha lateral ocupando o canvas", () => {
     renderInspector("mobile", true)
     const inspector = screen.getByTestId("inspector").parentElement
 
-    expect(inspector).toHaveClass("w-14", "min-w-14", "max-w-14")
-    // 338px - 56px deixa 282px de canvas.
-    expect(inspector).not.toHaveClass("fixed")
+    expect(inspector).toHaveClass("max-md:hidden")
   })
 
-  it("aberto, flutua por cima do canvas em vez de espremê-lo", () => {
+  // A sheet over the lower part of the screen: the diagram stays visible
+  // above it, so the student sees the highlighted block while stepping.
+  it("aberto, sobe como uma folha na parte de baixo, com o diagrama visível em cima", () => {
     renderInspector("mobile", false)
     const inspector = screen.getByTestId("inspector").parentElement
 
-    expect(inspector).toHaveClass("max-md:fixed", "max-md:w-[min(90vw,420px)]")
+    expect(inspector).toHaveClass("max-md:fixed", "max-md:inset-x-0", "max-md:bottom-0", "max-md:h-[55dvh]", "max-md:w-full")
+    expect(inspector).not.toHaveClass("max-md:top-12")
     // O min-w de 280px era o que travava o canvas em 34px.
     expect(inspector?.className).not.toContain("min-w-[280px]")
   })

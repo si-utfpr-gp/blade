@@ -109,7 +109,7 @@ export function CanvasSaveButton() {
         disabled={saving || isReadOnly}
         aria-label={saving ? "Salvando..." : label}
         title={hint}
-        className="flex h-20 w-20 items-center justify-center rounded-lg border border-border bg-card/95 text-foreground transition-colors hover:border-primary/40 hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-40 sm:h-8 sm:w-8"
+        className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card/95 text-foreground transition-colors hover:border-primary/40 hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-40 sm:h-8 sm:w-8"
       >
         <Save className="h-5 w-5" aria-hidden="true" />
       </button>

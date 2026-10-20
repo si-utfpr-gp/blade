@@ -73,6 +73,56 @@ describe("BuilderPage — menu de blocos no celular", () => {
     })) as unknown as typeof window.matchMedia
   })
 
+  // The four corner groups crowded a 390px canvas; on a phone they share one
+  // bar along the bottom, within thumb reach.
+  it("reúne as ações do canvas numa barra inferior", () => {
+    render(<BuilderPage />)
+    const bar = screen.getByTestId("canvas-toolbar-mobile")
+
+    for (const name of [/desfazer/i, /refazer/i, /salvar algoritmo/i, /exportar algoritmo/i, /executar/i, /mostrar depurador/i]) {
+      expect(within(bar).getByRole("button", { name })).toBeInTheDocument()
+    }
+    expect(screen.queryByTestId("canvas-toolbar-save")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("canvas-toolbar-export")).not.toBeInTheDocument()
+  })
+
+  it("só mostra o botão do depurador na barra, sem a faixa lateral", () => {
+    render(<BuilderPage />)
+
+    expect(screen.getAllByRole("button", { name: /mostrar depurador/i })).toHaveLength(1)
+  })
+
+  it("abre o depurador pela barra inferior", () => {
+    render(<BuilderPage />)
+    fireEvent.click(within(screen.getByTestId("canvas-toolbar-mobile")).getByRole("button", { name: /mostrar depurador/i }))
+
+    expect(screen.getAllByText(/iniciar execução/i).length).toBeGreaterThan(0)
+    expect(within(screen.getByTestId("canvas-toolbar-mobile")).getByRole("button", { name: /esconder depurador/i })).toBeInTheDocument()
+  })
+
+  it("deixa o zoom para o gesto de pinça", () => {
+    const { container } = render(<BuilderPage />)
+
+    expect(container.querySelector(".react-flow__controls")).toBeNull()
+  })
+
+  it("mostra só o ícone do Blade no cabeçalho, deixando espaço para o nome", () => {
+    render(<BuilderPage />)
+
+    expect(screen.getByText("Blade")).toHaveClass("hidden", "sm:inline")
+  })
+
+  // The drawer covers the canvas, so picking something to open closes it and
+  // shows what was picked.
+  it("fecha a gaveta depois de abrir um exemplo", () => {
+    render(<BuilderPage />)
+    fireEvent.click(screen.getByRole("button", { name: /abrir menu de blocos/i }))
+    fireEvent.click(screen.getByRole("button", { name: /^Exemplos/i }))
+    fireEvent.click(screen.getByRole("button", { name: /^Par ou Ímpar,/ }))
+
+    expect(document.getElementById("workspace-sidebar")).toHaveClass("-translate-x-full")
+  })
+
   it("tem o botão hamburguer para abrir os blocos", () => {
     render(<BuilderPage />)
 

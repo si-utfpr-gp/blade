@@ -9,6 +9,7 @@ import {
   isCanvasLocked,
   getContextMenuPosition,
   centerDropPosition,
+  followOffsetY,
 } from "./canvasSync"
 import { nodeTypes } from "./nodes"
 import {
@@ -26,6 +27,9 @@ import { useFitOnDiagramLoad } from "./useFitOnDiagramLoad"
 import { usePanePlacement } from "./usePanePlacement"
 import { PlacementHint } from "./PlacementHint"
 import { useDiagramOrigin } from "./DiagramOrigin"
+import { useIsDesktop } from "../layout/useMediaQuery"
+import { useInspector } from "../layout/InspectorContext"
+import { TerminalSquare } from "lucide-react"
 
 interface IConstructorCanvasProps {
   onDiagramLoaded?: () => void
@@ -53,6 +57,8 @@ export default function ConstructorCanvas({
 
   const { screenToFlowPosition, getNode, setCenter } = useReactFlow()
   const placeAt = usePanePlacement()
+  const isDesktop = useIsDesktop()
+  const inspector = useInspector()
   useFitOnDiagramLoad(diagramLoadCount)
   const { state: simulatorState } = useSimulator()
 
@@ -83,11 +89,18 @@ export default function ConstructorCanvas({
     if (!target) return
     const width = target.measured?.width ?? 0
     const height = target.measured?.height ?? 0
-    setCenter(target.position.x + width / 2, target.position.y + height / 2, {
-      zoom: 2,
+    const zoom = 2
+    const offset = followOffsetY({
+      isDesktop,
+      sheetOpen: inspector ? !inspector.collapsed : false,
+      viewportHeight: window.innerHeight,
+      zoom,
+    })
+    setCenter(target.position.x + width / 2, target.position.y + height / 2 + offset, {
+      zoom,
       duration: 300,
     })
-  }, [highlightedNodeId, getNode, setCenter])
+  }, [highlightedNodeId, getNode, setCenter, isDesktop, inspector])
 
   const wrapperRef = useRef<HTMLDivElement>(null)
 
@@ -178,41 +191,70 @@ export default function ConstructorCanvas({
         event.dataTransfer.dropEffect = "move"
       }}
     >
-      {/* Save sits on the left edge, run on the right, so a click never
-          lands on the wrong one. */}
-      <div
-        data-testid="canvas-toolbar-save"
-        // The padding follows the button: the touch target is taller on small
-        // screens, and a fixed padding would clip it.
-        className="absolute left-3 top-3 z-10 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
-      >
-        <CanvasSaveButton />
-      </div>
+      {isDesktop ? (
+        <>
+          {/* Save sits on the left edge, run on the right, so a click never
+              lands on the wrong one. */}
+          <div
+            data-testid="canvas-toolbar-save"
+            // The padding follows the button: the touch target is taller on small
+            // screens, and a fixed padding would clip it.
+            className="absolute left-3 top-3 z-10 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
+          >
+            <CanvasSaveButton />
+          </div>
 
-      <div
-        data-testid="canvas-toolbar"
-        className="absolute right-3 top-3 z-10 rounded-lg border border-border bg-card/95 px-2 py-1.5 shadow-md backdrop-blur"
-      >
-        <RunDiagramButton onDiagramLoaded={onDiagramLoaded} />
-      </div>
+          <div
+            data-testid="canvas-toolbar"
+            className="absolute right-3 top-3 z-10 rounded-lg border border-border bg-card/95 px-2 py-1.5 shadow-md backdrop-blur"
+          >
+            <RunDiagramButton onDiagramLoaded={onDiagramLoaded} />
+          </div>
 
-      {/* Bottom right, away from save on the top left, run on the top right and
-          the zoom controls on the bottom left. The error notice holds the
-          bottom centre, so the four corners never crowd each other. */}
-      <div
-        data-testid="canvas-toolbar-export"
-        className="absolute bottom-3 right-3 z-10 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
-      >
-        <CanvasExportButton />
-      </div>
+          {/* Bottom right, away from save on the top left, run on the top right and
+              the zoom controls on the bottom left. The error notice holds the
+              bottom centre, so the four corners never crowd each other. */}
+          <div
+            data-testid="canvas-toolbar-export"
+            className="absolute bottom-3 right-3 z-10 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
+          >
+            <CanvasExportButton />
+          </div>
 
-      {/* Bottom left, right of the zoom controls that own the corner. */}
-      <div
-        data-testid="canvas-toolbar-undo"
-        className="absolute bottom-3 left-14 z-10 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
-      >
-        <CanvasHistoryControls locked={locked} />
-      </div>
+          {/* Bottom left, right of the zoom controls that own the corner. */}
+          <div
+            data-testid="canvas-toolbar-undo"
+            className="absolute bottom-3 left-14 z-10 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
+          >
+            <CanvasHistoryControls locked={locked} />
+          </div>
+        </>
+      ) : (
+        // On a phone the four corner groups crowded the canvas; they share one
+        // bar along the bottom instead, within reach of the thumb.
+        <div
+          data-testid="canvas-toolbar-mobile"
+          className="absolute inset-x-2 bottom-2 z-10 flex items-center gap-1 rounded-xl border border-border bg-card/95 p-1.5 shadow-md backdrop-blur"
+        >
+          <CanvasHistoryControls locked={locked} />
+          <span aria-hidden="true" className="mx-0.5 h-6 w-px bg-border" />
+          <CanvasSaveButton />
+          <CanvasExportButton />
+          {inspector && (
+            <button
+              type="button"
+              onClick={inspector.toggle}
+              aria-label={inspector.collapsed ? "Mostrar depurador" : "Esconder depurador"}
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card/95 text-primary"
+            >
+              <TerminalSquare className="h-5 w-5" aria-hidden="true" />
+            </button>
+          )}
+          <div className="ml-auto">
+            <RunDiagramButton onDiagramLoaded={onDiagramLoaded} />
+          </div>
+        </div>
+      )}
 
       <ReactFlow
         onPaneClick={(event) => placeAt(screenToFlowPosition({ x: event.clientX, y: event.clientY }))}
@@ -244,7 +286,8 @@ export default function ConstructorCanvas({
       >
         <PlacementHint />
         <Background />
-        <Controls />
+        {/* Pinch zooms on a phone, and the bar needs the bottom edge. */}
+        {isDesktop && <Controls />}
       </ReactFlow>
 
       {contextMenu && (

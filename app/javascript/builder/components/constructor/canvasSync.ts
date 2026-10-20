@@ -8,6 +8,30 @@ export function getHighlightedNodeId(
   return steps[currentStepIndex]?.nodeId ?? null
 }
 
+// Share of the screen the debugger sheet covers on a phone; WorkspaceLayout
+// draws it with h-[55dvh].
+export const MOBILE_SHEET_SHARE = 0.55
+
+/**
+ * How far below the block the camera aims when following the run, in flow
+ * units. On a phone the open debugger covers the lower part of the screen, so
+ * aiming half a sheet lower puts the block in the middle of what is left.
+ */
+export function followOffsetY({
+  isDesktop,
+  sheetOpen,
+  viewportHeight,
+  zoom,
+}: {
+  isDesktop: boolean
+  sheetOpen: boolean
+  viewportHeight: number
+  zoom: number
+}): number {
+  if (isDesktop || !sheetOpen) return 0
+  return (viewportHeight * MOBILE_SHEET_SHARE) / 2 / zoom
+}
+
 /**
  * What the canvas lets the student do. A running simulation freezes the
  * diagram; a bundled example can be rearranged to read it better, but its

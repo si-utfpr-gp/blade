@@ -40,7 +40,7 @@ export function CanvasExportButton() {
         onClick={() => setAsking(true)}
         aria-label="Exportar algoritmo"
         title="Exportar algoritmo"
-        className="flex h-20 w-20 items-center justify-center rounded-lg border border-border bg-card/95 text-foreground transition-colors hover:border-primary/40 hover:bg-muted/50 sm:h-8 sm:w-8"
+        className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card/95 text-foreground transition-colors hover:border-primary/40 hover:bg-muted/50 sm:h-8 sm:w-8"
       >
         <Download className="h-5 w-5" aria-hidden="true" />
       </button>
