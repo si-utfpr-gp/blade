@@ -15,6 +15,8 @@ export interface SavedAlgorithm {
   name: string
   diagram: SerializedDiagram
   created_at: string
+  // Set while the algorithm has a public link; null when it is private.
+  share_token?: string | null
 }
 
 export type AlgorithmsStatus = "idle" | "loading" | "saving" | "deleting" | "error"

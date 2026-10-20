@@ -23,6 +23,7 @@ import ContextMenu from "./ContextMenu"
 import { RunDiagramButton } from "./RunDiagramButton"
 import { CanvasSaveButton } from "./CanvasSaveButton"
 import { CanvasExportButton } from "./CanvasExportButton"
+import { ShareButton } from "./ShareButton"
 import { CanvasHistoryControls } from "./CanvasHistoryControls"
 import { useFitOnDiagramLoad } from "./useFitOnDiagramLoad"
 import { usePanePlacement } from "./usePanePlacement"
@@ -205,9 +206,10 @@ export default function ConstructorCanvas({
               data-testid="canvas-toolbar-save"
               // The padding follows the button: the touch target is taller on small
               // screens, and a fixed padding would clip it.
-              className="absolute left-3 top-3 z-10 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
+              className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
             >
               <CanvasSaveButton />
+              <ShareButton />
             </div>
           )}
 
@@ -252,6 +254,7 @@ export default function ConstructorCanvas({
               <CanvasHistoryControls locked={locked} />
               <span aria-hidden="true" className="mx-0.5 h-6 w-px bg-border" />
               <CanvasSaveButton />
+              <ShareButton />
               <CanvasExportButton />
             </>
           )}
