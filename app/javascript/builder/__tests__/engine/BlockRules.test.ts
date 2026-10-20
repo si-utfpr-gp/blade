@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { ERROR_TYPES } from "../../engine/errors"
 import { runToEnd, type RawDiagram } from "./runDiagram"
-import { block, expectError, out, proc, program } from "./diagramBuilder"
+import { block, choose, expectError, input, out, proc, program } from "./diagramBuilder"
 
 /*
  * Classroom rules for what goes inside a block: the memory block only
@@ -53,6 +53,45 @@ describe("regras dos blocos", () => {
       [],
       ERROR_TYPES.INVALID_EXPRESSION,
       "A memória só declara variáveis. Inicialize 'soma' em um bloco de processo, como 'soma = 0'.",
+    )
+  })
+
+  // The escolha/caso compares a value against a finite list of options, so it
+  // only takes integers and characters: not reals, and not logical tests.
+  it("a escolha aceita uma variável inteira", () => {
+    const diagram = program([["inteiro", "n"]], [input("n"), choose("n", [["0", [out("'zero'")]], ["1", [out("'um'")]]], [out("'inválido'")])])
+    expect(runToEnd(diagram, ["1"]).outputs).toEqual(["um"])
+  })
+
+  it("a escolha aceita uma variável caractere", () => {
+    const diagram = program([["caractere", "op"]], [input("op"), choose("op", [["'+'", [out("'soma'")]]], [out("'outro'")])])
+    expect(runToEnd(diagram, ["+"]).outputs).toEqual(["soma"])
+  })
+
+  it("a escolha recusa uma variável real", () => {
+    expectError(
+      program([["real", "x"]], [input("x"), choose("x", [["1", [out("'um'")]]])]),
+      ["1"],
+      ERROR_TYPES.INVALID_SELECTION,
+      "A escolha só compara valores inteiros ou caracteres, e 'x' é real.",
+    )
+  })
+
+  it("a escolha recusa uma expressão lógica", () => {
+    expectError(
+      program([["inteiro", "x"]], [input("x"), choose("x > 1", [["verdadeiro", [out("'sim'")]]])]),
+      ["2"],
+      ERROR_TYPES.INVALID_SELECTION,
+      "A escolha só compara valores inteiros ou caracteres, e 'x > 1' é lógico.",
+    )
+  })
+
+  it("a escolha recusa uma conta que dá um número com casas decimais", () => {
+    expectError(
+      program([["inteiro", "x"]], [input("x"), choose("x / 2", [["1", [out("'um'")]]])]),
+      ["3"],
+      ERROR_TYPES.INVALID_SELECTION,
+      "A escolha só compara valores inteiros ou caracteres, e 'x / 2' é real.",
     )
   })
 })

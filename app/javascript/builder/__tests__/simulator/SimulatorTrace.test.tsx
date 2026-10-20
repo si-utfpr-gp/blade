@@ -171,6 +171,21 @@ describe("traceInstruction", () => {
     })).toBe("Processo (soma += num)")
   })
 
+  // As in the course material: the selection row is the condition, and its
+  // sub-step says which case was taken ("Caso 0", "Caso Falso").
+  it("identifies selection rows as conditions on the compared value", () => {
+    expect(traceInstruction({
+      nodeId: "n4",
+      nodeLabel: "numero",
+      nodeType: "selection",
+      variables: [],
+      log: "numero = 0",
+      explanation: "",
+      changes: [],
+      nextHint: "",
+    })).toBe("Condição (numero)")
+  })
+
   // The row names the variable it reads, so a block reading several
   // variables shows which one each row is about.
   it("names the variable an input row reads", () => {

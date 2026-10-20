@@ -363,20 +363,20 @@ describe("bateria — escolha/caso", () => {
     expect(runToEnd(menu(), [op]).outputs).toEqual([expected])
   })
 
-  it("casos com valores reais", () => {
+  // The escolha/caso only takes integers and characters.
+  it("recusa uma variável real", () => {
     const diagram = program([["real", "x"]], [input("x"), choose("x", [["1.5", [out("'um e meio'")]], ["2.5", [out("'dois e meio'")]]], [out("'outro'")])])
-    expect(runToEnd(diagram, ["2.5"]).outputs).toEqual(["dois e meio"])
-    expect(runToEnd(diagram, ["2"]).outputs).toEqual(["outro"])
+    expectError(diagram, ["2.5"], "INVALID_SELECTION", "A escolha só compara valores inteiros ou caracteres, e 'x' é real.")
   })
 
-  it("conta com reais coincide com o caso que mostra o mesmo valor", () => {
+  it("recusa uma conta com reais", () => {
     const diagram = program([["real", "x"]], [choose("0.1 + 0.2", [["0.3", [out("'0.3'")]]], [out("'outro'")])])
-    expect(runToEnd(diagram).outputs).toEqual(["0.3"])
+    expectError(diagram, [], "INVALID_SELECTION", "A escolha só compara valores inteiros ou caracteres, e '0.1 + 0.2' é real.")
   })
 
-  it("casos que só diferem no ruído de ponto flutuante são repetidos", () => {
-    const diagram = program([["real", "x", "1"]], [choose("x", [["0.3", [out("'a'")]], ["0.1 + 0.2", [out("'b'")]]], [out("'outro'")])])
-    expectError(diagram, [], "INVALID_SELECTION", "Escolha: valor '0.1 + 0.2' repetido")
+  it("casos com o mesmo valor escrito de outra forma são repetidos", () => {
+    const diagram = program([["inteiro", "x", "1"]], [choose("x", [["2", [out("'a'")]], ["1 + 1", [out("'b'")]]], [out("'outro'")])])
+    expectError(diagram, [], "INVALID_SELECTION", "Escolha: valor '1 + 1' repetido")
   })
 
   it("inteiro 2 coincide com o caso 2.0", () => {

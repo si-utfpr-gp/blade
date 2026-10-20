@@ -389,6 +389,7 @@ export class ExecutionEngine {
             case "selection": {
                 const expression = node.label ?? "";
                 const value = frame.expr.value(expression, node.id);
+                this.checkSelectionType(expression, value, node.id);
                 const cases = node.cases ?? [];
                 const caseValues = this.selectionCaseValues(node, cases, value);
                 const index = caseValues.findIndex(caseValue => sameValue(caseValue, value));
@@ -477,6 +478,27 @@ export class ExecutionEngine {
     }
 
     /** Evaluates each case value once and rejects a selection that repeats one. */
+    /**
+     * The escolha/caso compares against a finite list of options, so it takes
+     * integers and characters only. A declared variable answers by its type,
+     * so a real holding 2 is still refused; anything else by its value.
+     */
+    private checkSelectionType(expression: string, value: ExpressionValue, blockId: string): void {
+        const declared = this.requireActiveFrame().expr.typeOf(expression)
+        const kind = declared ?? (
+            typeof value === "boolean" ? "logico"
+                : typeof value === "number" ? (Number.isInteger(value) ? "inteiro" : "real")
+                    : "caractere"
+        )
+        if (kind === "inteiro" || kind === "caractere") return
+        const name = kind === "logico" ? "lógico" : kind
+        throw new ExecutionError(
+            ERROR_TYPES.INVALID_SELECTION,
+            `A escolha só compara valores inteiros ou caracteres, e '${expression.trim()}' é ${name}.`,
+            blockId,
+        )
+    }
+
     private selectionCaseValues(node: IParserNode, cases: string[], value: ExpressionValue): ExpressionValue[] {
         const frame = this.requireActiveFrame()
         const values = cases.map(source => frame.expr.value(source, node.id))
@@ -591,7 +613,11 @@ export class ExecutionEngine {
         const localExpr = new ExprEvaluator(localMemory)
         routine.parameters.forEach((parameter, index) => {
             const value = caller.expr.value(call.args[index], node.id)
-            localMemory.declare(parameter, typeOfValue(value))
+            // A variable passed in keeps its declared type, and a whole number
+            // is an inteiro, so the parameter is not just "any number".
+            const type = caller.expr.typeOf(call.args[index])
+                ?? (typeof value === "number" && Number.isInteger(value) ? "inteiro" : typeOfValue(value))
+            localMemory.declare(parameter, type)
             localExpr.store(parameter, value, node.id)
         })
 
