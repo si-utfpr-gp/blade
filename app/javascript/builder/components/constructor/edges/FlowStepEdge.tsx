@@ -1,5 +1,31 @@
-import { BaseEdge, getSmoothStepPath, type EdgeProps } from "@xyflow/react"
+import { BaseEdge, getSmoothStepPath, Position, useStore, type EdgeProps, type ReactFlowState } from "@xyflow/react"
 import { selectionCaseIndex } from "../../blocks/blockCapabilities"
+import { loopBodyIds, loopReturnLaneX, loopReturnPath } from "./loopReturn"
+
+const LATERAL_SIDE: Record<string, "left" | "right"> = { "left-in": "left", "right-in": "right" }
+
+/**
+ * Where the arrow that closes a loop climbs back, or null for any other
+ * arrow. Only an arrow entering a connector from the side can close a loop,
+ * and it does when its source is reachable from that connector.
+ */
+function loopLaneSelector(edge: { id: string; source: string; target: string; targetHandleId?: string | null }) {
+  return (state: ReactFlowState): number | null => {
+    const side = edge.targetHandleId ? LATERAL_SIDE[edge.targetHandleId] : undefined
+    if (!side) return null
+
+    const body = loopBodyIds(edge, state.edges)
+    if (body.size === 0) return null
+
+    const rects = [...body].flatMap((id) => {
+      const node = state.nodeLookup.get(id)
+      if (!node) return []
+      const { x, y } = node.internals.positionAbsolute
+      return [{ x, y, width: node.measured.width ?? 0, height: node.measured.height ?? 0 }]
+    })
+    return rects.length > 0 ? loopReturnLaneX(side, rects) : null
+  }
+}
 
 /**
  * Where a case arrow turns sideways, or undefined to keep the usual midpoint.
@@ -31,9 +57,14 @@ export function caseTurnY({
 
 /**
  * The canvas's square-cornered arrow, as React Flow's own "step" draws it,
- * with case arrows turning at the height caseTurnY picks.
+ * with case arrows turning at the height caseTurnY picks and the arrow that
+ * closes a loop going around the body instead of through it.
  */
 export function FlowStepEdge({
+  id,
+  source,
+  target,
+  targetHandleId,
   sourceX,
   sourceY,
   targetX,
@@ -52,17 +83,28 @@ export function FlowStepEdge({
   markerStart,
   interactionWidth,
 }: EdgeProps) {
+  const laneX = useStore(loopLaneSelector({ id, source, target, targetHandleId }))
   const centerY = caseTurnY({ sourceHandleId, sourceX, sourceY, targetX, targetY })
-  const [path, labelX, labelY] = getSmoothStepPath({
-    sourceX,
-    sourceY,
-    sourcePosition,
-    targetX,
-    targetY,
-    targetPosition,
-    borderRadius: 0,
-    ...(centerY !== undefined ? { centerY } : {}),
-  })
+  const [path, labelX, labelY] =
+    laneX !== null
+      ? loopReturnPath({
+          sourceX,
+          sourceY,
+          targetX,
+          targetY,
+          laneX,
+          fromSide: sourcePosition === Position.Left || sourcePosition === Position.Right,
+        })
+      : getSmoothStepPath({
+          sourceX,
+          sourceY,
+          sourcePosition,
+          targetX,
+          targetY,
+          targetPosition,
+          borderRadius: 0,
+          ...(centerY !== undefined ? { centerY } : {}),
+        })
 
   return (
     <BaseEdge
