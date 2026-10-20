@@ -31,4 +31,11 @@ Rails.application.routes.draw do
   match "/logout", to: "sessions#destroy", via: [ :post, :delete ], as: :logout
 
   resources :algorithms, only: [ :index, :create, :show, :update, :destroy ]
+
+  # Everything else, whatever the method, is a 404 from ErrorsController, so
+  # an unknown or probing path never reaches another controller. It has to be
+  # the last route. Rails' own engines (Active Storage and the like, under
+  # /rails) keep their routes.
+  match "*path", to: "errors#not_found", via: :all,
+                 constraints: ->(request) { !request.path.start_with?("/rails/") }
 end
