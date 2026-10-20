@@ -63,6 +63,19 @@ class LandingPageTest < ActionController::TestCase
     assert_select "footer a[href=?]", "mailto:marczal@utfpr.edu.br"
   end
 
+  # On a phone the section links do not fit the header, so they move into a
+  # menu behind a hamburger button, together with the sign in.
+  test "offers the site routes in a mobile menu" do
+    get :show
+
+    assert_select "details[data-mobile-menu]" do
+      assert_select "summary[aria-label=?]", "Abrir menu"
+      %w[#recursos #acessos #perguntas /blocks /about /login /builder].each do |href|
+        assert_select "a[href=?]", href
+      end
+    end
+  end
+
   # Real screenshots of the builder, so the landing shows the product as it is.
   test "shows real screenshots of the builder, the desk check and the code" do
     get :show

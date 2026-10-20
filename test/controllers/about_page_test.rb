@@ -43,4 +43,11 @@ class AboutPageTest < ActionController::TestCase
 
     assert_select "a[href=?]", "mailto:marczal@utfpr.edu.br"
   end
+
+  test "has the same mobile menu as the other public pages" do
+    get :show
+
+    assert_select "details[data-mobile-menu] a[href=?]", "/"
+    assert_select "details[data-mobile-menu] a[href=?]", "/builder"
+  end
 end

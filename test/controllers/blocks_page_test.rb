@@ -58,4 +58,11 @@ class BlocksPageTest < ActionController::TestCase
     assert_select "header a[href=?]", "/blocks"
     assert_select "footer a[href=?]", "/blocks"
   end
+
+  test "has the same mobile menu as the other public pages" do
+    get :show
+
+    assert_select "details[data-mobile-menu] a[href=?]", "/"
+    assert_select "details[data-mobile-menu] a[href=?]", "/builder"
+  end
 end

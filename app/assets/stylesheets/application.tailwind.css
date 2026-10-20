@@ -178,6 +178,21 @@
     }
   }
 
+  /* The section links glide instead of jumping, and the section title lands
+     with some room above it rather than glued to the top of the screen. */
+  @media (prefers-reduced-motion: no-preference) {
+    html:has(.landing) { scroll-behavior: smooth; }
+  }
+  .landing section[id], .landing article[id] { scroll-margin-top: 1.5rem; }
+
+  /* Mobile menu of the public pages: a <details>, so it works without
+     JavaScript. The summary swaps between the hamburger and a close icon. */
+  .site-menu > summary::-webkit-details-marker { display: none; }
+  .site-menu .site-menu-close,
+  .site-menu[open] .site-menu-open { display: none; }
+  .site-menu[open] .site-menu-close { display: block; }
+  .site-menu[open] .site-menu-panel { animation: landing-rise 180ms ease-out both; }
+
   /* Execution highlight animation */
   @keyframes node-pulse {
     0%, 100% { box-shadow: 0 0 0 3px hsl(var(--secondary)), 0 0 8px hsl(var(--secondary) / 0.3); }
