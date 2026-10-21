@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react"
 import { useReactFlow } from "@xyflow/react"
-import { Focus, Wrench, X } from "lucide-react"
+import { Focus, X } from "lucide-react"
 
 const BALL_SIZE = 56
 // Keeps the ball off the very edge, where the phone's own back gesture lives.
@@ -43,6 +43,23 @@ function initialPosition(): Point {
   }
   const { height } = viewportSize()
   return snapToSide({ x: Number.MAX_SAFE_INTEGER, y: height * 0.35 })
+}
+
+/** Lucide's wrench, in two tones of the project's blue. */
+function WrenchIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path
+        d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
+        fill="hsl(var(--primary) / 0.18)"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="5.6" cy="18.4" r="1" fill="currentColor" />
+    </svg>
+  )
 }
 
 /**
@@ -192,12 +209,17 @@ export function FloatingTools({ children }: { children: (close: () => void) => R
         onClick={handleClick}
         // touch-none hands every finger movement to us, so the page does not
         // scroll or zoom while the ball is dragged.
-        className={`flex touch-none select-none items-center justify-center rounded-full bg-foreground/80 text-background shadow-lg ring-4 ring-background/60 backdrop-blur transition-[opacity,transform] ${
-          open || dragging ? "opacity-100" : "opacity-70"
-        } ${dragging ? "scale-110" : ""}`}
+        className={`flex touch-none select-none items-center justify-center rounded-full border-2 border-primary bg-card text-primary shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.45)] transition-[opacity,transform,box-shadow] duration-200 ${
+          open || dragging ? "opacity-100" : "opacity-90"
+        } ${dragging ? "scale-110 shadow-[0_10px_28px_-4px_hsl(var(--primary)/0.55)]" : ""}`}
         style={{ width: BALL_SIZE, height: BALL_SIZE }}
       >
-        {open ? <X className="h-6 w-6" aria-hidden="true" /> : <Wrench className="h-6 w-6" aria-hidden="true" />}
+        {/* The icon turns as the menu opens, so the change reads as one motion. */}
+        <span
+          className={`flex transition-transform duration-200 ${open ? "rotate-90" : "rotate-0"}`}
+        >
+          {open ? <X className="h-6 w-6" strokeWidth={2.5} aria-hidden="true" /> : <WrenchIcon className="h-6 w-6" />}
+        </span>
       </button>
 
       <div
