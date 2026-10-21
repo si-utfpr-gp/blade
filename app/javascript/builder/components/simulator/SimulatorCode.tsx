@@ -1,5 +1,37 @@
-import { useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { useSimulator } from "./SimulatorContext";
+import { highlightCode, type TokenKind } from "./highlightCode";
+
+// Darker cousins of the block colours, so 11px text keeps its contrast on the
+// light panel: processes are purple, so are keywords; text is green as the
+// start block; numbers take the decision's orange.
+const TOKEN_STYLE: Partial<Record<TokenKind, CSSProperties>> = {
+  keyword: { color: "hsl(255 60% 45%)", fontWeight: 600 },
+  string: { color: "hsl(150 60% 28%)" },
+  number: { color: "hsl(28 90% 36%)" },
+  comment: { color: "hsl(var(--muted-foreground))", fontStyle: "italic" },
+  type: { color: "hsl(195 85% 29%)" },
+  builtin: { color: "hsl(225 45% 38%)" },
+  function: { color: "hsl(210 85% 40%)" },
+};
+
+export function HighlightedCode({ code }: { code: string }) {
+  const tokens = useMemo(() => highlightCode(code), [code]);
+
+  return (
+    <code>
+      {tokens.map((token, index) =>
+        token.kind === "plain" ? (
+          token.text
+        ) : (
+          <span key={index} data-token={token.kind} style={TOKEN_STYLE[token.kind]}>
+            {token.text}
+          </span>
+        ),
+      )}
+    </code>
+  );
+}
 
 export default function SimulatorCode() {
   const { state } = useSimulator();
@@ -34,7 +66,7 @@ export default function SimulatorCode() {
       </div>
       <pre className="flex-1 overflow-auto p-3 text-[11px] font-mono leading-relaxed bg-foreground/2">
         {jsCode || tsCode ? (
-          <code>{codeLang === "js" ? jsCode : tsCode}</code>
+          <HighlightedCode code={codeLang === "js" ? jsCode : tsCode} />
         ) : (
           <span className="text-muted-foreground">
             Carregue um diagrama válido (JSON) para gerar o código JavaScript/TypeScript.
