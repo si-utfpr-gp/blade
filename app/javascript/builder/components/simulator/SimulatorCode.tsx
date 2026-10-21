@@ -52,16 +52,16 @@ function CopyButton({ text }: { text: string }) {
         onClick={handleCopy}
         aria-label={copied ? "Código copiado" : "Copiar código"}
         title="Copiar código"
-        className={`flex items-center gap-1 rounded-md px-3 py-1.5 text-[11px] font-medium transition-colors duration-300 ${
+        className={`mr-1.5 flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-medium transition-colors duration-300 ${
           copied
-            ? "copy-flash bg-[hsl(var(--node-start)/0.15)] text-[hsl(150_60%_28%)]"
+            ? "copy-flash bg-[hsl(var(--node-start)/0.1)] text-[hsl(150_60%_28%)]"
             : status === "failed"
               ? "text-[hsl(var(--node-error))]"
               : "text-muted-foreground hover:text-foreground"
         }`}
       >
         {/* The key remounts the icon, so the pop plays on every change. */}
-        <Icon key={status} className={`h-3.5 w-3.5 ${status === "idle" ? "" : "copy-pop"}`} aria-hidden="true" />
+        <Icon key={status} className={`h-3 w-3 ${status === "idle" ? "" : "copy-pop"}`} aria-hidden="true" />
         {copied ? "Copiado!" : status === "failed" ? "Não deu para copiar" : "Copiar"}
       </button>
       <span role="status" className="sr-only">
