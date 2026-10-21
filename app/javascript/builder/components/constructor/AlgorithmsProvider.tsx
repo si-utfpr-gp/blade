@@ -43,6 +43,16 @@ interface IAlgorithmsContextValue {
 
 const AlgorithmsContext = createContext<IAlgorithmsContextValue | null>(null)
 
+const OFFLINE_MESSAGE =
+  "Sem conexão com o servidor. Verifique a internet e tente de novo."
+
+// fetch throws a TypeError, in the browser's own words, when the request
+// never reached the server; anything else already carries our message.
+function failureMessage(cause: unknown, fallback: string): string {
+  if (cause instanceof TypeError) return OFFLINE_MESSAGE
+  return cause instanceof Error ? cause.message : fallback
+}
+
 async function readErrors(response: Response): Promise<string> {
   try {
     const body = await response.json()
@@ -78,7 +88,7 @@ export function AlgorithmsProvider({
       setError(null)
       setStatus("idle")
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Falha ao carregar.")
+      setError(failureMessage(cause, "Falha ao carregar."))
       setStatus("error")
     }
   }, [])
@@ -113,7 +123,7 @@ export function AlgorithmsProvider({
         return { ok: true, algorithm: saved }
       } catch (cause) {
         const message =
-          cause instanceof Error ? cause.message : "Falha ao salvar."
+          failureMessage(cause, "Falha ao salvar.")
         setError(message)
         setStatus("error")
         return { ok: false, message }
@@ -145,7 +155,7 @@ export function AlgorithmsProvider({
         return { ok: true, algorithm: updated }
       } catch (cause) {
         const message =
-          cause instanceof Error ? cause.message : "Falha ao atualizar."
+          failureMessage(cause, "Falha ao atualizar.")
         setError(message)
         setStatus("error")
         return { ok: false, message }
@@ -167,7 +177,7 @@ export function AlgorithmsProvider({
       setStatus("idle")
       return true
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Falha ao excluir.")
+      setError(failureMessage(cause, "Falha ao excluir."))
       setStatus("error")
       return false
     }

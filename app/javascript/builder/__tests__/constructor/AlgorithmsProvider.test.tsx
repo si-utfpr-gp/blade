@@ -248,4 +248,27 @@ describe("AlgorithmsProvider", () => {
       expect(screen.getByTestId("error")).toHaveTextContent("")
     })
   })
+
+  // Without a connection fetch throws the browser's own words, in English,
+  // and the student saw "Failed to fetch".
+  it("explica em português quando não há conexão com o servidor", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+
+    renderProvider()
+    await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("idle"))
+    fireEvent.click(screen.getByRole("button", { name: "salvar" }))
+
+    await waitFor(() => expect(screen.getByTestId("error")).toHaveTextContent(/sem conexão com o servidor/i))
+    expect(screen.getByTestId("error")).not.toHaveTextContent(/failed to fetch/i)
+  })
+
+  it("explica a falta de conexão também ao carregar a lista", async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError("NetworkError when attempting to fetch resource."))
+
+    renderProvider()
+
+    await waitFor(() => expect(screen.getByTestId("error")).toHaveTextContent(/sem conexão com o servidor/i))
+  })
 })
