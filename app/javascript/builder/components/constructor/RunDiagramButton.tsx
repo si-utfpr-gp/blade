@@ -1,5 +1,5 @@
-import { useState } from "react"
 import { useConstructor } from "./ConstructorProvider"
+import { useToast } from "../ui/Toast"
 import { useSimulator } from "../simulator/SimulatorContext"
 import { normalizeDiagram } from "./normalizeDiagram"
 
@@ -10,9 +10,7 @@ interface IRunDiagramButtonProps {
 export function RunDiagramButton({ onDiagramLoaded }: IRunDiagramButtonProps) {
   const { nodes, edges } = useConstructor()
   const { loadAndStartDiagram } = useSimulator()
-  const [status, setStatus] = useState<{ ok: boolean; message: string } | null>(
-    null,
-  )
+  const { notify } = useToast()
 
   const handleRun = () => {
     const { nodes: normalizedNodes, edges: normalizedEdges } = normalizeDiagram(
@@ -21,12 +19,11 @@ export function RunDiagramButton({ onDiagramLoaded }: IRunDiagramButtonProps) {
     )
     const result = loadAndStartDiagram(normalizedNodes, normalizedEdges)
     if (result.ok) {
-      setStatus({ ok: true, message: "Diagrama carregado no simulador." })
-      console.log(status?.message)
       onDiagramLoaded?.()
     } else {
-      setStatus({ ok: false, message: result.error })
-      console.error(status?.message)
+      // The debugger panel is usually closed, and always is on a phone, so
+      // the reason is said where it is seen.
+      notify(result.error, "error")
     }
   }
 

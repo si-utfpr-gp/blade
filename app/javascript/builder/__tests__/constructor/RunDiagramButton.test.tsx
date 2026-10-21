@@ -66,4 +66,17 @@ describe("RunDiagramButton", () => {
     fireEvent.click(screen.getByRole("button", { name: /executar/i }))
     expect(screen.getByTestId("sim-steps").textContent).toBe("1")
   })
+
+  // The reason went only to the debugger panel, which is usually closed and
+  // always is on a phone, so Executar looked like it did nothing. It also
+  // carried the rule's internal code, which means nothing to a student.
+  it("explica num aviso por que não executou, sem o código interno da regra", async () => {
+    renderIntegration(<TestHarness />)
+
+    fireEvent.click(screen.getByRole("button", { name: /executar/i }))
+
+    const notice = await screen.findByText(/nenhum bloco de início/i)
+    expect(notice).toBeInTheDocument()
+    expect(notice.textContent).not.toMatch(/RN\d+/)
+  })
 })

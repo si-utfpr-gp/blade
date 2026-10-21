@@ -115,7 +115,7 @@ export function SimulatorProvider({
       try {
         const graph = parse(nodes, edges, { subroutines: options?.subroutines })
         if (!graph.startNodeId) {
-          return { ok: false, error: "Nenhum bloco de início (RN01)" }
+          return { ok: false, error: "Nenhum bloco de Início: coloque um para executar o algoritmo." }
         }
         const engine = new ExecutionEngine(graph)
         setEngine(engine)
