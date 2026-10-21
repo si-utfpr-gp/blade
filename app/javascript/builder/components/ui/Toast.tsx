@@ -28,7 +28,7 @@ const ToastContext = createContext<IToastContextValue | null>(null)
 
 // No notice stays on screen. A confirmation only has to be noticed; an error
 // stays longer, to be read.
-const AUTO_DISMISS_MS: Record<ToastTone, number> = { success: 2000, info: 2000, error: 5000 }
+const AUTO_DISMISS_MS: Record<ToastTone, number> = { success: 3000, info: 3000, error: 5000 }
 
 const TONE_STYLE: Record<ToastTone, string> = {
   success: "border-primary/40 bg-primary/10 text-primary",
