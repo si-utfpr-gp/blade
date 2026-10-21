@@ -26,7 +26,9 @@ interface IToastContextValue {
 
 const ToastContext = createContext<IToastContextValue | null>(null)
 
-const AUTO_DISMISS_MS = 4000
+// No notice stays on screen. A confirmation only has to be noticed; an error
+// stays longer, to be read.
+const AUTO_DISMISS_MS: Record<ToastTone, number> = { success: 2000, info: 2000, error: 5000 }
 
 const TONE_STYLE: Record<ToastTone, string> = {
   success: "border-primary/40 bg-primary/10 text-primary",
@@ -60,7 +62,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       setToasts((current) => [...current, { id, message, tone }])
       timers.current.set(
         id,
-        setTimeout(() => dismiss(id), AUTO_DISMISS_MS),
+        setTimeout(() => dismiss(id), AUTO_DISMISS_MS[tone]),
       )
     },
     [dismiss],

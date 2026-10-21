@@ -29,7 +29,7 @@ export default function SimulatorPanel({ collapsed = false, onToggleCollapsed }:
 
   return (
     <TooltipProvider delayDuration={200}>
-      <SimulatorErrorToast message={state.error} />
+      <SimulatorErrorToast key={state.error ?? ""} message={state.error} />
       {collapsed ? (
         <CollapsedDebuggerRail onToggleCollapsed={onToggleCollapsed} />
       ) : (
