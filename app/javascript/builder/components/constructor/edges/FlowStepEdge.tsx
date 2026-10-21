@@ -1,6 +1,11 @@
-import { BaseEdge, getSmoothStepPath, Position, useStore, type EdgeProps, type ReactFlowState } from "@xyflow/react"
+import { BaseEdge, getSmoothStepPath, Position, useReactFlow, useStore, type EdgeProps, type ReactFlowState } from "@xyflow/react"
 import { selectionCaseIndex } from "../../blocks/blockCapabilities"
 import { loopBodyIds, loopReturnLaneX, loopReturnPath } from "./loopReturn"
+import { useMediaQuery } from "../../layout/useMediaQuery"
+
+// How wide around its line an arrow takes a tap: a finger needs more room.
+const TOUCH_INTERACTION_WIDTH = 32
+const POINTER_INTERACTION_WIDTH = 20
 
 const LATERAL_SIDE: Record<string, "left" | "right"> = { "left-in": "left", "right-in": "right" }
 
@@ -60,8 +65,48 @@ export function caseTurnY({
  * with case arrows turning at the height caseTurnY picks and the arrow that
  * closes a loop going around the body instead of through it.
  */
+/**
+ * The selected arrow's delete button, at its middle. Deleting used to take
+ * the Delete key, which a phone does not have. Drawn in the SVG itself, with
+ * a hit area a finger can find.
+ */
+function EdgeDeleteButton({ x, y, onDelete }: { x: number; y: number; onDelete: () => void }) {
+  return (
+    <g
+      role="button"
+      aria-label="Apagar seta"
+      tabIndex={0}
+      transform={`translate(${x} ${y})`}
+      // Edges only take clicks on their stroke; the button takes them anywhere.
+      style={{ pointerEvents: "all", cursor: "pointer" }}
+      className="nodrag nopan"
+      onClick={(event) => {
+        event.stopPropagation()
+        onDelete()
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault()
+          onDelete()
+        }
+      }}
+    >
+      <circle r={22} fill="transparent" />
+      <circle r={13} fill="hsl(var(--card))" stroke="hsl(var(--node-error))" strokeWidth={2} />
+      <path
+        d="M -4.5 -4.5 L 4.5 4.5 M 4.5 -4.5 L -4.5 4.5"
+        stroke="hsl(var(--node-error))"
+        strokeWidth={2.2}
+        strokeLinecap="round"
+      />
+    </g>
+  )
+}
+
 export function FlowStepEdge({
   id,
+  selected,
+  deletable,
   source,
   target,
   targetHandleId,
@@ -83,6 +128,8 @@ export function FlowStepEdge({
   markerStart,
   interactionWidth,
 }: EdgeProps) {
+  const { deleteElements } = useReactFlow()
+  const coarsePointer = useMediaQuery("(pointer: coarse)")
   const laneX = useStore(loopLaneSelector({ id, source, target, targetHandleId }))
   const centerY = caseTurnY({ sourceHandleId, sourceX, sourceY, targetX, targetY })
   const [path, labelX, labelY] =
@@ -106,7 +153,7 @@ export function FlowStepEdge({
           ...(centerY !== undefined ? { centerY } : {}),
         })
 
-  return (
+  const edge = (
     <BaseEdge
       path={path}
       labelX={labelX}
@@ -120,8 +167,18 @@ export function FlowStepEdge({
       style={style}
       markerEnd={markerEnd}
       markerStart={markerStart}
-      interactionWidth={interactionWidth}
+      interactionWidth={
+        interactionWidth ?? (coarsePointer ? TOUCH_INTERACTION_WIDTH : POINTER_INTERACTION_WIDTH)
+      }
     />
+  )
+  if (!selected || deletable === false) return edge
+
+  return (
+    <>
+      {edge}
+      <EdgeDeleteButton x={labelX} y={labelY} onDelete={() => deleteElements({ edges: [{ id }] })} />
+    </>
   )
 }
 

@@ -324,6 +324,9 @@ export default function ConstructorCanvas({
         // canvas, an example included, has no key that deletes.
         deleteKeyCode={locked ? null : ["Backspace", "Delete"]}
         nodesConnectable={!locked}
+        // A finger lets go roughly near a dot; on a phone the arrow snaps to
+        // a dot from farther away.
+        connectionRadius={isDesktop ? 20 : 40}
         elementsSelectable={!locked}
         onNodeClick={(_, node) => {
           if (locked) return
