@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
-import { render, screen, fireEvent, within } from "@testing-library/react"
+import { render, screen, fireEvent, within, waitFor } from "@testing-library/react"
 import BuilderPage from "../BuilderPage"
 
 /**
@@ -28,6 +28,24 @@ describe("BuilderPage", () => {
     fireEvent.click(container.querySelector(".react-flow__pane") as Element, { clientX: 300, clientY: 300 })
 
     expect(container.querySelectorAll(".react-flow__node")).toHaveLength(2)
+  })
+
+  // Stepping on after a fix would replay the diagram as it was; the first
+  // edit after an error starts the run over, so the next one uses the fix.
+  it("reinicia a execução na primeira alteração depois de um erro", async () => {
+    const { container } = render(<BuilderPage />)
+    placeStartBlock(container)
+    fireEvent.click(screen.getByRole("button", { name: /executar/i }))
+    for (let i = 0; i < 5 && !screen.queryByRole("alert"); i++) {
+      fireEvent.click(screen.getByRole("button", { name: /próximo passo/i }))
+    }
+    await screen.findByRole("alert")
+
+    fireEvent.click(screen.getByTestId("block-tile-process"))
+    fireEvent.click(container.querySelector(".react-flow__pane") as Element, { clientX: 300, clientY: 300 })
+
+    await waitFor(() => expect(screen.queryByText(/Histórico — Passo/)).not.toBeInTheDocument())
+    expect(screen.queryByRole("button", { name: /próximo passo/i })).not.toBeInTheDocument()
   })
 
   it("inicia com o painel do simulador fechado", () => {

@@ -31,6 +31,7 @@ import { CenterDiagramButton, FloatingTools } from "./FloatingTools"
 import { EditLockControlButton, EditLockMenuButton } from "./CanvasEditLock"
 import { RearrangeControlButton, RearrangeMenuButton } from "./CanvasRearrange"
 import { useFitOnDiagramLoad } from "./useFitOnDiagramLoad"
+import { diagramSignature } from "./diagramSignature"
 import { usePanePlacement } from "./usePanePlacement"
 import { useBlockPlacement } from "./BlockPlacement"
 import { PlacementHint } from "./PlacementHint"
@@ -75,7 +76,21 @@ export default function ConstructorCanvas({
   const inspector = useInspector()
   const drawer = useDrawer()
   useFitOnDiagramLoad(diagramLoadCount)
-  const { state: simulatorState } = useSimulator()
+  const { state: simulatorState, reset: resetRun } = useSimulator()
+
+  // Stepping on after fixing an error would replay the diagram as it was, so
+  // the first edit after one starts the run over and the next run uses the fix.
+  const signature = diagramSignature(nodes, edges)
+  const signatureAtError = useRef<string | null>(null)
+  useEffect(() => {
+    if (simulatorState.error === null) {
+      signatureAtError.current = null
+    } else if (signatureAtError.current === null) {
+      signatureAtError.current = signature
+    } else if (signatureAtError.current !== signature) {
+      resetRun()
+    }
+  }, [simulatorState.error, signature, resetRun])
 
   const { isReadOnly } = useDiagramOrigin()
 
