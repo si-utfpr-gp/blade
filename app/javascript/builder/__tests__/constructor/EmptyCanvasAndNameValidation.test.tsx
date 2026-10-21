@@ -1,4 +1,3 @@
-import { chooseAccountIfAsked } from "../test-utils"
 import { describe, it, expect, vi } from "vitest"
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 
@@ -88,7 +87,6 @@ describe("nome obrigatório", () => {
     renderBuilder()
 
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
-    chooseAccountIfAsked()
 
     expect(
       await screen.findByText(/informe um nome para o algoritmo/i),
@@ -101,7 +99,6 @@ describe("nome obrigatório", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalled())
 
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
-    chooseAccountIfAsked()
 
     // Só a carga inicial; nenhum POST.
     expect(
@@ -116,7 +113,6 @@ describe("nome obrigatório", () => {
     expect(nameInput).not.toHaveClass("border-destructive")
 
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
-    chooseAccountIfAsked()
 
     await waitFor(() =>
       expect(screen.getByLabelText("Nome do algoritmo")).toHaveClass(
@@ -130,7 +126,6 @@ describe("nome obrigatório", () => {
     renderBuilder()
 
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
-    chooseAccountIfAsked()
     await waitFor(() =>
       expect(screen.getByLabelText("Nome do algoritmo")).toHaveClass(
         "border-destructive",
@@ -151,7 +146,6 @@ describe("nome obrigatório", () => {
       target: { value: "   " },
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
-    chooseAccountIfAsked()
 
     expect(
       await screen.findByText(/informe um nome para o algoritmo/i),
@@ -176,7 +170,6 @@ describe("nome obrigatório", () => {
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
     fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
-    chooseAccountIfAsked()
 
     await waitFor(() =>
       expect(
@@ -234,7 +227,6 @@ describe("mensagem da API na recusa", () => {
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
     fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
-    chooseAccountIfAsked()
 
     // Scoped to the toast: a screen reader only element carries the same text
     // and would make this pass without the student ever seeing it.
@@ -263,7 +255,6 @@ describe("mensagem da API na recusa", () => {
       await screen.findByRole("button", { name: /atualizar algoritmo/i }),
     )
     fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
-    chooseAccountIfAsked()
 
     const toast = await screen.findByRole("status")
     expect(toast).toHaveTextContent(/já existe um algoritmo com esse nome/i)
@@ -277,7 +268,6 @@ describe("mensagem da API na recusa", () => {
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
     fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
-    chooseAccountIfAsked()
 
     // The provider substitutes a message when the body carries none, so the
     // student still sees something instead of silence.

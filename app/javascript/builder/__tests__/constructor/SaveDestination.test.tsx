@@ -7,12 +7,11 @@ import { LocalAlgorithmsProvider, useLocalAlgorithms } from "../../components/co
 import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvider"
 import { AlgorithmNameProvider, useAlgorithmNameField } from "../../components/constructor/AlgorithmNameProvider"
 import { DiagramOriginProvider, useDiagramOrigin } from "../../components/constructor/DiagramOrigin"
-import { CanvasSaveButton } from "../../components/constructor/CanvasSaveButton"
+import { CanvasSaveButton, SaveLocalButton } from "../../components/constructor/CanvasSaveButton"
 
-// Saving used to go to the account only, and the browser's own store had no
-// way in. Without an account the diagram is kept on this machine; with one,
-// the student picks where a new diagram goes, and a file from this machine
-// can be updated in place or sent to the account.
+// Without an account the diagram is kept on this machine. With one, saving
+// goes to the account, while a button of its own keeps a copy on this
+// machine, and a file from this machine can be updated or sent to the account.
 function Probe() {
   const { algorithmName, onAlgorithmNameChange } = useAlgorithmNameField()
   const { origin, markLocal } = useDiagramOrigin()
@@ -54,6 +53,7 @@ function renderSave(signedIn: boolean) {
                 <ConstructorProvider>
                   <Probe />
                   <CanvasSaveButton />
+                  <SaveLocalButton />
                 </ConstructorProvider>
               </AlgorithmNameProvider>
             </DiagramOriginProvider>
@@ -127,43 +127,31 @@ describe("salvar sem conta", () => {
 })
 
 describe("salvar com conta", () => {
-  it("pergunta onde guardar um diagrama novo", () => {
-    renderSave(true)
-    fireEvent.click(screen.getByRole("button", { name: "bloco" }))
-    name("Soma")
-
-    save()
-
-    expect(screen.getByRole("dialog", { name: /onde salvar/i })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: /nesta máquina/i })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: /na minha conta/i })).toBeInTheDocument()
-  })
-
-  it("guarda nesta máquina quando o aluno escolhe", async () => {
-    renderSave(true)
-    fireEvent.click(screen.getByRole("button", { name: "bloco" }))
-    name("Soma")
-    save()
-
-    fireEvent.click(screen.getByRole("button", { name: /nesta máquina/i }))
-
-    await waitFor(() => expect(screen.getByTestId("local")).toHaveTextContent("Soma:1"))
-    expect(posts()).toHaveLength(0)
-  })
-
-  it("salva na conta quando o aluno escolhe", async () => {
+  it("salva um diagrama novo direto na conta, sem perguntar", async () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse([]))
       .mockResolvedValueOnce(jsonResponse({ id: 9, name: "Soma", diagram: { nodes: [], edges: [] }, created_at: "2026-10-20" }, 201))
     renderSave(true)
     fireEvent.click(screen.getByRole("button", { name: "bloco" }))
     name("Soma")
+
     save()
 
-    fireEvent.click(screen.getByRole("button", { name: /na minha conta/i }))
-
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     await waitFor(() => expect(posts()).toHaveLength(1))
     await waitFor(() => expect(screen.getByTestId("origin")).toHaveTextContent("saved"))
+  })
+
+  it("guarda nesta máquina pelo botão próprio", async () => {
+    renderSave(true)
+    fireEvent.click(screen.getByRole("button", { name: "bloco" }))
+    name("Soma")
+
+    fireEvent.click(screen.getByRole("button", { name: /salvar nesta máquina/i }))
+
+    await waitFor(() => expect(screen.getByTestId("local")).toHaveTextContent("Soma:1"))
+    expect(screen.getByTestId("origin")).toHaveTextContent("local")
+    expect(posts()).toHaveLength(0)
   })
 
   it("oferece atualizar o arquivo desta máquina ou enviá-lo para a conta", () => {
@@ -180,13 +168,22 @@ describe("salvar com conta", () => {
 
   it("não grava nada quando o aluno desiste da escolha", () => {
     renderSave(true)
+    fireEvent.click(screen.getByRole("button", { name: "abrir-local" }))
     fireEvent.click(screen.getByRole("button", { name: "bloco" }))
-    name("Soma")
+    name("Contador")
     save()
 
     fireEvent.click(screen.getByRole("button", { name: /cancelar/i }))
 
-    expect(screen.getByTestId("local")).toBeEmptyDOMElement()
+    expect(screen.getByTestId("local")).toHaveTextContent("Contador:0")
     expect(posts()).toHaveLength(0)
+  })
+})
+
+describe("botão Salvar nesta máquina", () => {
+  it("não aparece para quem não entrou, porque o Salvar já guarda aqui", () => {
+    renderSave(false)
+
+    expect(screen.queryByRole("button", { name: /salvar nesta máquina/i })).not.toBeInTheDocument()
   })
 })

@@ -36,6 +36,9 @@ export function CanvasSaveButton() {
 
     const kept = saveLocalDiagram(trimmed, diagram)
     if (!kept) return
+    // A copy of an account algorithm leaves the canvas on the account, where
+    // it keeps saving on its own; anything else now is this file.
+    if (origin.kind === "saved") return
     markLocal(kept.id)
     markClean()
   }
@@ -105,15 +108,16 @@ export function CanvasSaveButton() {
     proceed()
   }
 
-  // An algorithm on the account is updated there. Without an account the
-  // only place is this machine. Otherwise the student picks.
+  // Signed in, saving goes to the account; Salvar nesta máquina keeps a copy
+  // here instead. A file from this machine asks, since the student put it
+  // here on purpose. Without an account the only place is this machine.
   const proceed = () => {
-    if (origin.kind === "saved") {
-      void saveToAccount()
-    } else if (!signedIn) {
+    if (!signedIn) {
       saveHere()
-    } else {
+    } else if (origin.kind === "local") {
       setChoosing(true)
+    } else {
+      void saveToAccount()
     }
   }
 
@@ -122,36 +126,20 @@ export function CanvasSaveButton() {
     void destination()
   }
 
-  const choices: IDialogChoice[] =
-    origin.kind === "local"
-      ? [
-          {
-            label: "Atualizar nesta máquina",
-            description: "Guarda as mudanças no arquivo deste navegador.",
-            icon: <HardDrive className="h-4 w-4" aria-hidden="true" />,
-            onSelect: choose(saveHere),
-          },
-          {
-            label: "Enviar para minha conta",
-            description: "Leva o algoritmo para a sua conta, onde você o abre em qualquer computador. Ele sai desta máquina.",
-            icon: <Cloud className="h-4 w-4" aria-hidden="true" />,
-            onSelect: choose(saveToAccount),
-          },
-        ]
-      : [
-          {
-            label: "Nesta máquina",
-            description: "Fica só neste navegador, em Meus arquivos.",
-            icon: <HardDrive className="h-4 w-4" aria-hidden="true" />,
-            onSelect: choose(saveHere),
-          },
-          {
-            label: "Na minha conta",
-            description: "Fica em Meus algoritmos, e você o abre em qualquer computador.",
-            icon: <Cloud className="h-4 w-4" aria-hidden="true" />,
-            onSelect: choose(saveToAccount),
-          },
-        ]
+  const choices: IDialogChoice[] = [
+    {
+      label: "Atualizar nesta máquina",
+      description: "Guarda as mudanças no arquivo deste navegador.",
+      icon: <HardDrive className="h-4 w-4" aria-hidden="true" />,
+      onSelect: choose(saveHere),
+    },
+    {
+      label: "Enviar para minha conta",
+      description: "Leva o algoritmo para a sua conta, onde você o abre em qualquer computador. Ele sai desta máquina.",
+      icon: <Cloud className="h-4 w-4" aria-hidden="true" />,
+      onSelect: choose(saveToAccount),
+    },
+  ]
 
   const saving = status === "saving"
 
@@ -166,7 +154,7 @@ export function CanvasSaveButton() {
     : origin.kind === "saved"
       ? "Atualizar o algoritmo atual"
       : signedIn
-        ? "Salvar nesta máquina ou na sua conta"
+        ? "Salvar na sua conta"
         : "Salvar nesta máquina"
 
   // Icon only, to leave room on small screens. With no visible text the
@@ -213,5 +201,54 @@ export function CanvasSaveButton() {
         onCancel={() => setChoosing(false)}
       />
     </div>
+  )
+}
+
+/**
+ * Signed in, Salvar goes to the account; this keeps a copy on this machine,
+ * in Meus arquivos, for whoever also wants one here. A visitor does not see
+ * it: their Salvar already keeps the diagram here.
+ */
+export function SaveLocalButton() {
+  const { nodes, edges, markClean } = useConstructor()
+  const { signedIn } = useAlgorithms()
+  const { origin, isReadOnly, markLocal } = useDiagramOrigin()
+  const { algorithmName, flagMissingName } = useAlgorithmNameField()
+  const { saveDiagram, updateAlgorithm } = useLocalAlgorithms()
+  const { notify } = useToast()
+
+  if (!signedIn) return null
+
+  const handleClick = () => {
+    if (isReadOnly) return
+    const trimmed = algorithmName.trim()
+    if (!trimmed) {
+      notify("Informe um nome para o algoritmo antes de salvar.", "error")
+      flagMissingName()
+      return
+    }
+    const diagram = serializeDiagramForSave(nodes, edges)
+    if (origin.kind === "local") {
+      if (updateAlgorithm(origin.id, trimmed, diagram)) markClean()
+      return
+    }
+    const kept = saveDiagram(trimmed, diagram)
+    // A copy of an account algorithm leaves the canvas on the account.
+    if (!kept || origin.kind === "saved") return
+    markLocal(kept.id)
+    markClean()
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={isReadOnly}
+      aria-label="Salvar nesta máquina"
+      title="Guardar uma cópia neste navegador, em Meus arquivos"
+      className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card/95 text-foreground transition-colors hover:border-primary/40 hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-40 sm:h-8 sm:w-8"
+    >
+      <HardDrive className="h-5 w-5" aria-hidden="true" />
+    </button>
   )
 }

@@ -21,7 +21,7 @@ import {
 } from "../blocks/blockDefinitions"
 import ContextMenu from "./ContextMenu"
 import { RunDiagramButton } from "./RunDiagramButton"
-import { CanvasSaveButton } from "./CanvasSaveButton"
+import { CanvasSaveButton, SaveLocalButton } from "./CanvasSaveButton"
 import { CanvasExportButton } from "./CanvasExportButton"
 import { ShareButton } from "./ShareButton"
 import { CanvasHistoryControls } from "./CanvasHistoryControls"
@@ -234,6 +234,7 @@ export default function ConstructorCanvas({
               className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-lg border border-border bg-card/95 px-1.5 py-1 shadow-md backdrop-blur sm:px-2 sm:py-1.5"
             >
               <CanvasSaveButton />
+              <SaveLocalButton />
               <ShareButton />
             </div>
           )}
@@ -298,6 +299,7 @@ export default function ConstructorCanvas({
                     </button>
                   )}
                   <CanvasSaveButton />
+                  <SaveLocalButton />
                   <ShareButton />
                   <CanvasExportButton />
                 </>

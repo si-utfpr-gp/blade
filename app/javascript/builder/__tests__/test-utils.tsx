@@ -1,4 +1,3 @@
-import { screen, fireEvent } from "@testing-library/react"
 import { type ReactNode } from "react"
 import { SimulatorProvider } from "../components/simulator/SimulatorContext"
 import { ToastProvider } from "../components/ui/Toast"
@@ -49,14 +48,4 @@ export function BuilderProviders({
       </ToastProvider>
     </SimulatorProvider>
   )
-}
-
-/**
- * Signed in, saving a new diagram asks where it goes. Tests written about
- * saving to the account pick the account, and go on as before when nothing
- * was asked.
- */
-export function chooseAccountIfAsked() {
-  const choice = screen.queryByRole("button", { name: /^(na minha conta|enviar para minha conta)$/i })
-  if (choice) fireEvent.click(choice)
 }
