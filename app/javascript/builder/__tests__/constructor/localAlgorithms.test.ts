@@ -4,6 +4,7 @@ import {
   writeLocalAlgorithms,
   removeLocalAlgorithm,
   saveLocalAlgorithm,
+  updateLocalAlgorithm,
   LOCAL_ALGORITHMS_KEY,
   type LocalAlgorithm,
 } from "../../components/constructor/localAlgorithms"
@@ -207,6 +208,44 @@ describe("algoritmos locais", () => {
         ok: false,
         reason: "unavailable",
       })
+    })
+  })
+
+  // Renaming a file and saving over one both rewrite it in place, keeping its
+  // id and its place in the list, so the canvas still points at it.
+  describe("atualização", () => {
+    const kept = [
+      { id: "a", name: "Contador", diagram, created_at: "2026-10-14T12:00:00.000Z" },
+      { id: "b", name: "Soma", diagram, created_at: "2026-10-15T12:00:00.000Z" },
+    ]
+
+    it("renomeia sem mexer no diagrama nem na ordem", () => {
+      const storage = stored(kept)
+      vi.stubGlobal("localStorage", storage)
+
+      const result = updateLocalAlgorithm("b", { name: "Soma de dois" })
+
+      expect(result.ok && result.value.name).toBe("Soma de dois")
+      const written = JSON.parse(storage.setItem.mock.calls[0][1]) as LocalAlgorithm[]
+      expect(written.map((item) => [item.id, item.name])).toEqual([["a", "Contador"], ["b", "Soma de dois"]])
+      expect(written[1].diagram).toEqual(diagram)
+    })
+
+    it("troca o diagrama de um arquivo guardado", () => {
+      const storage = stored(kept)
+      vi.stubGlobal("localStorage", storage)
+      const changed = { nodes: [], edges: [] }
+
+      updateLocalAlgorithm("a", { name: "Contador", diagram: changed })
+
+      const written = JSON.parse(storage.setItem.mock.calls[0][1]) as LocalAlgorithm[]
+      expect(written[0].diagram).toEqual(changed)
+    })
+
+    it("avisa quando o arquivo não existe mais", () => {
+      vi.stubGlobal("localStorage", stored(kept))
+
+      expect(updateLocalAlgorithm("sumiu", { name: "x" })).toEqual({ ok: false, reason: "missing" })
     })
   })
 })

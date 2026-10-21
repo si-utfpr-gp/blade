@@ -12,12 +12,24 @@ import {
   readLocalAlgorithms,
   removeLocalAlgorithm,
   saveLocalAlgorithm,
+  updateLocalAlgorithm,
   type LocalAlgorithm,
+  type LocalStorageFailure,
 } from "./localAlgorithms"
 
 interface ILocalAlgorithmsContextValue {
   algorithms: LocalAlgorithm[]
-  saveDiagram: (name: string, diagram: SerializedDiagram) => boolean
+  // The stored file, or null when the browser refused it.
+  // `quiet` leaves the success message to the caller, as the import does.
+  saveDiagram: (
+    name: string,
+    diagram: SerializedDiagram,
+    options?: { quiet?: boolean },
+  ) => LocalAlgorithm | null
+  // Saving over a file and renaming one keep its id, so the canvas still
+  // points at it.
+  updateAlgorithm: (id: string, name: string, diagram: SerializedDiagram) => boolean
+  renameAlgorithm: (id: string, name: string) => boolean
   deleteAlgorithm: (id: string) => boolean
   getAlgorithm: (id: string) => LocalAlgorithm | undefined
 }
@@ -44,22 +56,46 @@ export function LocalAlgorithmsProvider({ children }: { children: ReactNode }) {
   const { notify } = useToast()
 
   const saveDiagram = useCallback(
-    (name: string, diagram: SerializedDiagram) => {
+    (name: string, diagram: SerializedDiagram, options?: { quiet?: boolean }) => {
       const result = saveLocalAlgorithm(name, diagram)
 
       if (!result.ok) {
-        notify(
-          result.reason === "quota" ? STORAGE_FULL_MESSAGE : STORAGE_BLOCKED_MESSAGE,
-          "error",
-        )
-        return false
+        notify(failureMessage(result.reason), "error")
+        return null
       }
 
       setAlgorithms((current) => [ result.value, ...current ])
-      notify(`Algoritmo "${name}" guardado neste navegador.`, "success")
+      if (!options?.quiet) notify(`Algoritmo "${name}" guardado neste navegador.`, "success")
+      return result.value
+    },
+    [notify],
+  )
+
+  const rewrite = useCallback(
+    (id: string, changes: { name: string; diagram?: SerializedDiagram }) => {
+      const result = updateLocalAlgorithm(id, changes)
+      if (!result.ok) {
+        notify(failureMessage(result.reason), "error")
+        return false
+      }
+      setAlgorithms((current) => current.map((item) => (item.id === id ? result.value : item)))
       return true
     },
     [notify],
+  )
+
+  const updateAlgorithm = useCallback(
+    (id: string, name: string, diagram: SerializedDiagram) => {
+      const updated = rewrite(id, { name, diagram })
+      if (updated) notify(`Algoritmo "${name}" atualizado neste navegador.`, "success")
+      return updated
+    },
+    [rewrite, notify],
+  )
+
+  const renameAlgorithm = useCallback(
+    (id: string, name: string) => rewrite(id, { name }),
+    [rewrite],
   )
 
   const deleteAlgorithm = useCallback(
@@ -83,8 +119,8 @@ export function LocalAlgorithmsProvider({ children }: { children: ReactNode }) {
   )
 
   const value = useMemo<ILocalAlgorithmsContextValue>(
-    () => ({ algorithms, saveDiagram, deleteAlgorithm, getAlgorithm }),
-    [algorithms, saveDiagram, deleteAlgorithm, getAlgorithm],
+    () => ({ algorithms, saveDiagram, updateAlgorithm, renameAlgorithm, deleteAlgorithm, getAlgorithm }),
+    [algorithms, saveDiagram, updateAlgorithm, renameAlgorithm, deleteAlgorithm, getAlgorithm],
   )
 
   return (
@@ -98,6 +134,14 @@ const STORAGE_BLOCKED_MESSAGE =
   "Não foi possível usar o armazenamento deste navegador, então o algoritmo não ficou guardado."
 const STORAGE_FULL_MESSAGE =
   "O armazenamento do navegador está cheio. Exclua um algoritmo guardado para liberar espaço."
+const STORAGE_MISSING_MESSAGE =
+  "Esse arquivo não está mais guardado neste navegador; ele pode ter sido excluído em outra aba."
+
+function failureMessage(reason: LocalStorageFailure): string {
+  if (reason === "quota") return STORAGE_FULL_MESSAGE
+  if (reason === "missing") return STORAGE_MISSING_MESSAGE
+  return STORAGE_BLOCKED_MESSAGE
+}
 
 export function useLocalAlgorithms(): ILocalAlgorithmsContextValue {
   const context = useContext(LocalAlgorithmsContext)

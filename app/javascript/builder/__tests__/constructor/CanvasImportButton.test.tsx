@@ -12,6 +12,10 @@ import {
 } from "../../components/constructor/AlgorithmNameProvider"
 import { DiagramOriginProvider, useDiagramOrigin } from "../../components/constructor/DiagramOrigin"
 import { CanvasImportButton } from "../../components/constructor/CanvasImportButton"
+import {
+  LocalAlgorithmsProvider,
+  useLocalAlgorithms,
+} from "../../components/constructor/LocalAlgorithmsProvider"
 
 const exported = {
   nodes: [
@@ -51,6 +55,7 @@ function renderImport() {
   return render(
     <SimulatorProvider>
       <ToastProvider>
+        <LocalAlgorithmsProvider>
         <DiagramOriginProvider>
           <AlgorithmNameProvider>
             <ConstructorProvider>
@@ -59,6 +64,7 @@ function renderImport() {
             </ConstructorProvider>
           </AlgorithmNameProvider>
         </DiagramOriginProvider>
+        </LocalAlgorithmsProvider>
       </ToastProvider>
     </SimulatorProvider>,
   )
@@ -224,30 +230,62 @@ describe("CanvasImportButton", () => {
     expect(new Set(tops).size).toBe(3)
   })
 
-  it("marca a origem como nova, para o salvamento criar em vez de atualizar", async () => {
+  // An imported file is kept in Meus arquivos, so it stays on this machine
+  // and saving it again updates that file instead of starting another.
+  it("guarda o arquivo importado em Meus arquivos e passa a apontar para ele", async () => {
+    let value: string | null = null
+    vi.stubGlobal("localStorage", {
+      getItem: () => value,
+      setItem: (_: string, next: string) => {
+        value = next
+      },
+      removeItem: () => {},
+    })
     const { container } = render(
       <SimulatorProvider>
         <ToastProvider>
-          <DiagramOriginProvider>
-            <AlgorithmNameProvider>
-              <ConstructorProvider>
-                <OriginProbe />
-                <CanvasImportButton />
-              </ConstructorProvider>
-            </AlgorithmNameProvider>
-          </DiagramOriginProvider>
+          <LocalAlgorithmsProvider>
+            <DiagramOriginProvider>
+              <AlgorithmNameProvider>
+                <ConstructorProvider>
+                  <OriginProbe />
+                  <CanvasImportButton />
+                </ConstructorProvider>
+              </AlgorithmNameProvider>
+            </DiagramOriginProvider>
+          </LocalAlgorithmsProvider>
         </ToastProvider>
       </SimulatorProvider>,
     )
+    pickFile(container, jsonFile(JSON.stringify(exported), "Contador.json"))
+
+    await waitFor(() => expect(screen.getByTestId("origin-kind").textContent).toBe("local"))
+    expect(screen.getByTestId("local-names").textContent).toBe("Contador")
+    expect(JSON.parse(value ?? "[]")[0]).toMatchObject({ name: "Contador" })
+  })
+
+  it("ainda abre o arquivo quando o navegador não deixa guardar", async () => {
+    vi.stubGlobal("localStorage", {
+      getItem: () => null,
+      setItem: () => {
+        throw new Error("bloqueado")
+      },
+      removeItem: () => {},
+    })
+    const { container } = renderImport()
     pickFile(container, jsonFile(JSON.stringify(exported)))
 
-    await waitFor(() =>
-      expect(screen.getByTestId("origin-kind").textContent).toBe("blank"),
-    )
+    await waitFor(() => expect(screen.getByTestId("count").textContent).toBe("2"))
   })
 })
 
 function OriginProbe() {
   const { origin } = useDiagramOrigin()
-  return <span data-testid="origin-kind">{origin.kind}</span>
+  const { algorithms } = useLocalAlgorithms()
+  return (
+    <>
+      <span data-testid="origin-kind">{origin.kind}</span>
+      <span data-testid="local-names">{algorithms.map((item) => item.name).join(",")}</span>
+    </>
+  )
 }

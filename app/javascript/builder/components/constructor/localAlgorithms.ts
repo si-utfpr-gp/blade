@@ -16,9 +16,10 @@ export const LOCAL_ALGORITHMS_KEY = "blade.local-algorithms.v1"
  *
  * "quota" and "unavailable" are kept apart because the student can act on them
  * differently: a full store is fixed by deleting something, while a blocked
- * one only disappears by allowing storage in the browser.
+ * one only disappears by allowing storage in the browser. "missing" is a file
+ * deleted in another tab while this one still showed it.
  */
-export type LocalStorageFailure = "quota" | "unavailable"
+export type LocalStorageFailure = "quota" | "unavailable" | "missing"
 
 export type LocalResult<T> =
   | { ok: true; value: T }
@@ -84,6 +85,29 @@ export function saveLocalAlgorithm(
   if (!written.ok) return written
 
   return { ok: true, value: algorithm }
+}
+
+/**
+ * Rewrites a stored file in place, keeping its id and its place in the list,
+ * so renaming it or saving over it leaves the canvas pointing at it.
+ */
+export function updateLocalAlgorithm(
+  id: string,
+  changes: { name: string; diagram?: SerializedDiagram },
+): LocalResult<LocalAlgorithm> {
+  const current = readLocalAlgorithms()
+  if (!current.ok) return current
+
+  const existing = current.value.find((item) => item.id === id)
+  if (!existing) return { ok: false, reason: "missing" }
+
+  const updated: LocalAlgorithm = { ...existing, ...changes }
+  const written = writeLocalAlgorithms(
+    current.value.map((item) => (item.id === id ? updated : item)),
+  )
+  if (!written.ok) return written
+
+  return { ok: true, value: updated }
 }
 
 function toAlgorithms(parsed: unknown): LocalAlgorithm[] {

@@ -20,7 +20,7 @@ const diagram = {
 }
 
 function Probe() {
-  const { algorithms, saveDiagram, deleteAlgorithm, getAlgorithm } =
+  const { algorithms, saveDiagram, deleteAlgorithm, getAlgorithm, renameAlgorithm, updateAlgorithm } =
     useLocalAlgorithms()
   return (
     <div>
@@ -44,6 +44,16 @@ function Probe() {
       >
         ler
       </button>
+      <button type="button" onClick={() => renameAlgorithm(algorithms[0]?.id ?? "", "Renomeado")}>
+        renomear
+      </button>
+      <button
+        type="button"
+        onClick={() => updateAlgorithm(algorithms[0]?.id ?? "", "Contador", { nodes: [], edges: [] })}
+      >
+        atualizar
+      </button>
+      <span data-testid="first-nodes">{algorithms[0]?.diagram.nodes.length ?? "-"}</span>
     </div>
   )
 }
@@ -232,5 +242,51 @@ describe("LocalAlgorithmsProvider", () => {
 
     await waitFor(() => expect(storage.setItem).toHaveBeenCalled())
     expect(storage.setItem.mock.calls[0][0]).toBe(LOCAL_ALGORITHMS_KEY)
+  })
+
+  it("devolve o arquivo guardado, para o canvas apontar para ele", () => {
+    useMemoryStorage()
+    let saved: unknown
+    function SaveProbe() {
+      const { saveDiagram } = useLocalAlgorithms()
+      return (
+        <button type="button" onClick={() => { saved = saveDiagram("Contador", diagram) }}>
+          guardar
+        </button>
+      )
+    }
+    render(
+      <ToastProvider>
+        <LocalAlgorithmsProvider>
+          <SaveProbe />
+        </LocalAlgorithmsProvider>
+      </ToastProvider>,
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "guardar" }))
+
+    expect(saved).toMatchObject({ name: "Contador", id: expect.any(String) })
+  })
+
+  it("renomeia um arquivo guardado", () => {
+    useMemoryStorage()
+    renderProvider()
+    fireEvent.click(screen.getByRole("button", { name: "salvar" }))
+
+    fireEvent.click(screen.getByRole("button", { name: "renomear" }))
+
+    expect(screen.getByTestId("names")).toHaveTextContent("Renomeado")
+    expect(screen.getByTestId("count")).toHaveTextContent("1")
+  })
+
+  it("salva por cima de um arquivo guardado, sem criar outro", () => {
+    useMemoryStorage()
+    renderProvider()
+    fireEvent.click(screen.getByRole("button", { name: "salvar" }))
+
+    fireEvent.click(screen.getByRole("button", { name: "atualizar" }))
+
+    expect(screen.getByTestId("count")).toHaveTextContent("1")
+    expect(screen.getByTestId("first-nodes")).toHaveTextContent("0")
   })
 })
