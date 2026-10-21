@@ -28,6 +28,7 @@ import { CanvasHistoryControls } from "./CanvasHistoryControls"
 import { CenterDiagramButton, FloatingTools } from "./FloatingTools"
 import { useFitOnDiagramLoad } from "./useFitOnDiagramLoad"
 import { usePanePlacement } from "./usePanePlacement"
+import { useBlockPlacement } from "./BlockPlacement"
 import { PlacementHint } from "./PlacementHint"
 import { useDiagramOrigin } from "./DiagramOrigin"
 import { useIsDesktop } from "../layout/useMediaQuery"
@@ -141,6 +142,21 @@ export default function ConstructorCanvas({
     addNode(type, position, variant)
   }
 
+  const { registerDropTarget } = useBlockPlacement()
+  useEffect(() => {
+    registerDropTarget((point, block) => {
+      const rect = wrapperRef.current?.getBoundingClientRect()
+      if (locked || !rect) return false
+      const inside =
+        point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom
+      if (!inside) return false
+
+      addNode(block.type, centerDropPosition(screenToFlowPosition(point), block.type), block.variant)
+      return true
+    })
+    return () => registerDropTarget(null)
+  }, [registerDropTarget, locked, addNode, screenToFlowPosition])
+
   const handleNodeContextMenu = useCallback(
     (event: MouseEvent, node: AlgorithmNode) => {
       if (locked) return
@@ -191,6 +207,7 @@ export default function ConstructorCanvas({
   return (
     <div
       ref={wrapperRef}
+      data-testid="canvas-drop-zone"
       className="relative h-full w-full"
       onDrop={handleDrop}
       onDragOver={(event) => {

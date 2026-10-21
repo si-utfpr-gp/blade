@@ -10,6 +10,7 @@ import { useBlockPlacement } from "../constructor/BlockPlacement"
 import { useDrawer } from "../layout/DrawerContext"
 import { ExamplesSection } from "../constructor/ExamplesSection"
 import { CanvasActions } from "../constructor/CanvasActions"
+import { useTouchBlockDrag } from "./useTouchBlockDrag"
 
 interface IBlocksPanelProps {
   errors: string[]
@@ -21,6 +22,12 @@ export default function BlocksPanel({ errors }: IBlocksPanelProps) {
   // A mouse drag ends with a click event too; without this flag a drag would
   // also arm the block and the next tap would drop a second copy.
   const draggedRef = useRef(false)
+  const touchDrag = useTouchBlockDrag({
+    // The drawer covers the canvas; it slides away as soon as a block lifts.
+    onLift: () => {
+      if (drawer?.isOpen) drawer.close()
+    },
+  })
 
   return (
     <div className="flex h-full flex-col bg-card">
@@ -39,6 +46,10 @@ export default function BlocksPanel({ errors }: IBlocksPanelProps) {
               }
               data-testid={`block-tile-${block.type}${block.variant ? `-${block.variant}` : ""}`}
               draggable
+              onPointerDown={(event) =>
+                touchDrag.onPointerDown(event, { type: block.type, variant: block.variant })
+              }
+              style={{ touchAction: "pan-y" }}
               onDragStart={(event) => {
                 draggedRef.current = true
                 event.dataTransfer.setData(DRAG_DATA_KEY, block.type)
@@ -59,7 +70,7 @@ export default function BlocksPanel({ errors }: IBlocksPanelProps) {
                 pendingBlock?.variant === block.variant
               }
               onClick={() => {
-                if (draggedRef.current) return
+                if (draggedRef.current || touchDrag.justDragged.current) return
                 arm(block.type, block.variant)
                 // The drawer covers the canvas, so the block would land
                 // behind it if the menu stayed open.
@@ -85,6 +96,8 @@ export default function BlocksPanel({ errors }: IBlocksPanelProps) {
           ))}
         </div>
       </div>
+
+      {touchDrag.preview}
 
       <ExamplesSection />
 

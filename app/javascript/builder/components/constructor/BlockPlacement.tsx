@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react"
@@ -19,10 +20,17 @@ export interface IPendingBlock {
   variant?: "start" | "end"
 }
 
+/** Places a block at a screen point; false when the point is off the canvas. */
+export type DropAtScreen = (point: { x: number; y: number }, block: IPendingBlock) => boolean
+
 interface IBlockPlacementContextValue {
   pendingBlock: IPendingBlock | null
   arm: (type: BlockType, variant?: "start" | "end") => void
   cancel: () => void
+  // A finger drag ends outside React Flow's reach, in the blocks menu's own
+  // handlers; the canvas registers how to turn that point into a block.
+  dropAt: DropAtScreen
+  registerDropTarget: (target: DropAtScreen | null) => void
 }
 
 const BlockPlacementContext = createContext<IBlockPlacementContextValue | null>(
@@ -38,9 +46,18 @@ export function BlockPlacementProvider({ children }: { children: ReactNode }) {
 
   const cancel = useCallback(() => setPendingBlock(null), [])
 
+  const dropTarget = useRef<DropAtScreen | null>(null)
+  const registerDropTarget = useCallback((target: DropAtScreen | null) => {
+    dropTarget.current = target
+  }, [])
+  const dropAt = useCallback<DropAtScreen>(
+    (point, block) => dropTarget.current?.(point, block) ?? false,
+    [],
+  )
+
   const value = useMemo(
-    () => ({ pendingBlock, arm, cancel }),
-    [pendingBlock, arm, cancel],
+    () => ({ pendingBlock, arm, cancel, dropAt, registerDropTarget }),
+    [pendingBlock, arm, cancel, dropAt, registerDropTarget],
   )
 
   return (
