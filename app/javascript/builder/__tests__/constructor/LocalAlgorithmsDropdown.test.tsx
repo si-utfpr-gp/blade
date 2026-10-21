@@ -199,7 +199,7 @@ describe("ExamplesSection — Meus arquivos", () => {
     useMemoryStorage(
       JSON.stringify([
         { id: "a", name: "Contador", diagram, created_at: "2026-10-14" },
-        { id: "b", name: "Soma", diagram, created_at: "2026-10-15" },
+        { id: "b", name: "Soma", diagram, created_at: "2026-10-15T12:00:00.000Z" },
       ]),
     )
 
@@ -207,6 +207,7 @@ describe("ExamplesSection — Meus arquivos", () => {
     fireEvent.click(screen.getByRole("button", { name: /meus arquivos/i }))
 
     expect(screen.getAllByText(/nesta máquina/i)).toHaveLength(1)
-    expect(screen.getByText("2026-10-15")).toBeInTheDocument()
+    // As a date, not the raw timestamp the browser stores.
+    expect(screen.getByText("15/10/2026")).toBeInTheDocument()
   })
 })

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { BookOpen, FolderOpen, ChevronDown, ChevronRight, Trash2 } from "lucide-react"
+import { BookOpen, FolderOpen, ChevronDown, ChevronRight, Pencil, Trash2 } from "lucide-react"
 import { useConstructor } from "./ConstructorProvider"
 import { useSimulator } from "../simulator/SimulatorContext"
 import {
@@ -10,7 +10,7 @@ import { layoutExampleDiagram } from "./layoutExampleDiagram"
 import { HardDrive } from "lucide-react"
 import { useAlgorithms } from "./AlgorithmsProvider"
 import { useLocalAlgorithms } from "./LocalAlgorithmsProvider"
-import { useAlgorithmNameField } from "./AlgorithmNameProvider"
+import { ALGORITHM_NAME_MAX_LENGTH, useAlgorithmNameField } from "./AlgorithmNameProvider"
 import { useToast } from "../ui/Toast"
 import { ConfirmDialog } from "../ui/ConfirmDialog"
 import { CanvasImportButton } from "./CanvasImportButton"
@@ -28,6 +28,12 @@ const CATEGORY_COLOR: Record<string, string> = {
 // Not a category like the examples use: this says where the diagram lives,
 // which is the one thing a student cannot tell by looking at the list.
 const LOCAL_CATEGORY = "Nesta máquina"
+
+// The browser keeps a timestamp; the list shows the day it stands for.
+function keptOn(timestamp: string): string {
+  const date = new Date(timestamp)
+  return Number.isNaN(date.getTime()) ? timestamp : date.toLocaleDateString("pt-BR")
+}
 
 function categoryStyle(category: string) {
   const token = CATEGORY_COLOR[category]
@@ -63,6 +69,8 @@ interface ISidebarDropdownProps {
   // Left out where the item does not belong to the student, such as the
   // examples that ship with the app.
   onDelete?: (id: string) => void
+  // Left out for the examples too. Gets a trimmed, non-empty name.
+  onRename?: (id: string, name: string) => void
 }
 
 function SidebarDropdown({
@@ -74,8 +82,19 @@ function SidebarDropdown({
   caption,
   onSelect,
   onDelete,
+  onRename,
 }: ISidebarDropdownProps) {
   const [open, setOpen] = useState(false)
+  const [renaming, setRenaming] = useState<{ id: string; draft: string } | null>(null)
+
+  // Enter and leaving the field both end up here; the first one wins.
+  const finishRename = () => {
+    if (!renaming) return
+    const item = items.find((candidate) => candidate.id === renaming.id)
+    const name = renaming.draft.trim()
+    setRenaming(null)
+    if (item && name && name !== item.title) onRename?.(item.id, name)
+  }
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -160,6 +179,29 @@ function SidebarDropdown({
                 key={item.id}
                 className="flex w-full items-center gap-1 rounded-md transition-colors hover:bg-muted/50"
               >
+                {renaming?.id === item.id ? (
+                  <input
+                    aria-label={`Novo nome para "${item.title}"`}
+                    value={renaming.draft}
+                    maxLength={ALGORITHM_NAME_MAX_LENGTH}
+                    autoFocus
+                    onFocus={(event) => event.currentTarget.select()}
+                    onChange={(event) => setRenaming({ id: item.id, draft: event.target.value })}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault()
+                        finishRename()
+                      } else if (event.key === "Escape") {
+                        // Gives up on the name only; the list and the drawer
+                        // stay open.
+                        event.stopPropagation()
+                        setRenaming(null)
+                      }
+                    }}
+                    onBlur={finishRename}
+                    className="min-h-11 min-w-0 flex-1 rounded-md border border-primary/50 bg-background px-2 text-xs font-medium text-foreground outline-none ring-2 ring-primary/20 md:min-h-0 md:py-1.5"
+                  />
+                ) : (
                 <button
                   type="button"
                   aria-pressed={isSelected}
@@ -207,7 +249,19 @@ function SidebarDropdown({
                     }`}
                   />
                 </button>
-                {onDelete && (
+                )}
+                {onRename && renaming?.id !== item.id && (
+                  <button
+                    type="button"
+                    aria-label={`Renomear "${item.title}"`}
+                    title="Renomear"
+                    onClick={() => setRenaming({ id: item.id, draft: item.title })}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary md:h-7 md:w-7"
+                  >
+                    <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                  </button>
+                )}
+                {onDelete && renaming?.id !== item.id && (
                   <button
                     type="button"
                     aria-label={`Excluir "${item.title}"`}
@@ -230,12 +284,13 @@ function SidebarDropdown({
 export function ExamplesSection() {
   const { loadCanvasNodes } = useConstructor()
   const { reset } = useSimulator()
-  const { algorithms, signedIn, deleteAlgorithm } = useAlgorithms()
+  const { algorithms, signedIn, deleteAlgorithm, updateAlgorithm } = useAlgorithms()
   const openSaved = useOpenSavedAlgorithm()
   const {
     algorithms: localAlgorithms,
     getAlgorithm: getLocalAlgorithm,
     deleteAlgorithm: deleteLocalAlgorithm,
+    renameAlgorithm: renameLocalAlgorithm,
   } = useLocalAlgorithms()
   const { onAlgorithmNameChange } = useAlgorithmNameField()
   const { origin, markExample, markLocal } = useDiagramOrigin()
@@ -301,6 +356,26 @@ export function ExamplesSection() {
     })
   }
 
+  // The open diagram keeps its name in the field at the top, so renaming it
+  // from the list renames it there too.
+  const handleRenameLocal = (id: string, name: string) => {
+    if (renameLocalAlgorithm(id, name) && origin.kind === "local" && origin.id === id) {
+      onAlgorithmNameChange(name)
+    }
+  }
+
+  const handleRenameSaved = async (id: string, name: string) => {
+    const algorithm = algorithms.find((item) => item.id.toString() === id)
+    if (!algorithm) return
+    const result = await updateAlgorithm(algorithm.id, name, algorithm.diagram)
+    if (!result.ok) {
+      // The account says why, for instance that the name is taken.
+      notify(result.message, "error")
+      return
+    }
+    if (origin.kind === "saved" && origin.id === algorithm.id) onAlgorithmNameChange(result.algorithm.name)
+  }
+
   const handleDeleteLocal = (id: string) => {
     const algorithm = localAlgorithms.find((item) => item.id === id)
     if (!algorithm) return
@@ -318,15 +393,16 @@ export function ExamplesSection() {
         items={localAlgorithms.map((algorithm) => ({
           id: algorithm.id,
           title: algorithm.name,
-          description: `Guardado em ${algorithm.created_at}`,
+          description: `Guardado em ${keptOn(algorithm.created_at)}`,
           spokenHint: LOCAL_CATEGORY,
-          meta: algorithm.created_at,
+          meta: keptOn(algorithm.created_at),
         }))}
         caption="Guardados nesta máquina, só neste navegador."
         selectedId={selectedLocalId}
         emptyText="Nenhum arquivo guardado neste navegador."
         onSelect={handleSelectLocalAlgorithm}
         onDelete={handleDeleteLocal}
+        onRename={handleRenameLocal}
       />
 
       <CanvasImportButton />
@@ -344,6 +420,7 @@ export function ExamplesSection() {
           emptyText="Nenhum algoritmo salvo ainda."
           onSelect={handleSelectUserAlgorithm}
           onDelete={handleDeleteSaved}
+          onRename={(id, name) => void handleRenameSaved(id, name)}
         />
       )}
 
