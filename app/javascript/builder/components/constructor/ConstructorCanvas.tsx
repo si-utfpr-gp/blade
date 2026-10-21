@@ -27,6 +27,7 @@ import { ShareButton } from "./ShareButton"
 import { CanvasHistoryControls } from "./CanvasHistoryControls"
 import { CenterDiagramButton, FloatingTools } from "./FloatingTools"
 import { EditLockControlButton, EditLockMenuButton } from "./CanvasEditLock"
+import { RearrangeControlButton, RearrangeMenuButton } from "./CanvasRearrange"
 import { useFitOnDiagramLoad } from "./useFitOnDiagramLoad"
 import { usePanePlacement } from "./usePanePlacement"
 import { useBlockPlacement } from "./BlockPlacement"
@@ -279,6 +280,7 @@ export default function ConstructorCanvas({
                     <CanvasHistoryControls locked={locked} />
                   </div>
                   <EditLockMenuButton />
+                  <RearrangeMenuButton locked={locked} />
                   <div onClick={close}>
                     <CenterDiagramButton />
                   </div>
@@ -350,6 +352,7 @@ export default function ConstructorCanvas({
         {/* Pinch zooms on a phone, and the bar needs the bottom edge. */}
         {isDesktop && (
           <Controls showInteractive={false}>
+            {!viewer && <RearrangeControlButton locked={locked} />}
             {!viewer && <EditLockControlButton />}
           </Controls>
         )}

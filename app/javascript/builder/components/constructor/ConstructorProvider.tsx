@@ -40,6 +40,7 @@ import {
 import { diagramSignature } from "./diagramSignature"
 import { serializeDiagramForSave } from "./serializeDiagram"
 import { recenterOnMeasuredSize, type PlannedCenters } from "./recenterOnMeasuredSize"
+import { layoutExampleDiagram } from "./layoutExampleDiagram"
 import {
   edgesFromDiagram,
   isHistoryWorthy,
@@ -130,6 +131,10 @@ interface ConstructorContextValue {
   ) => void
 
   resetCanvas: () => void
+
+  // Lays the diagram out as the examples are drawn: the main flow in one
+  // column, branches beside their decision. One step in the history.
+  rearrange: () => void
 
   clearCanvas: () => void
 
@@ -578,6 +583,36 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
     setCleanSignature(diagramSignature(centered, edges))
   }, [nodes, edges, setNodes])
 
+  const rearrange = useCallback(() => {
+    if (nodes.length === 0) return
+    const { nodes: planned, centers } = layoutExampleDiagram({
+      id: "rearrange",
+      title: "",
+      description: "",
+      category: "",
+      diagram: {
+        nodes: nodes.map((node) => ({ id: node.id, type: node.type ?? "", data: node.data as Record<string, unknown> })),
+        edges: edges.map((edge) => ({
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          ...(edge.sourceHandle ? { sourceHandle: edge.sourceHandle } : {}),
+          ...(edge.targetHandle ? { targetHandle: edge.targetHandle } : {}),
+        })),
+      },
+    })
+    const plannedById = new Map(planned.map((node) => [node.id, node.position]))
+    record()
+    // The blocks on the canvas are already measured, so each one lands on its
+    // planned centre right away; an unmeasured one keeps the estimate.
+    setNodes(
+      recenterOnMeasuredSize(
+        nodes.map((node) => ({ ...node, position: plannedById.get(node.id) ?? node.position })),
+        centers,
+      ),
+    )
+  }, [nodes, edges, record, setNodes])
+
   const resetCanvas = useCallback(() => {
     pendingCenters.current = null
     setNodes(initialNodes)
@@ -629,6 +664,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       duplicateNode: unlessLocked(duplicateNode),
       loadCanvasNodes,
       resetCanvas,
+      rearrange: unlessLocked(rearrange),
       clearCanvas,
       isDirty,
       markClean,
@@ -660,6 +696,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       duplicateNode,
       loadCanvasNodes,
       resetCanvas,
+      rearrange,
       clearCanvas,
       isDirty,
       markClean,
