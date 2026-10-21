@@ -198,7 +198,9 @@ export function FloatingTools({
       ref={rootRef}
       data-testid="floating-tools"
       hidden={hidden}
-      className="fixed z-[60]"
+      // Over the drawer and the debugger sheet (z-40), under dialogs (z-50),
+      // which the tools themselves open.
+      className="fixed z-[45]"
       style={{
         left: position.x,
         top: position.y,

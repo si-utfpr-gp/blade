@@ -158,3 +158,70 @@ export function ConfirmDialog({
     </DialogPrimitive.Root>
   )
 }
+export interface IDialogChoice {
+  label: string
+  description: string
+  icon?: React.ReactNode
+  onSelect: () => void
+}
+
+/**
+ * Asks the student to pick one of a few ways to go on, each explained in a
+ * line, such as where to save. Cancelling picks none of them.
+ */
+export function ChoiceDialog({
+  open,
+  title,
+  description,
+  choices,
+  cancelLabel = "Cancelar",
+  onCancel,
+}: {
+  open: boolean
+  title: string
+  description?: string
+  choices: IDialogChoice[]
+  cancelLabel?: string
+  onCancel: () => void
+}) {
+  return (
+    <DialogPrimitive.Root open={open} onOpenChange={(next) => !next && onCancel()}>
+      {/* A margin on a phone, where the full width touched the screen edges. */}
+      <DialogContent className="w-[calc(100%-2rem)] max-w-md">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          {description ? (
+            <DialogDescription>{description}</DialogDescription>
+          ) : (
+            // Radix warns without a description; an empty one says nothing.
+            <DialogDescription className="sr-only">{title}</DialogDescription>
+          )}
+        </DialogHeader>
+        <div className="grid gap-2">
+          {choices.map((choice) => (
+            <button
+              key={choice.label}
+              type="button"
+              aria-label={choice.label}
+              onClick={choice.onSelect}
+              className="flex items-start gap-3 rounded-lg border border-border bg-card p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {choice.icon && <span className="mt-0.5 shrink-0 text-primary">{choice.icon}</span>}
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-foreground">{choice.label}</span>
+                <span className="block text-xs text-muted-foreground">{choice.description}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+        <DialogFooter>
+          <DialogPrimitive.Close asChild>
+            <button type="button" className={buttonVariants({ variant: "outline" })}>
+              {cancelLabel}
+            </button>
+          </DialogPrimitive.Close>
+        </DialogFooter>
+      </DialogContent>
+    </DialogPrimitive.Root>
+  )
+}

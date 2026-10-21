@@ -57,10 +57,12 @@ describe("botão flutuante de ferramentas no celular", () => {
     expect(ball()).toHaveAttribute("aria-expanded", "false")
   })
 
-  it("fica por cima do depurador e da gaveta de blocos", () => {
+  // Under dialogs, though: saving from the menu asks where, and the open
+  // menu covered that question.
+  it("fica por cima do depurador e da gaveta de blocos, mas embaixo dos diálogos", () => {
     render(<BuilderPage />)
 
-    expect(ball().closest("[data-testid='floating-tools']")).toHaveClass("fixed", "z-[60]")
+    expect(ball().closest("[data-testid='floating-tools']")).toHaveClass("fixed", "z-[45]")
   })
 
   it("muda de lugar quando é arrastado, sem abrir o menu", () => {

@@ -1,4 +1,4 @@
-import { BuilderProviders } from "../test-utils"
+import { BuilderProviders, chooseAccountIfAsked } from "../test-utils"
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
@@ -144,6 +144,7 @@ render(wrap(<BlocksPanel errors={[]} />))
       await user.click(button)
       // The canvas has no blocks, so saving asks first.
       await user.click(screen.getByRole("button", { name: /salvar mesmo/i }))
+      chooseAccountIfAsked()
       await waitFor(() => expect(fetchMock).toHaveBeenCalled())
 
       const [url, init] = fetchMock.mock.calls.at(-1) as [string, RequestInit]

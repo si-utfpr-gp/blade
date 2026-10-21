@@ -1,3 +1,4 @@
+import { chooseAccountIfAsked } from "../test-utils"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
@@ -315,6 +316,7 @@ describe("salvar duas vezes não duplica", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
     fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
+    chooseAccountIfAsked()
     await waitFor(() =>
       expect(
         fetchMock.mock.calls.some(([, init]) => init?.method === "POST"),
@@ -329,6 +331,7 @@ describe("salvar duas vezes não duplica", () => {
 
     fireEvent.click(updateButton)
     fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
+    chooseAccountIfAsked()
     await waitFor(() =>
       expect(
         fetchMock.mock.calls.some(([, init]) => init?.method === "PATCH"),
@@ -374,6 +377,7 @@ describe("aviso ao salvar", () => {
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
     fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
+    chooseAccountIfAsked()
     expect(
       await screen.findByText(/algoritmo "contador" salvo/i),
     ).toBeInTheDocument()
@@ -422,6 +426,7 @@ describe("aviso ao salvar", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /atualizar algoritmo/i }))
     fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
+    chooseAccountIfAsked()
     // The notice is only raised once the PATCH resolves, so waiting for it
     // also proves the request completed rather than merely being fired.
     expect(
@@ -450,6 +455,7 @@ describe("aviso ao salvar", () => {
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
     fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
+    chooseAccountIfAsked()
 
     // The API message is surfaced instead of a generic failure, so the student
     // knows what to change.

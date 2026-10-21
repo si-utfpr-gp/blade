@@ -1,3 +1,4 @@
+import { chooseAccountIfAsked } from "../test-utils"
 import { ToastProvider } from "../../components/ui/Toast"
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
@@ -108,6 +109,7 @@ describe("CanvasSaveButton — salvar algoritmo", () => {
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
     fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
+    chooseAccountIfAsked()
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
 
@@ -146,6 +148,7 @@ describe("CanvasSaveButton — salvar algoritmo", () => {
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
     fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
+    chooseAccountIfAsked()
 
     // Wait for the POST to resolve, otherwise the assertion below would match
     // the value still present before the save handler runs.
@@ -174,6 +177,7 @@ describe("CanvasSaveButton — salvar algoritmo", () => {
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
     fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
+    chooseAccountIfAsked()
 
     // Scoped to the toast, since a screen reader only element carries the same
     // text for assistive tech.
@@ -563,6 +567,7 @@ describe("CanvasSaveButton — estado sujo depois de salvar", () => {
       target: { value: "Meu algoritmo" },
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    chooseAccountIfAsked()
 
     await waitFor(() =>
       expect(screen.getByTestId("dirty").textContent).toBe("false"),
@@ -583,6 +588,7 @@ describe("CanvasSaveButton — estado sujo depois de salvar", () => {
       target: { value: "Meu algoritmo" },
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    chooseAccountIfAsked()
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
     await waitFor(() =>
@@ -641,6 +647,7 @@ describe("CanvasSaveButton — canvas vazio", () => {
       target: { value: "Meu algoritmo" },
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    chooseAccountIfAsked()
 
     expect(screen.getByRole("alertdialog")).toBeInTheDocument()
     // Only the initial list request; nothing was written.
@@ -674,6 +681,7 @@ describe("CanvasSaveButton — canvas vazio", () => {
       target: { value: "Contador" },
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    chooseAccountIfAsked()
 
     expect(screen.getByText(/não terá nenhum bloco/i)).toBeInTheDocument()
   })
@@ -695,6 +703,7 @@ describe("CanvasSaveButton — canvas vazio", () => {
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
     fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
+    chooseAccountIfAsked()
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
   })
@@ -709,6 +718,7 @@ describe("CanvasSaveButton — canvas vazio", () => {
       target: { value: "Meu algoritmo" },
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    chooseAccountIfAsked()
     fireEvent.click(screen.getByRole("button", { name: /cancelar/i }))
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
@@ -724,8 +734,10 @@ describe("CanvasSaveButton — canvas vazio", () => {
       target: { value: "Meu algoritmo" },
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    chooseAccountIfAsked()
     fireEvent.click(screen.getByRole("button", { name: /cancelar/i }))
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    chooseAccountIfAsked()
 
     expect(screen.getByRole("alertdialog")).toBeInTheDocument()
   })
@@ -757,6 +769,7 @@ describe("CanvasSaveButton — canvas vazio", () => {
       target: { value: "Meu algoritmo" },
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
+    chooseAccountIfAsked()
 
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument()
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
@@ -860,6 +873,7 @@ describe("CanvasSaveButton — mover um algoritmo do navegador para a conta", ()
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
     fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
+    chooseAccountIfAsked()
     return fetchMock
   }
 
@@ -898,6 +912,7 @@ describe("CanvasSaveButton — mover um algoritmo do navegador para a conta", ()
     })
     fireEvent.click(screen.getByRole("button", { name: /salvar algoritmo/i }))
     fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
+    chooseAccountIfAsked()
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
     expect(localCount).toBe(1)

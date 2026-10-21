@@ -1,27 +1,49 @@
 import { useState } from "react"
-import { Save } from "lucide-react"
+import { Cloud, HardDrive, Save } from "lucide-react"
 import { useToast } from "../ui/Toast"
 import { useConstructor } from "./ConstructorProvider"
 import { useAlgorithms } from "./AlgorithmsProvider"
 import { useDiagramOrigin } from "./DiagramOrigin"
 import { useAlgorithmNameField } from "./AlgorithmNameProvider"
 import { serializeDiagramForSave } from "./serializeDiagram"
-import { ConfirmDialog } from "../ui/ConfirmDialog"
+import { ChoiceDialog, ConfirmDialog, type IDialogChoice } from "../ui/ConfirmDialog"
 import { useLocalAlgorithms } from "./LocalAlgorithmsProvider"
 
 export function CanvasSaveButton() {
   const { nodes, edges, markClean } = useConstructor()
-  const { saveAlgorithm, updateAlgorithm, status, error } = useAlgorithms()
-  const { origin, isReadOnly, markSaved } = useDiagramOrigin()
+  const { saveAlgorithm, updateAlgorithm, status, error, signedIn } = useAlgorithms()
+  const { origin, isReadOnly, markSaved, markLocal } = useDiagramOrigin()
   const { algorithmName, flagMissingName } = useAlgorithmNameField()
-  const { deleteAlgorithm: deleteLocalAlgorithm } = useLocalAlgorithms()
+  const {
+    saveDiagram: saveLocalDiagram,
+    updateAlgorithm: updateLocalAlgorithm,
+    deleteAlgorithm: deleteLocalAlgorithm,
+  } = useLocalAlgorithms()
   const { notify } = useToast()
   const [emptyWarning, setEmptyWarning] = useState(false)
+  const [choosing, setChoosing] = useState(false)
+
+  // Kept on this machine: the browser's own store, the only one without an
+  // account. A file from this machine is updated in place.
+  const saveHere = () => {
+    const trimmed = algorithmName.trim()
+    const diagram = serializeDiagramForSave(nodes, edges)
+
+    if (origin.kind === "local") {
+      if (updateLocalAlgorithm(origin.id, trimmed, diagram)) markClean()
+      return
+    }
+
+    const kept = saveLocalDiagram(trimmed, diagram)
+    if (!kept) return
+    markLocal(kept.id)
+    markClean()
+  }
 
   // Saving an empty canvas is almost never the intent: on a saved algorithm it
   // would overwrite good work with nothing, and a new one would store an
   // algorithm that cannot do anything. Still allowed, but only on purpose.
-  const save = async () => {
+  const saveToAccount = async () => {
     const trimmed = algorithmName.trim()
     const diagram = serializeDiagramForSave(nodes, edges)
 
@@ -80,8 +102,56 @@ export function CanvasSaveButton() {
       setEmptyWarning(true)
       return
     }
-    void save()
+    proceed()
   }
+
+  // An algorithm on the account is updated there. Without an account the
+  // only place is this machine. Otherwise the student picks.
+  const proceed = () => {
+    if (origin.kind === "saved") {
+      void saveToAccount()
+    } else if (!signedIn) {
+      saveHere()
+    } else {
+      setChoosing(true)
+    }
+  }
+
+  const choose = (destination: () => void | Promise<void>) => () => {
+    setChoosing(false)
+    void destination()
+  }
+
+  const choices: IDialogChoice[] =
+    origin.kind === "local"
+      ? [
+          {
+            label: "Atualizar nesta máquina",
+            description: "Guarda as mudanças no arquivo deste navegador.",
+            icon: <HardDrive className="h-4 w-4" aria-hidden="true" />,
+            onSelect: choose(saveHere),
+          },
+          {
+            label: "Enviar para minha conta",
+            description: "Leva o algoritmo para a sua conta, onde você o abre em qualquer computador. Ele sai desta máquina.",
+            icon: <Cloud className="h-4 w-4" aria-hidden="true" />,
+            onSelect: choose(saveToAccount),
+          },
+        ]
+      : [
+          {
+            label: "Nesta máquina",
+            description: "Fica só neste navegador, em Meus arquivos.",
+            icon: <HardDrive className="h-4 w-4" aria-hidden="true" />,
+            onSelect: choose(saveHere),
+          },
+          {
+            label: "Na minha conta",
+            description: "Fica em Meus algoritmos, e você o abre em qualquer computador.",
+            icon: <Cloud className="h-4 w-4" aria-hidden="true" />,
+            onSelect: choose(saveToAccount),
+          },
+        ]
 
   const saving = status === "saving"
 
@@ -95,7 +165,9 @@ export function CanvasSaveButton() {
     ? "Exemplos não podem ser alterados"
     : origin.kind === "saved"
       ? "Atualizar o algoritmo atual"
-      : "Salvar o algoritmo na sua conta"
+      : signedIn
+        ? "Salvar nesta máquina ou na sua conta"
+        : "Salvar nesta máquina"
 
   // Icon only, to leave room on small screens. With no visible text the
   // accessible name and the title carry the whole meaning: screen readers get
@@ -130,9 +202,15 @@ export function CanvasSaveButton() {
         destructive={origin.kind === "saved"}
         onConfirm={() => {
           setEmptyWarning(false)
-          void save()
+          proceed()
         }}
         onCancel={() => setEmptyWarning(false)}
+      />
+      <ChoiceDialog
+        open={choosing}
+        title="Onde salvar?"
+        choices={choices}
+        onCancel={() => setChoosing(false)}
       />
     </div>
   )
