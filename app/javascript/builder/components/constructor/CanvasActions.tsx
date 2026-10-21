@@ -7,7 +7,7 @@ import { useDiagramOrigin } from "./DiagramOrigin"
 import { useDiscardGuard } from "./useDiscardGuard"
 
 export function CanvasActions() {
-  const { resetCanvas, clearCanvas } = useConstructor()
+  const { resetCanvas, clearCanvas, editLocked } = useConstructor()
   const { reset } = useSimulator()
   const { error } = useAlgorithms()
   const { clearAlgorithmName } = useAlgorithmNameField()
@@ -54,7 +54,10 @@ export function CanvasActions() {
       <button
         type="button"
         onClick={handleClear}
-        className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground"
+        // Clearing is an edit; the lock keeps the diagram as it is.
+        disabled={editLocked}
+        title={editLocked ? "Destrave a edição para limpar" : undefined}
+        className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-destructive"
       >
         <Trash2 className="h-3 w-3" /> Limpar
       </button>

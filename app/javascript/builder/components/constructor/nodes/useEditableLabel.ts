@@ -10,14 +10,17 @@ export function useEditableLabel(
   currentLabel: string,
   { multiline = false }: { multiline?: boolean } = {},
 ) {
-  const { updateNodeData } = useConstructor()
+  const { updateNodeData, editLocked } = useConstructor()
   const [editing, setEditing] = useState(false)
   const [draftLabel, setDraftLabel] = useState(currentLabel)
 
+  // A locked diagram would refuse the new text anyway; the field stays shut
+  // instead of taking typing it then throws away.
   const startEditing = useCallback(() => {
+    if (editLocked) return
     setDraftLabel(currentLabel)
     setEditing(true)
-  }, [currentLabel])
+  }, [currentLabel, editLocked])
 
   const commit = useCallback(() => {
     setEditing(false)

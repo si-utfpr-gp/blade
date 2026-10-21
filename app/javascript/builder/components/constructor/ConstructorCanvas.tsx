@@ -26,6 +26,7 @@ import { CanvasExportButton } from "./CanvasExportButton"
 import { ShareButton } from "./ShareButton"
 import { CanvasHistoryControls } from "./CanvasHistoryControls"
 import { CenterDiagramButton, FloatingTools } from "./FloatingTools"
+import { EditLockControlButton, EditLockMenuButton } from "./CanvasEditLock"
 import { useFitOnDiagramLoad } from "./useFitOnDiagramLoad"
 import { usePanePlacement } from "./usePanePlacement"
 import { useBlockPlacement } from "./BlockPlacement"
@@ -61,6 +62,7 @@ export default function ConstructorCanvas({
     setSelectedNodeId,
     removeNode,
     diagramLoadCount,
+    editLocked,
   } = useConstructor()
 
   const { screenToFlowPosition, getNode, setCenter } = useReactFlow()
@@ -78,7 +80,9 @@ export default function ConstructorCanvas({
     running: isCanvasLocked(simulatorState.isStarted, simulatorState.isFinished),
     isExample: isReadOnly,
   })
-  const locked = !canEdit
+  // The student's own lock freezes the diagram like a running simulation.
+  const locked = !canEdit || editLocked
+  const canDrag = canMove && !editLocked
   const highlightedNodeId = getHighlightedNodeId(
     simulatorState.steps,
     simulatorState.currentStepIndex,
@@ -271,6 +275,7 @@ export default function ConstructorCanvas({
                   <div className="col-span-2">
                     <CanvasHistoryControls locked={locked} />
                   </div>
+                  <EditLockMenuButton />
                   <div onClick={close}>
                     <CenterDiagramButton />
                   </div>
@@ -317,7 +322,7 @@ export default function ConstructorCanvas({
         onReconnectEnd={onReconnectEnd}
         isValidConnection={isValidConnection}
         edgesReconnectable={!locked}
-        nodesDraggable={canMove}
+        nodesDraggable={canDrag}
         // Both keys delete the selected block. Typing in a field never
         // reaches here: React Flow ignores the keys inside inputs, so the
         // Backspace in the algorithm name cannot eat a block. A locked
@@ -340,7 +345,11 @@ export default function ConstructorCanvas({
         <PlacementHint />
         <Background />
         {/* Pinch zooms on a phone, and the bar needs the bottom edge. */}
-        {isDesktop && <Controls />}
+        {isDesktop && (
+          <Controls showInteractive={false}>
+            {!viewer && <EditLockControlButton />}
+          </Controls>
+        )}
       </ReactFlow>
 
       {contextMenu && (

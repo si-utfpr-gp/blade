@@ -150,7 +150,17 @@ interface ConstructorContextValue {
   // Incremented whenever a whole diagram is loaded, cleared or reset, so the
   // canvas can tell a new diagram apart from ordinary editing.
   diagramLoadCount: number
+
+  // The student's own lock: while on, nothing changes the diagram, whichever
+  // way the change comes in. Opening, starting or resetting a diagram still
+  // works, since that is not editing this one.
+  editLocked: boolean
+  setEditLocked: (locked: boolean) => void
 }
+
+// While locked, React Flow may still measure the blocks and select them;
+// moving, adding and removing are refused.
+const CHANGES_ALLOWED_WHILE_LOCKED = new Set(["select", "dimensions"])
 
 const ConstructorContext = createContext<ConstructorContextValue | null>(null)
 
@@ -172,6 +182,14 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
   const [connectionError, setConnectionError] = useState<string | null>(null)
   const edgeReconnectSuccessful = useRef(true)
   const pendingCenters = useRef<PlannedCenters | null>(null)
+  const [editLocked, setEditLockedState] = useState(false)
+  // React Flow's change handlers read the lock at call time, so a drag that
+  // was under way when the lock went on stops at once.
+  const editLockedRef = useRef(false)
+  const setEditLocked = useCallback((locked: boolean) => {
+    editLockedRef.current = locked
+    setEditLockedState(locked)
+  }, [])
 
   // The dirty check compares the current diagram against the state it had when
   // it was loaded or last saved. Comparing fingerprints instead of toggling a
@@ -208,7 +226,11 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
   // keeps pointing at a block that is no longer there, which used to leave
   // the Backspace key deleting nothing and the inspector reading stale data.
   const onNodesChange = useCallback(
-    (changes: NodeChange<AlgorithmNode>[]) => {
+    (incoming: NodeChange<AlgorithmNode>[]) => {
+      const changes = editLockedRef.current
+        ? incoming.filter((change) => CHANGES_ALLOWED_WHILE_LOCKED.has(change.type))
+        : incoming
+      if (changes.length === 0) return
       if (isHistoryWorthy(changes)) record()
       if (
         selectedNodeId !== null &&
@@ -224,7 +246,11 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
   )
 
   const onEdgesChange = useCallback(
-    (changes: EdgeChange[]) => {
+    (incoming: EdgeChange[]) => {
+      const changes = editLockedRef.current
+        ? incoming.filter((change) => CHANGES_ALLOWED_WHILE_LOCKED.has(change.type))
+        : incoming
+      if (changes.length === 0) return
       if (isHistoryWorthy(changes)) record()
       applyEdgeChanges(changes)
     },
@@ -272,6 +298,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
 
   const onReconnect = useCallback(
     (oldEdge: Edge, newConnection: Connection) => {
+      if (editLockedRef.current) return
       const result = validateConnection({
         connection: newConnection,
         nodes,
@@ -561,7 +588,10 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
     setDiagramLoadCount((count) => count + 1)
   }, [setNodes, setEdges, resetHistory])
 
+  // Checks the lock itself: it touches refs, which the guard in the context
+  // value may not wrap during render.
   const clearCanvas = useCallback(() => {
+    if (editLockedRef.current) return
     pendingCenters.current = null
     setNodes([])
     setEdges([])
@@ -571,36 +601,46 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
     setDiagramLoadCount((count) => count + 1)
   }, [setNodes, setEdges, resetHistory])
 
-  const value = useMemo(
-    () => ({
+  // Every edit goes through here, so the lock holds for the canvas, the
+  // blocks' own fields and the menus alike.
+  const value = useMemo(() => {
+    const unlessLocked =
+      <Args extends unknown[]>(edit: (...args: Args) => void) =>
+      (...args: Args) => {
+        if (!editLocked) edit(...args)
+      }
+    return {
       nodes,
       edges,
       selectedNodeId,
       setSelectedNodeId,
       onNodesChange,
       onEdgesChange,
-      onConnect,
+      onConnect: unlessLocked(onConnect),
       onReconnect,
       onReconnectStart,
       onReconnectEnd,
       isValidConnection,
       connectionError,
-      addNode,
-      updateNodeData,
-      updateSelectionCases,
-      removeNode,
-      duplicateNode,
+      addNode: unlessLocked(addNode),
+      updateNodeData: unlessLocked(updateNodeData),
+      updateSelectionCases: unlessLocked(updateSelectionCases),
+      removeNode: unlessLocked(removeNode),
+      duplicateNode: unlessLocked(duplicateNode),
       loadCanvasNodes,
       resetCanvas,
       clearCanvas,
       isDirty,
       markClean,
-      undo,
-      redo,
+      undo: unlessLocked(undo),
+      redo: unlessLocked(redo),
       canUndo: history.canUndo,
       canRedo: history.canRedo,
       diagramLoadCount,
-    }),
+      editLocked,
+      setEditLocked,
+    }
+  },
     [
       nodes,
       edges,
@@ -628,6 +668,8 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       history.canUndo,
       history.canRedo,
       diagramLoadCount,
+      editLocked,
+      setEditLocked,
     ],
   )
 
