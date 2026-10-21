@@ -4,6 +4,10 @@
     ["Lucas Gontarz Fajardo", "lucasgfaj"],
     ["Emanuel Oliveira Andrade", "emanuel-o-dev"]
   ]
+  advisors = [
+    ["Prof. Dr. Diego Marczal", "MarczalTSIGP"],
+    ["Profª. Drª. Renata Luiza Stange", "rlstange-utfpr"]
+  ]
   repository = "https://github.com/si-utfpr-gp/blade"
   contact = "marczal@utfpr.edu.br"
 %>
@@ -58,14 +62,17 @@
     </p>
 
     <div class="mt-6 grid gap-4 sm:grid-cols-2">
-      <article class="rounded-2xl bg-white p-5 ring-1 ring-slate-200">
-        <p class="text-lg font-semibold text-slate-900">Prof. Dr. Diego Marczal</p>
-        <p class="mt-1 text-sm text-slate-500">Professor orientador</p>
-      </article>
-      <article class="rounded-2xl bg-white p-5 ring-1 ring-slate-200">
-        <p class="text-lg font-semibold text-slate-900">Profª. Drª. Renata Luiza Stange</p>
-        <p class="mt-1 text-sm text-slate-500">Professora orientadora</p>
-      </article>
+      <% advisors.each do |name, handle| %>
+        <a href="https://github.com/<%= handle %>" target="_blank" rel="noopener"
+           class="flex items-center gap-4 rounded-2xl bg-white p-5 ring-1 ring-slate-200 transition hover:shadow-lg hover:shadow-slate-900/5 hover:ring-blue-600">
+          <img src="https://github.com/<%= handle %>.png?size=128" alt="" width="56" height="56" loading="lazy"
+               class="h-14 w-14 shrink-0 rounded-full bg-slate-100 ring-1 ring-slate-200">
+          <span>
+            <span class="block text-lg font-semibold text-slate-900"><%= name %></span>
+            <span class="block font-mono text-sm text-slate-500">@<%= handle %></span>
+          </span>
+        </a>
+      <% end %>
     </div>
   </section>
 
