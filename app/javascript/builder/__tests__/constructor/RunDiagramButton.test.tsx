@@ -8,6 +8,7 @@ import {
 } from "../../components/constructor/ConstructorProvider"
 import { AlgorithmsProvider } from "../../components/constructor/AlgorithmsProvider"
 import { RunDiagramButton } from "../../components/constructor/RunDiagramButton"
+import { SimulatorErrorNotice } from "../../components/simulator/SimulatorErrorNotice"
 import type { ReactNode } from "react"
 
 function TestHarness({ onDiagramLoaded }: { onDiagramLoaded?: () => void }) {
@@ -17,6 +18,8 @@ function TestHarness({ onDiagramLoaded }: { onDiagramLoaded?: () => void }) {
   return (
     <div>
       <RunDiagramButton onDiagramLoaded={onDiagramLoaded} />
+      {/* What the canvas mounts to say the run's error. */}
+      <SimulatorErrorNotice />
       {/* The canvas opens empty, so a step needs a block to step through. */}
       <button type="button" onClick={() => addNode("startEnd", { x: 0, y: 0 }, "start")}>
         add-start

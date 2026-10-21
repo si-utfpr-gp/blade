@@ -453,7 +453,8 @@ describe("aviso ao salvar", () => {
 
     // The API message is surfaced instead of a generic failure, so the student
     // knows what to change.
-    const toast = await screen.findByRole("status")
+    // An error notice is announced as an alert.
+    const toast = await screen.findByRole("alert")
     expect(toast).toHaveTextContent(/nome não pode ficar em branco/i)
   })
 })

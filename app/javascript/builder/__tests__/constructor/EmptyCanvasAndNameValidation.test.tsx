@@ -230,7 +230,8 @@ describe("mensagem da API na recusa", () => {
 
     // Scoped to the toast: a screen reader only element carries the same text
     // and would make this pass without the student ever seeing it.
-    const toast = await screen.findByRole("status")
+    // An error notice is announced as an alert.
+    const toast = await screen.findByRole("alert")
     expect(toast).toHaveTextContent(/já existe um algoritmo com esse nome/i)
   })
 
@@ -256,7 +257,8 @@ describe("mensagem da API na recusa", () => {
     )
     fireEvent.click(screen.getByRole("button", { name: /salvar mesmo/i }))
 
-    const toast = await screen.findByRole("status")
+    // An error notice is announced as an alert.
+    const toast = await screen.findByRole("alert")
     expect(toast).toHaveTextContent(/já existe um algoritmo com esse nome/i)
   })
 
@@ -271,7 +273,8 @@ describe("mensagem da API na recusa", () => {
 
     // The provider substitutes a message when the body carries none, so the
     // student still sees something instead of silence.
-    const toast = await screen.findByRole("status")
+    // An error notice is announced as an alert.
+    const toast = await screen.findByRole("alert")
     expect(toast).toHaveTextContent(/falha na requisição/i)
   })
 })

@@ -177,7 +177,8 @@ describe("CanvasSaveButton — salvar algoritmo", () => {
 
     // Scoped to the toast, since a screen reader only element carries the same
     // text for assistive tech.
-    const toast = await screen.findByRole("status")
+    // An error notice is announced as an alert.
+    const toast = await screen.findByRole("alert")
     expect(toast).toHaveTextContent(/nome não pode ficar em branco/i)
   })
 })

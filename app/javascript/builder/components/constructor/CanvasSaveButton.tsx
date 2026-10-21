@@ -11,7 +11,7 @@ import { useLocalAlgorithms } from "./LocalAlgorithmsProvider"
 
 export function CanvasSaveButton() {
   const { nodes, edges, markClean } = useConstructor()
-  const { saveAlgorithm, updateAlgorithm, status, error, signedIn } = useAlgorithms()
+  const { saveAlgorithm, updateAlgorithm, status, signedIn } = useAlgorithms()
   const { origin, isReadOnly, markSaved, markLocal } = useDiagramOrigin()
   const { algorithmName, flagMissingName } = useAlgorithmNameField()
   const {
@@ -173,11 +173,6 @@ export function CanvasSaveButton() {
       >
         <Save className="h-5 w-5" aria-hidden="true" />
       </button>
-      {error && (
-        <span className="sr-only" role="alert">
-          {error}
-        </span>
-      )}
       <ConfirmDialog
         open={emptyWarning}
         title="Salvar sem nenhum bloco?"

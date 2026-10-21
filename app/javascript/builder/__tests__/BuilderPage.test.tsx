@@ -13,6 +13,16 @@ function placeStartBlock(container: HTMLElement) {
 }
 
 describe("BuilderPage", () => {
+  // Executar on a diagram that cannot run showed the same error twice, at
+  // the top and at the bottom of the screen.
+  it("mostra um aviso só quando Executar não consegue rodar", async () => {
+    render(<BuilderPage />)
+
+    fireEvent.click(screen.getByRole("button", { name: /executar/i }))
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/nenhum bloco de início/i)
+    expect(screen.getAllByText(/nenhum bloco de início/i)).toHaveLength(1)
+  })
   // An error stops the run, and the diagram used to stay locked until Parar.
   it("deixa editar o fluxograma assim que a execução para num erro", async () => {
     const { container } = render(<BuilderPage />)

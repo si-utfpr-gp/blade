@@ -1,7 +1,6 @@
 import { Plus, Trash2 } from "lucide-react"
 import { useConstructor } from "./ConstructorProvider"
 import { useSimulator } from "../simulator/SimulatorContext"
-import { useAlgorithms } from "./AlgorithmsProvider"
 import { useAlgorithmNameField } from "./AlgorithmNameProvider"
 import { useDiagramOrigin } from "./DiagramOrigin"
 import { useDiscardGuard } from "./useDiscardGuard"
@@ -9,7 +8,6 @@ import { useDiscardGuard } from "./useDiscardGuard"
 export function CanvasActions() {
   const { resetCanvas, clearCanvas, editLocked } = useConstructor()
   const { reset } = useSimulator()
-  const { error } = useAlgorithms()
   const { clearAlgorithmName } = useAlgorithmNameField()
   const { markBlank, origin } = useDiagramOrigin()
   const { guard, dialog } = useDiscardGuard()
@@ -38,11 +36,6 @@ export function CanvasActions() {
 
   return (
     <div className="space-y-2 border-t border-border p-2">
-      {error && (
-        <p className="text-xs text-destructive" role="alert">
-          {error}
-        </p>
-      )}
 
       <button
         type="button"

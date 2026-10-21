@@ -34,6 +34,8 @@ interface IAlgorithmsContextValue {
   signedIn: boolean
   status: AlgorithmsStatus
   error: string | null
+  // Only why the list itself did not load; a failed save is told by its caller.
+  loadError: string | null
   loadAlgorithms: () => Promise<void>
   saveAlgorithm: (name: string, diagram: SerializedDiagram) => Promise<WriteResult>
   updateAlgorithm: (id: number, name: string, diagram: SerializedDiagram) => Promise<WriteResult>
@@ -76,6 +78,7 @@ export function AlgorithmsProvider({
   const [algorithms, setAlgorithms] = useState<SavedAlgorithm[]>([])
   const [status, setStatus] = useState<AlgorithmsStatus>("idle")
   const [error, setError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   const fetchAlgorithms = useCallback(async () => {
     try {
@@ -86,9 +89,12 @@ export function AlgorithmsProvider({
       if (!response.ok) throw new Error(await readErrors(response))
       setAlgorithms((await response.json()) as SavedAlgorithm[])
       setError(null)
+      setLoadError(null)
       setStatus("idle")
     } catch (cause) {
-      setError(failureMessage(cause, "Falha ao carregar."))
+      const message = failureMessage(cause, "Falha ao carregar.")
+      setError(message)
+      setLoadError(message)
       setStatus("error")
     }
   }, [])
@@ -213,6 +219,7 @@ export function AlgorithmsProvider({
       signedIn,
       status,
       error,
+      loadError,
       loadAlgorithms,
       saveAlgorithm,
       updateAlgorithm,
@@ -224,6 +231,7 @@ export function AlgorithmsProvider({
       signedIn,
       status,
       error,
+      loadError,
       loadAlgorithms,
       saveAlgorithm,
       updateAlgorithm,

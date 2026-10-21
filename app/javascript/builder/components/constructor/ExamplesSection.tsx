@@ -284,7 +284,7 @@ function SidebarDropdown({
 export function ExamplesSection() {
   const { loadCanvasNodes } = useConstructor()
   const { reset } = useSimulator()
-  const { algorithms, signedIn, deleteAlgorithm, updateAlgorithm } = useAlgorithms()
+  const { algorithms, signedIn, deleteAlgorithm, updateAlgorithm, loadError } = useAlgorithms()
   const openSaved = useOpenSavedAlgorithm()
   const {
     algorithms: localAlgorithms,
@@ -298,6 +298,11 @@ export function ExamplesSection() {
   // closes it so the student sees what was opened.
   const drawer = useDrawer()
   const { notify } = useToast()
+
+  // The list not loading is said once, as a notice like every other message.
+  useEffect(() => {
+    if (signedIn && loadError) notify(loadError, "error")
+  }, [signedIn, loadError, notify])
   // Each list marks the diagram on the canvas, read from where it came from,
   // so anything else taking the canvas (an import, a new algorithm, a clear)
   // unmarks it without each of those having to remember the lists.
@@ -417,7 +422,7 @@ export function ExamplesSection() {
             description: `Salvo em ${algorithm.created_at}`,
           }))}
           selectedId={selectedUserId}
-          emptyText="Nenhum algoritmo salvo ainda."
+          emptyText={loadError ? "Não foi possível carregar seus algoritmos." : "Nenhum algoritmo salvo ainda."}
           onSelect={handleSelectUserAlgorithm}
           onDelete={handleDeleteSaved}
           onRename={(id, name) => void handleRenameSaved(id, name)}

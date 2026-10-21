@@ -42,4 +42,15 @@ describe("avisos", () => {
 
     expect(screen.queryByText("Deu errado.")).not.toBeInTheDocument()
   })
+
+  // An error interrupts a screen reader; a confirmation waits its turn.
+  it("anuncia o erro como alerta e a confirmação como status", () => {
+    render(<ToastProvider><Trigger /></ToastProvider>)
+
+    fireEvent.click(screen.getByRole("button", { name: "erro" }))
+    fireEvent.click(screen.getByRole("button", { name: "sucesso" }))
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Deu errado.")
+    expect(screen.getByRole("status")).toHaveTextContent("Salvo.")
+  })
 })

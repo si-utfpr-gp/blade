@@ -23,6 +23,7 @@ import ContextMenu from "./ContextMenu"
 import { RunDiagramButton } from "./RunDiagramButton"
 import { CanvasSaveButton, SaveLocalButton } from "./CanvasSaveButton"
 import { CloudAutosave } from "./CloudAutosave"
+import { SimulatorErrorNotice } from "../simulator/SimulatorErrorNotice"
 import { CanvasDraft } from "./CanvasDraft"
 import { CanvasExportButton } from "./CanvasExportButton"
 import { ShareButton } from "./ShareButton"
@@ -338,6 +339,7 @@ export default function ConstructorCanvas({
         </FloatingTools>
       )}
 
+      <SimulatorErrorNotice />
       {!viewer && <CloudAutosave />}
       {!viewer && <CanvasDraft />}
 

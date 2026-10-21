@@ -30,10 +30,15 @@ const ToastContext = createContext<IToastContextValue | null>(null)
 // stays longer, to be read.
 const AUTO_DISMISS_MS: Record<ToastTone, number> = { success: 3000, info: 3000, error: 5000 }
 
+// The project's own tokens, the ones the blocks use: green as the start
+// block for what worked, red as an error, the card for the rest. The text is a
+// darker shade of each, to keep its contrast on the tint.
 const TONE_STYLE: Record<ToastTone, string> = {
-  success: "border-primary/40 bg-primary/10 text-primary",
-  error: "border-destructive/40 bg-destructive/10 text-destructive",
-  info: "border-border bg-card text-foreground",
+  success:
+    "border-[hsl(var(--node-start)/0.4)] bg-[hsl(var(--node-start)/0.12)] text-[hsl(150_60%_26%)]",
+  error:
+    "border-[hsl(var(--destructive)/0.4)] bg-[hsl(var(--destructive)/0.1)] text-[hsl(0_70%_42%)]",
+  info: "border-[hsl(var(--border))] bg-[hsl(var(--card))] text-[hsl(var(--foreground))]",
 }
 
 const TONE_ICON = {
@@ -108,7 +113,8 @@ function ToastViewport({
         return (
           <div
             key={toast.id}
-            role="status"
+            // An error interrupts a screen reader; anything else waits.
+            role={toast.tone === "error" ? "alert" : "status"}
             className={`pointer-events-auto flex items-start gap-2 rounded-lg border px-3 py-2 shadow-lg backdrop-blur ${TONE_STYLE[toast.tone]}`}
           >
             <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
