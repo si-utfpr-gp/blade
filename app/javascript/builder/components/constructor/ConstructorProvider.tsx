@@ -127,7 +127,9 @@ interface ConstructorContextValue {
   loadCanvasNodes: (
     nodes: CanvasNodeInput[],
     edges: CanvasEdgeInput[],
-    options?: { centers?: PlannedCenters },
+    // `dirty` brings back a diagram that still had unsaved edits, as a
+    // restored draft does, instead of counting it as just opened.
+    options?: { centers?: PlannedCenters; dirty?: boolean },
   ) => void
 
   resetCanvas: () => void
@@ -166,6 +168,9 @@ interface ConstructorContextValue {
 // While locked, React Flow may still measure the blocks and select them;
 // moving, adding and removing are refused.
 const CHANGES_ALLOWED_WHILE_LOCKED = new Set(["select", "dimensions"])
+
+// Matches no diagram, so what was loaded with it counts as unsaved.
+const DIRTY_SIGNATURE = "unsaved"
 
 const ConstructorContext = createContext<ConstructorContextValue | null>(null)
 
@@ -509,7 +514,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
     (
       inputNodes: CanvasNodeInput[],
       inputEdges: CanvasEdgeInput[],
-      options?: { centers?: PlannedCenters },
+      options?: { centers?: PlannedCenters; dirty?: boolean },
     ) => {
       const nextNodes: AlgorithmNode[] = inputNodes
         .filter((node) => isBlockType(node.type))
@@ -561,7 +566,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
       setSelectedNodeId(null)
       // What lands on the canvas is the new point of comparison, so opening an
       // algorithm never reads as an edit the student has to confirm losing.
-      setCleanSignature(diagramSignature(nextNodes, nextEdges))
+      setCleanSignature(options?.dirty ? DIRTY_SIGNATURE : diagramSignature(nextNodes, nextEdges))
       // Loading is a new starting point: walking back from it would bring back
       // a diagram the student deliberately left.
       resetHistory()

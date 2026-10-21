@@ -23,6 +23,7 @@ import ContextMenu from "./ContextMenu"
 import { RunDiagramButton } from "./RunDiagramButton"
 import { CanvasSaveButton, SaveLocalButton } from "./CanvasSaveButton"
 import { CloudAutosave } from "./CloudAutosave"
+import { CanvasDraft } from "./CanvasDraft"
 import { CanvasExportButton } from "./CanvasExportButton"
 import { ShareButton } from "./ShareButton"
 import { CanvasHistoryControls } from "./CanvasHistoryControls"
@@ -319,6 +320,7 @@ export default function ConstructorCanvas({
       )}
 
       {!viewer && <CloudAutosave />}
+      {!viewer && <CanvasDraft />}
 
       <ReactFlow
         onPaneClick={(event) => placeAt(screenToFlowPosition({ x: event.clientX, y: event.clientY }))}
