@@ -192,4 +192,21 @@ describe("ExamplesSection — Meus arquivos", () => {
       ).toBeInTheDocument(),
     )
   })
+
+  // Every row repeated a bold "Nesta máquina" badge; the list says it once and
+  // each file shows when it was kept instead.
+  it("diz uma vez só onde os arquivos ficam e mostra a data de cada um", () => {
+    useMemoryStorage(
+      JSON.stringify([
+        { id: "a", name: "Contador", diagram, created_at: "2026-10-14" },
+        { id: "b", name: "Soma", diagram, created_at: "2026-10-15" },
+      ]),
+    )
+
+    renderSection(false)
+    fireEvent.click(screen.getByRole("button", { name: /meus arquivos/i }))
+
+    expect(screen.getAllByText(/nesta máquina/i)).toHaveLength(1)
+    expect(screen.getByText("2026-10-15")).toBeInTheDocument()
+  })
 })

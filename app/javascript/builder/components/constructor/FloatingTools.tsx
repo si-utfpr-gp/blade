@@ -92,7 +92,14 @@ export function CenterDiagramButton() {
  * cover. The menu stays mounted while closed. Save and share open dialogs from
  * inside it, and unmounting the menu would close them halfway.
  */
-export function FloatingTools({ children }: { children: (close: () => void) => ReactNode }) {
+export function FloatingTools({
+  children,
+  hidden = false,
+}: {
+  children: (close: () => void) => ReactNode
+  // Hidden, not unmounted, so the menu's state and any open dialog survive.
+  hidden?: boolean
+}) {
   const [position, setPosition] = useState<Point>(initialPosition)
   const [open, setOpen] = useState(false)
   const [dragging, setDragging] = useState(false)
@@ -190,6 +197,7 @@ export function FloatingTools({ children }: { children: (close: () => void) => R
     <div
       ref={rootRef}
       data-testid="floating-tools"
+      hidden={hidden}
       className="fixed z-[60]"
       style={{
         left: position.x,

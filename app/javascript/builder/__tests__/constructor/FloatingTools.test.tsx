@@ -103,4 +103,13 @@ describe("botão flutuante de ferramentas no celular", () => {
 
     expect(screen.queryByRole("button", { name: /^ferramentas$/i })).not.toBeInTheDocument()
   })
+
+  // The ball sat on top of the blocks menu, over the very lists the student
+  // was reading.
+  it("sai da frente enquanto o menu de blocos está aberto", () => {
+    render(<BuilderPage />)
+    fireEvent.click(screen.getByRole("button", { name: /abrir menu de blocos/i }))
+
+    expect(screen.queryByRole("button", { name: /^ferramentas$/i })).not.toBeInTheDocument()
+  })
 })

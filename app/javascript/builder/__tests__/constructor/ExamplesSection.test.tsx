@@ -140,4 +140,22 @@ describe("ExamplesSection", () => {
       screen.getByText(/Nenhum algoritmo salvo ainda\./i),
     ).toBeInTheDocument()
   })
+
+  // As a popover the list opened inside a scroll area a few pixels tall on a
+  // short laptop screen, and was cut off. It now opens in place and pushes
+  // the rest down, so the sidebar's own scroll reaches every item.
+  it("abre a lista no lugar, sem flutuar sobre o resto", () => {
+    renderSection()
+    openExamplesDropdown()
+
+    expect(screen.getByRole("group", { name: "Exemplos" })).not.toHaveClass("absolute")
+  })
+
+  it("dá às linhas da lista uma altura que o dedo acerta", () => {
+    renderSection()
+    openExamplesDropdown()
+    const row = screen.getByRole("button", { name: new RegExp(DIAGRAM_EXAMPLES[0].title) })
+
+    expect(row).toHaveClass("min-h-11", "md:min-h-0")
+  })
 })

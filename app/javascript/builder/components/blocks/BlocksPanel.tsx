@@ -31,6 +31,9 @@ export default function BlocksPanel({ errors }: IBlocksPanelProps) {
 
   return (
     <div className="flex h-full flex-col bg-card">
+      {/* One scroll for the blocks and the lists: scrolling apart, the lists
+          got a sliver of a short screen. Novo and Limpar stay below it. */}
+      <div data-testid="sidebar-scroll" className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
       <div className="border-b border-border p-3">
         <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           Blocos de Algoritmo
@@ -100,8 +103,9 @@ export default function BlocksPanel({ errors }: IBlocksPanelProps) {
       {touchDrag.preview}
 
       <ExamplesSection />
+      </div>
 
-      <div className="mt-auto">
+      <div className="shrink-0">
         <CanvasActions />
       </div>
 

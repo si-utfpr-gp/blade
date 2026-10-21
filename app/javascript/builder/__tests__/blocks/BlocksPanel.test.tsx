@@ -88,4 +88,17 @@ it("organiza os blocos em grid de duas colunas", () => {
     expect(data[DRAG_VARIANT_KEY]).toBe("end")
     expect(screen.getByTestId("block-tile-startEnd-start")).toBeTruthy()
   })
+
+  // The blocks and the lists used to scroll separately, and on a short screen
+  // the lists got a sliver; one scroll area now holds both, with Novo and
+  // Limpar kept in reach below it.
+  it("rola blocos e listas juntos, com as ações fixas embaixo", () => {
+    renderPanel()
+    const scroll = screen.getByTestId("sidebar-scroll")
+
+    expect(scroll).toHaveClass("overflow-y-auto")
+    expect(scroll).toContainElement(screen.getByTestId("blocks-grid"))
+    expect(scroll).toContainElement(screen.getByRole("button", { name: /^Exemplos/ }))
+    expect(scroll).not.toContainElement(screen.getByRole("button", { name: /limpar/i }))
+  })
 })

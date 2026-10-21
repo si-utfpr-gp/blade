@@ -108,7 +108,8 @@ render(wrap(<BlocksPanel errors={[]} />))
   })
 
   describe("examples dropdown", () => {
-    it("renders the open menu above the surrounding chrome", async () => {
+    // In place, not floating: a popover was cut off by the sidebar's scroll.
+    it("opens the menu in the sidebar's flow", async () => {
       const user = userEvent.setup()
 render(wrap(<BlocksPanel errors={[]} />))
 
@@ -117,7 +118,7 @@ render(wrap(<BlocksPanel errors={[]} />))
       )
 
       const menu = await screen.findByRole("group", { name: "Exemplos" })
-      expect(menu.className).toContain("z-50")
+      expect(menu).not.toHaveClass("absolute")
     })
   })
 

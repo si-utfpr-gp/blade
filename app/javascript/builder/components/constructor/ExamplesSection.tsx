@@ -43,7 +43,12 @@ interface IDropdownItem {
   id: string
   title: string
   description: string
+  // Shown as a coloured badge, as the examples' topics are.
   category?: string
+  // Read out after the title, for what the list already says once on screen.
+  spokenHint?: string
+  // A quiet second line, such as when a file was kept.
+  meta?: string
 }
 
 interface ISidebarDropdownProps {
@@ -52,6 +57,8 @@ interface ISidebarDropdownProps {
   items: IDropdownItem[]
   selectedId: string | null
   emptyText: string
+  // Said once above the items, instead of on every row.
+  caption?: string
   onSelect: (id: string) => void
   // Left out where the item does not belong to the student, such as the
   // examples that ship with the app.
@@ -64,6 +71,7 @@ function SidebarDropdown({
   items,
   selectedId,
   emptyText,
+  caption,
   onSelect,
   onDelete,
 }: ISidebarDropdownProps) {
@@ -88,6 +96,13 @@ function SidebarDropdown({
       document.removeEventListener("mousedown", handlePointerDown)
       document.removeEventListener("keydown", handleKeyDown)
     }
+  }, [open])
+
+  // Opening near the bottom of a short screen, the list would start out of
+  // sight; it scrolls the sidebar just enough to show itself.
+  const listRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (open) listRef.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" })
   }, [open])
 
   const selected = items.find((item) => item.id === selectedId) ?? null
@@ -117,12 +132,18 @@ function SidebarDropdown({
         />
       </button>
 
+      {/* In place rather than floating: as a popover it opened inside the
+          sidebar's scroll and was cut off on short screens. */}
       {open && (
         <div
+          ref={listRef}
           role="group"
           aria-label={label}
-          className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-lg border border-border bg-card p-1 shadow-lg"
+          className="mt-1 max-h-[min(18rem,50dvh)] overflow-y-auto overscroll-contain rounded-lg border border-border bg-card p-1 shadow-sm"
         >
+          {caption && items.length > 0 && (
+            <p className="px-2 pb-1 pt-1.5 text-xs text-muted-foreground">{caption}</p>
+          )}
           {items.length === 0 && (
             <p className="px-2 py-2 text-xs text-muted-foreground">
               {emptyText}
@@ -146,21 +167,24 @@ function SidebarDropdown({
                   // screen reader is better served by the name first and where
                   // the diagram lives after it.
                   aria-label={
-                    item.category ? `${item.title}, ${item.category}` : item.title
+                    item.category || item.spokenHint
+                      ? `${item.title}, ${item.category ?? item.spokenHint}`
+                      : item.title
                   }
                   title={item.description}
                   onClick={() => {
                     onSelect(item.id)
                     setOpen(false)
                   }}
-                  className={`flex min-w-0 flex-1 items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left ${
+                  // Finger-sized rows on a phone, compact ones with a mouse.
+                  className={`flex min-h-11 min-w-0 flex-1 items-center justify-between gap-2 rounded-md px-2 py-2 text-left md:min-h-0 md:py-1.5 ${
                     isSelected ? "bg-primary/5 text-primary" : ""
                   }`}
                 >
                   <span className="min-w-0 flex-1">
                     {item.category && (
                       <span
-                        className="mb-0.5 block w-fit rounded border px-1.5 py-0.5 text-xs font-semibold"
+                        className="mb-0.5 block w-fit rounded border px-1.5 text-xs font-medium leading-4"
                         style={categoryStyle(item.category)}
                       >
                         {item.category}
@@ -169,6 +193,11 @@ function SidebarDropdown({
                     <span className="block truncate text-xs font-medium text-foreground">
                       {item.title}
                     </span>
+                    {item.meta && (
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {item.meta}
+                      </span>
+                    )}
                   </span>
                   <ChevronRight
                     className={`h-3.5 w-3.5 shrink-0 ${
@@ -184,7 +213,7 @@ function SidebarDropdown({
                     aria-label={`Excluir "${item.title}"`}
                     title="Excluir"
                     onClick={() => onDelete(item.id)}
-                    className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive md:h-7 md:w-7"
                   >
                     <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
@@ -281,7 +310,8 @@ export function ExamplesSection() {
   }
 
   return (
-    <div className="flex-1 space-y-2 overflow-y-auto p-3">
+    // The sidebar scrolls as a whole; see BlocksPanel.
+    <div className="space-y-2 p-3">
       <SidebarDropdown
         icon={<HardDrive className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
         label="Meus arquivos"
@@ -289,8 +319,10 @@ export function ExamplesSection() {
           id: algorithm.id,
           title: algorithm.name,
           description: `Guardado em ${algorithm.created_at}`,
-          category: LOCAL_CATEGORY,
+          spokenHint: LOCAL_CATEGORY,
+          meta: algorithm.created_at,
         }))}
+        caption="Guardados nesta máquina, só neste navegador."
         selectedId={selectedLocalId}
         emptyText="Nenhum arquivo guardado neste navegador."
         onSelect={handleSelectLocalAlgorithm}

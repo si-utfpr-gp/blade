@@ -34,6 +34,7 @@ import { PlacementHint } from "./PlacementHint"
 import { useDiagramOrigin } from "./DiagramOrigin"
 import { useIsDesktop } from "../layout/useMediaQuery"
 import { useInspector } from "../layout/InspectorContext"
+import { useDrawer } from "../layout/DrawerContext"
 import { TerminalSquare } from "lucide-react"
 
 interface IConstructorCanvasProps {
@@ -69,6 +70,7 @@ export default function ConstructorCanvas({
   const placeAt = usePanePlacement()
   const isDesktop = useIsDesktop()
   const inspector = useInspector()
+  const drawer = useDrawer()
   useFitOnDiagramLoad(diagramLoadCount)
   const { state: simulatorState } = useSimulator()
 
@@ -267,7 +269,8 @@ export default function ConstructorCanvas({
       ) : (
         // On a phone the tools sit behind one floating ball the student can
         // drag anywhere; see FloatingTools for why not a fixed bar.
-        <FloatingTools>
+        // Out of the way while the blocks menu covers the canvas.
+        <FloatingTools hidden={drawer?.isOpen ?? false}>
           {(close) => (
             <>
               {!viewer && (
