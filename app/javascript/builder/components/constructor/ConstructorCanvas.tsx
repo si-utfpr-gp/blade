@@ -82,7 +82,11 @@ export default function ConstructorCanvas({
   // A running simulation freezes everything; a bundled example can still be
   // rearranged, but not edited.
   const { canMove, canEdit } = canvasPermissions({
-    running: isCanvasLocked(simulatorState.isStarted, simulatorState.isFinished),
+    running: isCanvasLocked(
+      simulatorState.isStarted,
+      simulatorState.isFinished,
+      simulatorState.error !== null,
+    ),
     isExample: isReadOnly,
   })
   // The student's own lock freezes the diagram like a running simulation.

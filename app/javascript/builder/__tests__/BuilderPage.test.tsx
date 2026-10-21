@@ -13,6 +13,23 @@ function placeStartBlock(container: HTMLElement) {
 }
 
 describe("BuilderPage", () => {
+  // An error stops the run, and the diagram used to stay locked until Parar.
+  it("deixa editar o fluxograma assim que a execução para num erro", async () => {
+    const { container } = render(<BuilderPage />)
+    placeStartBlock(container)
+    fireEvent.click(screen.getByRole("button", { name: /executar/i }))
+
+    for (let i = 0; i < 5 && !screen.queryByRole("alert"); i++) {
+      fireEvent.click(screen.getByRole("button", { name: /próximo passo/i }))
+    }
+    await screen.findByRole("alert")
+
+    fireEvent.click(screen.getByTestId("block-tile-process"))
+    fireEvent.click(container.querySelector(".react-flow__pane") as Element, { clientX: 300, clientY: 300 })
+
+    expect(container.querySelectorAll(".react-flow__node")).toHaveLength(2)
+  })
+
   it("inicia com o painel do simulador fechado", () => {
     render(<BuilderPage />)
     expect(

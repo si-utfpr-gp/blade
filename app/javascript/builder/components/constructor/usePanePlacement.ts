@@ -19,6 +19,7 @@ export function usePanePlacement(): (flowPoint: { x: number; y: number }) => voi
   const locked = isCanvasLocked(
     simulatorState.isStarted,
     simulatorState.isFinished,
+    simulatorState.error !== null,
   )
 
   // Escape gives up on the armed block, so a mis-tap is recoverable.

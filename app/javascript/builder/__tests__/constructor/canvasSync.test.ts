@@ -50,6 +50,12 @@ describe("isCanvasLocked", () => {
   it("destrava quando a execução termina", () => {
     expect(isCanvasLocked(true, true)).toBe(false)
   })
+
+  // An error stops the run; the student goes straight to fixing the diagram,
+  // without pressing Parar first.
+  it("destrava quando a execução para num erro", () => {
+    expect(isCanvasLocked(true, false, true)).toBe(false)
+  })
 })
 
 describe("getContextMenuPosition", () => {

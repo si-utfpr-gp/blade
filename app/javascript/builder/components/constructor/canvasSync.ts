@@ -47,11 +47,17 @@ export function canvasPermissions({
   return { canMove: !running, canEdit: !running && !isExample }
 }
 
+/**
+ * A run in progress freezes the diagram, so the highlighted block always
+ * matches what is drawn. One stopped by an error does not: the student goes
+ * straight to fixing it, without pressing Parar first.
+ */
 export function isCanvasLocked(
   isStarted: boolean,
   isFinished: boolean,
+  stoppedByError = false,
 ): boolean {
-  return isStarted && !isFinished
+  return isStarted && !isFinished && !stoppedByError
 }
 
 export interface CanvasRect {
