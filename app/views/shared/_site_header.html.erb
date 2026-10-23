@@ -5,7 +5,8 @@
   # hamburger, a <details> so it opens without JavaScript.
   current = local_assigns[:current]
   first_name = @user&.name.to_s.split.first
-  arrow = '<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.64l-3.97-3.97a.75.75 0 111.06-1.06l5.25 5.25a.75.75 0 010 1.06l-5.25 5.25a.75.75 0 11-1.06-1.06l3.97-3.97H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>'.html_safe
+  press = "transition-[color,background-color,box-shadow,scale,translate] duration-150 ease-out active:scale-[0.97]"
+  arrow = '<svg class="h-4 w-4 transition-transform duration-150 ease-out group-hover:translate-x-0.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.64l-3.97-3.97a.75.75 0 111.06-1.06l5.25 5.25a.75.75 0 010 1.06l-5.25 5.25a.75.75 0 11-1.06-1.06l3.97-3.97H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>'.html_safe
 %>
 <%# Sticky, so the routes stay one tap away while the page scrolls. %>
 <div class="sticky top-0 z-30 border-b border-slate-200/70 bg-white/80 backdrop-blur-md">
@@ -31,12 +32,12 @@
 
   <div class="hidden items-center gap-5 md:flex">
     <% if @user %>
-      <a href="/builder" class="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-5 py-2.5 text-base font-semibold text-white hover:bg-blue-500">
+      <a href="/builder" class="group inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-5 py-2.5 text-base font-semibold text-white hover:bg-blue-500 <%= press %>">
         Continuar como <%= first_name %> <%= arrow %>
       </a>
     <% else %>
-      <a href="/login" class="text-base font-medium text-slate-700 hover:text-slate-900">Entrar</a>
-      <a href="/builder" class="rounded-full bg-blue-600 px-5 py-2.5 text-base font-semibold text-white hover:bg-blue-500">
+      <a href="/login" class="text-base font-medium text-slate-700 transition-colors duration-150 hover:text-slate-900">Entrar</a>
+      <a href="/builder" class="rounded-full bg-blue-600 px-5 py-2.5 text-base font-semibold text-white hover:bg-blue-500 <%= press %>">
         Abrir o builder
       </a>
     <% end %>
@@ -55,12 +56,12 @@
       </nav>
       <div class="mt-2 flex flex-col gap-2 border-t border-slate-100 pt-3">
         <% if @user %>
-          <a href="/builder" class="inline-flex items-center justify-center gap-1.5 rounded-full bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-500">
+          <a href="/builder" class="group inline-flex items-center justify-center gap-1.5 rounded-full bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-500 <%= press %>">
             Continuar como <%= first_name %> <%= arrow %>
           </a>
         <% else %>
-          <a href="/builder" class="rounded-full bg-blue-600 px-5 py-3 text-center text-base font-semibold text-white hover:bg-blue-500">Abrir o builder</a>
-          <a href="/login" class="rounded-full px-5 py-3 text-center text-base font-medium text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50">Entrar</a>
+          <a href="/builder" class="rounded-full bg-blue-600 px-5 py-3 text-center text-base font-semibold text-white hover:bg-blue-500 <%= press %>">Abrir o builder</a>
+          <a href="/login" class="rounded-full px-5 py-3 text-center text-base font-medium text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 <%= press %>">Entrar</a>
         <% end %>
       </div>
     </div>

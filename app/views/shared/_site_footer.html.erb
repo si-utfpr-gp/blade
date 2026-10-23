@@ -1,19 +1,7 @@
 <%
-  # The block palette in the order the builder lists it, drawn as a thin strip
-  # so the colours a student meets here are the ones they draw with.
-  palette = %w[
-    --node-start --node-memory --node-input --node-process --node-decision
-    --node-selection --node-output --node-subroutine --node-connector --node-end
-  ]
   link = "text-slate-600 hover:text-slate-900"
 %>
 <footer class="border-t border-slate-200 bg-slate-50">
-  <div class="flex h-1" aria-hidden="true">
-    <% palette.each do |token| %>
-      <span class="flex-1" style="background: hsl(var(<%= token %>))"></span>
-    <% end %>
-  </div>
-
   <div class="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1fr_auto_auto] md:gap-16">
     <div class="max-w-sm">
       <a href="/" class="flex items-center gap-2" aria-label="Blade, página inicial">

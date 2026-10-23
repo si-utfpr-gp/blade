@@ -1,7 +1,9 @@
 <% content_for :title, "Blade · Algoritmos em blocos" %>
 <%
   first_name = @user&.name.to_s.split.first
-  arrow = '<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.64l-3.97-3.97a.75.75 0 111.06-1.06l5.25 5.25a.75.75 0 010 1.06l-5.25 5.25a.75.75 0 11-1.06-1.06l3.97-3.97H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>'.html_safe
+  # Press feedback shared by the page's buttons.
+  press = "transition-[color,background-color,box-shadow,scale,translate] duration-150 ease-out active:scale-[0.97]"
+  arrow = '<svg class="h-4 w-4 transition-transform duration-150 ease-out group-hover:translate-x-0.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.64l-3.97-3.97a.75.75 0 111.06-1.06l5.25 5.25a.75.75 0 010 1.06l-5.25 5.25a.75.75 0 11-1.06-1.06l3.97-3.97H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>'.html_safe
 %>
 
 <div class="landing relative overflow-clip bg-background text-foreground">
@@ -15,7 +17,7 @@
     <h1 class="landing-rise mx-auto max-w-4xl text-[2.6rem] font-medium leading-[1.08] tracking-tight text-slate-900 sm:text-7xl">
       Algoritmos em blocos,
       <span class="relative whitespace-nowrap text-blue-600">
-        <svg aria-hidden="true" viewBox="0 0 418 42" class="absolute left-0 top-2/3 h-[0.58em] w-full fill-blue-300/70" preserveAspectRatio="none"><path d="M203.371.916c-26.013-2.078-76.686 1.963-124.73 9.946L67.3 12.749C35.421 18.062 18.2 21.766 6.004 25.934 1.244 27.561.828 27.778.874 28.61c.07 1.214.828 1.121 9.595-1.176 9.072-2.377 17.15-3.92 39.246-7.496C123.565 7.986 157.869 4.492 195.942 5.046c7.461.108 19.25 1.696 19.17 2.582-.107 1.183-7.874 4.31-25.75 10.366-21.992 7.45-35.43 12.534-36.701 13.884-2.173 2.308-.202 4.407 4.442 4.734 2.654.187 3.263.157 15.593-.78 35.401-2.686 57.944-3.488 88.365-3.143 46.327.526 75.721 2.23 130.788 7.584 19.787 1.924 20.814 1.98 24.557 1.332l.066-.011c1.201-.203 1.53-1.825.399-2.335-2.911-1.31-4.893-1.604-22.048-3.261-57.509-5.556-87.871-7.36-132.059-7.842-23.239-.254-33.617-.116-50.627.674-11.629.54-42.371 2.494-46.696 2.967-2.359.259 8.133-3.625 26.504-9.81 23.239-7.825 27.934-10.149 28.304-14.005.417-4.348-3.529-6-16.878-7.066Z"/></svg>
+        <%= render "shared/scribble" %>
         <span class="relative">passo a passo</span>
       </span>
     </h1>
@@ -27,19 +29,19 @@
 
     <div class="landing-rise mx-auto mt-10 flex max-w-md flex-col items-stretch justify-center gap-3 sm:max-w-none sm:flex-row sm:items-center sm:gap-4" style="animation-delay: 160ms">
       <% if @user %>
-        <a href="/builder" class="inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-7 py-4 text-base font-semibold text-white hover:bg-slate-700">
+        <a href="/builder" class="group inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-7 py-4 text-base font-semibold text-white hover:bg-blue-500 <%= press %>">
           Continuar como <%= first_name %> <%= arrow %>
         </a>
         <%= form_with url: "/logout", method: :post, data: { turbo: false }, local: true do %>
-          <button type="submit" class="w-full rounded-full px-7 py-4 text-base text-slate-600 ring-1 ring-slate-200 hover:text-slate-900 hover:ring-slate-300">
+          <button type="submit" class="w-full rounded-full px-7 py-4 text-base text-slate-600 ring-1 ring-slate-200 hover:text-slate-900 hover:ring-slate-300 <%= press %>">
             Não é você? Sair
           </button>
         <% end %>
       <% else %>
-        <a href="/login" class="inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-7 py-4 text-base font-semibold text-white hover:bg-slate-700">
+        <a href="/login" class="group inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-7 py-4 text-base font-semibold text-white hover:bg-blue-500 <%= press %>">
           Entrar <%= arrow %>
         </a>
-        <a href="/builder" class="inline-flex items-center justify-center gap-2 rounded-full px-7 py-4 text-base font-semibold text-slate-700 ring-1 ring-slate-300 hover:text-slate-900 hover:ring-slate-400">
+        <a href="/builder" class="inline-flex items-center justify-center gap-2 rounded-full px-7 py-4 text-base font-semibold text-slate-700 ring-1 ring-slate-300 hover:text-slate-900 hover:ring-slate-400 <%= press %>">
           Acessar como visitante
         </a>
       <% end %>
@@ -52,7 +54,7 @@
 
     <%# A real screenshot of the builder, framed like a browser window. %>
     <div class="landing-rise relative mx-auto mt-16 max-w-5xl" style="animation-delay: 260ms">
-      <div class="landing-float overflow-hidden rounded-2xl bg-white shadow-2xl shadow-slate-900/15 ring-1 ring-slate-900/10 sm:rounded-3xl">
+      <div class="overflow-hidden rounded-2xl bg-white shadow-2xl shadow-slate-900/15 ring-1 ring-slate-900/10 sm:rounded-3xl">
         <div class="flex items-center gap-1.5 border-b border-slate-100 bg-slate-50 px-4 py-2.5" aria-hidden="true">
           <span class="h-2.5 w-2.5 rounded-full bg-slate-300"></span>
           <span class="h-2.5 w-2.5 rounded-full bg-slate-300"></span>
@@ -82,7 +84,7 @@
              ["Código equivalente", "O diagrama vira JavaScript e TypeScript, para ligar o fluxograma ao código.", "--node-input"],
              ["Importar e exportar", "Leve seus diagramas em JSON, com ou sem conta, e abra os exemplos prontos.", "--node-output"]
            ].each do |title, text, token| %>
-          <article data-feature class="rounded-2xl bg-white/10 p-6 ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/15">
+          <article data-feature class="rounded-2xl bg-white/10 p-6 ring-1 ring-white/15 transition-colors duration-150 hover:bg-white/15">
             <span class="mb-4 block h-1.5 w-12 rounded-full" style="background: hsl(var(<%= token %>))"></span>
             <h3 class="text-lg font-semibold text-white"><%= title %></h3>
             <p class="mt-2 text-base text-blue-100"><%= text %></p>
@@ -138,7 +140,7 @@
           <li class="landing-check">Importar e exportar JSON</li>
           <li class="landing-cross">Salvar algoritmos</li>
         </ul>
-        <a href="/builder" class="mt-6 inline-flex items-center gap-1.5 text-base font-semibold text-blue-600 hover:text-blue-500">Acessar como visitante <%= arrow %></a>
+        <a href="/builder" class="group mt-6 inline-flex items-center gap-1.5 text-base font-semibold text-blue-600 transition-colors duration-150 hover:text-blue-500">Acessar como visitante <%= arrow %></a>
       </article>
 
       <article class="landing-access rounded-2xl p-7 shadow-xl shadow-blue-600/10 ring-2 ring-blue-600" style="--c: var(--node-start)">
@@ -150,9 +152,9 @@
           <li class="landing-check">Lista dos seus algoritmos</li>
         </ul>
         <% if @user %>
-          <a href="/builder" class="mt-6 inline-flex items-center gap-1.5 text-base font-semibold text-blue-600 hover:text-blue-500">Continuar como <%= first_name %> <%= arrow %></a>
+          <a href="/builder" class="group mt-6 inline-flex items-center gap-1.5 text-base font-semibold text-blue-600 transition-colors duration-150 hover:text-blue-500">Continuar como <%= first_name %> <%= arrow %></a>
         <% else %>
-          <a href="/login" class="mt-6 inline-flex items-center gap-1.5 text-base font-semibold text-blue-600 hover:text-blue-500">Entrar como aluno <%= arrow %></a>
+          <a href="/login" class="group mt-6 inline-flex items-center gap-1.5 text-base font-semibold text-blue-600 transition-colors duration-150 hover:text-blue-500">Entrar como aluno <%= arrow %></a>
         <% end %>
       </article>
 
@@ -168,13 +170,43 @@
   </section>
 
   <%# ---------------------------------------------------------------- cta %>
-  <section class="relative overflow-hidden bg-slate-900 py-20 sm:py-28">
+  <section class="relative overflow-hidden bg-linear-to-br from-blue-600 to-blue-700 py-20 sm:py-28">
     <div aria-hidden="true" class="landing-grid landing-grid-dark pointer-events-none absolute inset-0"></div>
-    <div aria-hidden="true" class="landing-glow pointer-events-none absolute left-1/2 top-1/2 h-[26rem] w-[26rem] -translate-x-1/2 -translate-y-1/2 rounded-full" style="--glow: var(--node-decision)"></div>
-    <div class="relative mx-auto max-w-lg px-4 text-center">
-      <h2 class="text-4xl tracking-tight text-white md:text-5xl">Comece agora</h2>
-      <p class="mt-4 text-lg tracking-tight text-slate-300 sm:text-xl">Abra o builder e monte o seu primeiro algoritmo em poucos minutos.</p>
-      <a href="/builder" class="mt-10 inline-flex items-center gap-2 rounded-full bg-white px-7 py-4 text-base font-semibold text-slate-900 hover:bg-blue-50">
+    <div aria-hidden="true" class="landing-glow pointer-events-none absolute left-1/2 top-1/2 h-[26rem] w-[26rem] -translate-x-1/2 -translate-y-1/2 rounded-full" style="--glow: 213 94% 68%"></div>
+    <div aria-hidden="true" class="landing-glow pointer-events-none absolute -bottom-32 -left-24 h-[22rem] w-[22rem] rounded-full" style="--glow: 199 89% 70%; animation-delay: -9s"></div>
+
+    <%# Two small flowcharts drawn in outline, the dashes running along the
+        arrows the way a step runs through the builder. %>
+    <svg aria-hidden="true" viewBox="0 0 160 340" fill="white" fill-opacity="0.04" stroke="white" stroke-opacity="0.3" stroke-width="1.5" class="landing-cta-chart landing-reveal pointer-events-none absolute left-[7%] top-1/2 hidden h-72 -translate-y-1/2 lg:block">
+      <rect x="30" y="10" width="100" height="36" rx="18" />
+      <path class="landing-flow" d="M80 46v40" />
+      <rect x="25" y="86" width="110" height="48" rx="8" />
+      <path class="landing-flow" d="M80 134v40" />
+      <path d="M80 174l50 40-50 40-50-40z" />
+      <path class="landing-flow" d="M80 254v40" />
+      <rect x="30" y="294" width="100" height="36" rx="18" />
+    </svg>
+    <svg aria-hidden="true" viewBox="0 0 220 290" fill="white" fill-opacity="0.04" stroke="white" stroke-opacity="0.3" stroke-width="1.5" class="landing-cta-chart landing-reveal pointer-events-none absolute right-[7%] top-1/2 hidden h-64 -translate-y-1/2 lg:block">
+      <rect x="60" y="10" width="100" height="40" rx="8" />
+      <path class="landing-flow" d="M110 50v40" />
+      <path d="M110 90l50 40-50 40-50-40z" />
+      <path class="landing-flow" d="M60 130H30v80M160 130h30v80" />
+      <rect x="5" y="210" width="50" height="36" rx="8" />
+      <rect x="165" y="210" width="50" height="36" rx="8" />
+      <path class="landing-flow" d="M30 246v28h160v-28" />
+    </svg>
+
+    <div class="landing-reveal relative mx-auto max-w-lg px-4 text-center">
+      <p class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-blue-50 ring-1 ring-white/20">
+        <span class="relative flex h-2 w-2" aria-hidden="true">
+          <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/70 motion-reduce:animate-none"></span>
+          <span class="relative inline-flex h-2 w-2 rounded-full bg-white"></span>
+        </span>
+        Sem cadastro para começar
+      </p>
+      <h2 class="mt-6 text-4xl font-medium tracking-tight text-white md:text-5xl">Comece agora</h2>
+      <p class="mt-4 text-lg tracking-tight text-blue-100 sm:text-xl">Abra o builder e monte o seu primeiro algoritmo em poucos minutos.</p>
+      <a href="/builder" class="landing-shine group mt-10 inline-flex items-center gap-2 rounded-full bg-white px-7 py-4 text-base font-semibold text-blue-600 shadow-lg shadow-blue-900/25 hover:bg-blue-50 hover:shadow-xl hover:shadow-blue-900/30 <%= press %>">
         Abrir o builder <%= arrow %>
       </a>
     </div>

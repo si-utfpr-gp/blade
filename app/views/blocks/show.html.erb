@@ -83,30 +83,68 @@
   <%= render "shared/site_header", links: [["Início", "/"], ["Blocos", "/blocks"], ["Sobre", "/about"]], current: "/blocks" %>
 
   <%# --------------------------------------------------------------- intro %>
+  <%
+    press = "transition-[color,box-shadow,scale,translate] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-900/5 active:scale-[0.97]"
+    # A small program drawn with the real blocks, from the top down: read a
+    # number, test it, print or compute, finish. [shape, token, x, y]
+    chart = [
+      [ :terminal, "--node-start",   90,   0 ],
+      [ :io,       "--node-input",   90,  70 ],
+      [ :decision, "--node-decision", 90, 140 ],
+      [ :io,       "--node-output",   5, 215 ],
+      [ :process,  "--node-process", 175, 215 ],
+      [ :terminal, "--node-end",     90, 285 ]
+    ]
+  %>
   <section class="relative z-10 mx-auto max-w-6xl px-4 pb-12 pt-12 sm:px-6 lg:pt-20">
     <div aria-hidden="true" class="landing-grid pointer-events-none absolute inset-x-0 -top-24 bottom-0 -z-10"></div>
+    <div aria-hidden="true" class="landing-glow pointer-events-none absolute -right-24 -top-32 -z-10 h-[30rem] w-[30rem] rounded-full opacity-30" style="--glow: 217 91% 60%"></div>
 
-    <p class="font-mono text-sm text-blue-600">/blocks</p>
-    <h1 class="mt-2 text-4xl font-medium tracking-tight text-slate-900 sm:text-6xl">Os blocos do fluxograma</h1>
-    <p class="mt-6 max-w-3xl text-lg text-slate-700 sm:text-xl">
-      Cada bloco é uma instrução do algoritmo. Aqui está o que cada um faz, o que escrever dentro dele e um exemplo,
-      na mesma ordem do painel de blocos do builder.
-    </p>
+    <div class="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_17rem]">
+      <div>
+        <p class="landing-rise inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 font-mono text-sm text-blue-600 ring-1 ring-blue-100">
+          <span class="h-1.5 w-1.5 rounded-full bg-blue-600" aria-hidden="true"></span>/blocks
+        </p>
+        <h1 class="landing-rise mt-4 text-4xl font-medium tracking-tight text-slate-900 sm:text-6xl" style="animation-delay: 60ms">
+          Os
+          <span class="relative whitespace-nowrap text-blue-600"><%= render "shared/scribble" %><span class="relative">blocos</span></span>
+          do fluxograma
+        </h1>
+        <p class="landing-rise mt-6 max-w-3xl text-lg text-slate-700 sm:text-xl" style="animation-delay: 120ms">
+          Cada bloco é uma instrução do algoritmo. Aqui está o que cada um faz, o que escrever dentro dele e um exemplo,
+          na mesma ordem do painel de blocos do builder.
+        </p>
 
-    <nav aria-label="Índice dos blocos" class="mt-10 flex flex-wrap gap-2">
-      <% blocks.each do |block| %>
-        <a href="#<%= block[:id] %>" class="inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-sm font-medium text-slate-700 ring-1 ring-slate-200 hover:text-slate-900 hover:ring-slate-400">
-          <span class="h-2.5 w-2.5 rounded-full" style="background: hsl(var(<%= block[:token] %>))"></span><%= block[:name] %>
-        </a>
-      <% end %>
-      <a href="#expressoes" class="inline-flex items-center rounded-full px-3.5 py-1.5 text-sm font-medium text-blue-600 ring-1 ring-blue-200 hover:ring-blue-400">Expressões</a>
-    </nav>
+        <nav aria-label="Índice dos blocos" class="mt-10 flex flex-wrap gap-2">
+          <% blocks.each_with_index do |block, i| %>
+            <a href="#<%= block[:id] %>" class="landing-rise inline-flex items-center gap-2 rounded-full bg-white py-1.5 pl-2.5 pr-3.5 text-sm font-medium text-slate-700 ring-1 ring-slate-200 hover:text-slate-900 hover:ring-slate-400 <%= press %>" style="animation-delay: <%= 180 + i * 35 %>ms">
+              <svg width="22" height="14" viewBox="0 0 64 40" aria-hidden="true" class="shrink-0" fill="white" stroke="hsl(var(<%= block[:token] %>))" stroke-width="5"><%= shapes[block[:shape]].html_safe %></svg><%= block[:name] %>
+            </a>
+          <% end %>
+          <a href="#expressoes" class="landing-rise inline-flex items-center rounded-full px-3.5 py-1.5 text-sm font-medium text-blue-600 ring-1 ring-blue-200 hover:ring-blue-400 <%= press %>" style="animation-delay: <%= 180 + blocks.size * 35 %>ms">Expressões</a>
+        </nav>
+      </div>
+
+      <%# The blocks land one after the other, then the arrows start running. %>
+      <svg aria-hidden="true" viewBox="0 0 260 340" class="hidden w-full lg:block" fill="white" stroke-width="3">
+        <g class="landing-flow" fill="none" stroke="#94a3b8" stroke-width="1.5">
+          <path d="M130 44v28M130 114v28M166 165h49v58M94 165H45v56M215 256v24H130M45 259v21h85v12" />
+        </g>
+        <text x="176" y="158" class="fill-slate-400 font-mono text-[10px]" stroke="none">V</text>
+        <text x="78" y="158" class="fill-slate-400 font-mono text-[10px]" stroke="none">F</text>
+        <% chart.each_with_index do |(shape, token, x, y), i| %>
+          <g transform="translate(<%= x %> <%= y %>) scale(1.25)">
+            <g class="landing-rise" style="animation-delay: <%= 200 + i * 90 %>ms" stroke="hsl(var(<%= token %>))"><%= shapes[shape].html_safe %></g>
+          </g>
+        <% end %>
+      </svg>
+    </div>
   </section>
 
   <%# -------------------------------------------------------------- blocks %>
   <section aria-label="Blocos" class="mx-auto grid max-w-6xl gap-5 px-4 pb-16 sm:px-6">
     <% blocks.each do |block| %>
-      <article id="<%= block[:id] %>" data-block class="landing-access rounded-2xl bg-white p-6 ring-1 ring-slate-200 sm:p-8" style="--c: var(<%= block[:token] %>)">
+      <article id="<%= block[:id] %>" data-block class="landing-reveal landing-access rounded-2xl bg-white p-6 ring-1 ring-slate-200 sm:p-8" style="--c: var(<%= block[:token] %>)">
         <div class="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-10">
           <div>
             <div class="flex items-center gap-4">

@@ -194,15 +194,58 @@
     background-image: radial-gradient(rgb(255 255 255 / 0.12) 1.2px, transparent 1.2px);
   }
 
-  /* Soft colour field in one of the block colours (--glow). */
+  /* Soft colour field in one of the block colours (--glow). The gradient is
+     soft enough on its own; a blur filter on a drifting layer is costly. */
   .landing-glow {
-    background: radial-gradient(circle, hsl(var(--glow) / 0.55), transparent 65%);
-    filter: blur(40px);
+    background: radial-gradient(circle, hsl(var(--glow) / 0.45), transparent 70%);
     animation: landing-drift 18s ease-in-out infinite alternate;
   }
 
-  .landing-rise { animation: landing-rise 700ms cubic-bezier(.2, .7, .2, 1) both; }
-  .landing-float { animation: landing-float 7s ease-in-out infinite; }
+  .landing-rise { animation: landing-rise 500ms cubic-bezier(.23, 1, .32, 1) both; }
+
+  /* Closing call to action: outline flowcharts with dashes running along the
+     arrows, and a light that sweeps across the button on hover. */
+  .landing-cta-chart .landing-flow { stroke-opacity: 0.55; }
+
+  /* The arrows of a decorative flowchart: dashes that run toward the next
+     block. The stroke colour comes from the chart. */
+  .landing-flow {
+    fill: none;
+    stroke-dasharray: 4 6;
+    animation: landing-flow 1s linear infinite;
+  }
+
+  /* The title underline draws itself in from the left once the title lands. */
+  .landing-scribble { animation: landing-scribble 700ms cubic-bezier(.23, 1, .32, 1) 350ms both; }
+  @keyframes landing-scribble { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+  .landing-shine { position: relative; overflow: hidden; }
+  .landing-shine::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(110deg, transparent 35%, hsl(217 91% 60% / 0.2) 50%, transparent 65%);
+    transform: translateX(-100%);
+  }
+  /* Sweeps in slowly, resets at once when the pointer leaves. */
+  @media (hover: hover) and (pointer: fine) {
+    .landing-shine:hover::after {
+      transform: translateX(100%);
+      transition: transform 700ms cubic-bezier(.23, 1, .32, 1);
+    }
+  }
+
+  /* Rises as it scrolls into view, where the browser can tie motion to scroll;
+     elsewhere it is simply there. */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .landing-reveal {
+        animation: landing-rise linear both;
+        animation-timeline: view();
+        animation-range: entry 10% cover 35%;
+      }
+    }
+  }
 
   /* Access cards carry the colour of the block they stand for (--c). */
   .landing-access { position: relative; overflow: hidden; background: #fff; }
@@ -220,11 +263,11 @@
   .landing-cross::before { content: "✕"; color: hsl(var(--node-end)); font-weight: 700; text-decoration: none; }
 
   @keyframes landing-rise { from { opacity: 0; transform: translateY(14px); } }
-  @keyframes landing-float { 50% { transform: translateY(-8px); } }
+  @keyframes landing-flow { to { stroke-dashoffset: -20; } }
   @keyframes landing-drift { to { transform: translate(40px, 30px) scale(1.1); } }
 
   @media (prefers-reduced-motion: reduce) {
-    .landing-glow, .landing-rise, .landing-float {
+    .landing-glow, .landing-rise, .landing-flow, .landing-scribble {
       animation: none;
     }
   }
@@ -243,7 +286,14 @@
   .site-menu .site-menu-close,
   .site-menu[open] .site-menu-open { display: none; }
   .site-menu[open] .site-menu-close { display: block; }
-  .site-menu[open] .site-menu-panel { animation: landing-rise 180ms ease-out both; }
+  /* The panel grows out of the hamburger, in the top right corner. */
+  .site-menu-panel { transform-origin: top right; }
+  .site-menu[open] .site-menu-panel { animation: site-menu-in 180ms cubic-bezier(.23, 1, .32, 1) both; }
+  @keyframes site-menu-in { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
+  @media (prefers-reduced-motion: reduce) {
+    .site-menu[open] .site-menu-panel { animation-name: site-menu-fade; }
+  }
+  @keyframes site-menu-fade { from { opacity: 0; } }
 
   /* Execution highlight animation */
   @keyframes node-pulse {
