@@ -40,14 +40,15 @@ class RateLimitTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "the sign in callback stops at 10 a minute" do
+  # Per address, and a class signs in together from the campus network.
+  test "the sign in callback stops at 300 a minute" do
     OmniAuth.config.test_mode = true
     OmniAuth.config.mock_auth[:google_oauth2] = OmniAuth::AuthHash.new(
       provider: "google_oauth2", uid: "sub-rate", info: { email: "ana@utfpr.edu.br", name: "Ana" },
       extra: { raw_info: { email_verified: true } }
     )
 
-    10.times do
+    300.times do
       get "/auth/google_oauth2/callback"
       assert_redirected_to builder_index_path
     end

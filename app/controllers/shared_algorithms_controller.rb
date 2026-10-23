@@ -5,8 +5,10 @@
 # for an iframe, and the only page other sites may frame.
 class SharedAlgorithmsController < ApplicationController
   # Links end up in public pages, so readers come in numbers; this only stops
-  # someone hammering the server from one address.
-  rate_limit to: 300, within: 1.minute, store: RATE_LIMIT_STORE,
+  # someone hammering the server from one address. A class opening the link
+  # its teacher sent shares the campus address, so there is room for 200
+  # students opening it and reloading.
+  rate_limit to: 600, within: 1.minute, store: RATE_LIMIT_STORE,
              with: -> { head :too_many_requests }
 
   before_action :set_algorithm

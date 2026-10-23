@@ -3,8 +3,10 @@ class SessionsController < ApplicationController
   skip_before_action :verify_authenticity_token, only: :create
 
   # The callback creates sessions and users, so repeated hits from one address
-  # are cut off; a student signs in once.
-  rate_limit to: 10, within: 1.minute, only: :create, store: RATE_LIMIT_STORE,
+  # are cut off. The count is per address because nobody is signed in yet, and
+  # a whole class signs in at once from the campus network, behind one
+  # address: the limit has to fit a class of 200.
+  rate_limit to: 300, within: 1.minute, only: :create, store: RATE_LIMIT_STORE,
              with: -> { redirect_to login_path, alert: "Muitas tentativas de entrar. Espere um minuto e tente de novo." }
 
   # The login page: sign in as a student or open the builder as a guest. It is
