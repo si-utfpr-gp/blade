@@ -29,6 +29,7 @@ class AlgorithmsController < ApplicationController
     )
 
     if algorithm.save
+      audit "algorithm.created", algorithm, { "name" => algorithm.name }
       render json: algorithm, status: :created
     else
       render json: { errors: error_messages(algorithm) }, status: :unprocessable_entity
@@ -56,6 +57,7 @@ class AlgorithmsController < ApplicationController
     return head :not_found unless algorithm
 
     algorithm.destroy!
+    audit "algorithm.destroyed", algorithm, { "name" => algorithm.name }
     head :no_content
   end
 

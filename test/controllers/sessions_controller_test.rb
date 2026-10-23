@@ -52,7 +52,7 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to "http://www.example.com/builder"
     assert_equal "ana@utfpr.edu.br", User.find_by(provider_uid: "sub-123")&.login
-    assert session[:user_id]
+    assert session[:user_session_id]
   end
 
   test "signing in again reuses the same user" do
@@ -75,12 +75,12 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as
 
     assert_nil session[:planted]
-    assert session[:user_id]
+    assert session[:user_session_id]
   end
 
   test "signing out clears the session and returns to the landing page" do
     sign_in_as
-    assert session[:user_id]
+    assert session[:user_session_id]
 
     delete logout_url
 
@@ -108,7 +108,7 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
   test "a callback without an auth hash signs nobody in" do
     get "/auth/google_oauth2/callback"
 
-    assert_nil session[:user_id]
+    assert_nil session[:user_session_id]
   end
 
   # The landing presents the system, so it stays reachable after signing in;

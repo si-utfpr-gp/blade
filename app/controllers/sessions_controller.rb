@@ -25,6 +25,9 @@ class SessionsController < ApplicationController
     end
 
     user = User.from_google(auth)
+    if user.previously_new_record?
+      AuditEvent.record("account.created", user: user, request: request, subject: user)
+    end
     sign_in(user)
     redirect_to builder_index_path
   rescue User::EmailRequired, User::EmailNotVerified, User::DomainNotAllowed => e
@@ -51,10 +54,16 @@ class SessionsController < ApplicationController
   # planted by an attacker before login would stay valid afterwards.
   def sign_in(user)
     reset_session
-    session[:user_id] = user.id
+    session[:user_session_id] = Session.start(user, request).id
+    AuditEvent.record("session.signed_in", user: user, request: request)
   end
 
+  # The Session row goes too, so the cookie is dead even if it was copied.
   def sign_out
+    if current_session
+      audit "session.signed_out"
+      current_session.destroy
+    end
     reset_session
     session[:signed_out] = true
   end

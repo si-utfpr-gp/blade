@@ -12,6 +12,7 @@ class AlgorithmSharesController < ApplicationController
     return head :not_found unless algorithm
 
     algorithm.share!
+    audit "algorithm.shared", algorithm
     render json: {
       share_url: shared_algorithm_url(algorithm.share_token),
       embed_url: embedded_algorithm_url(algorithm.share_token)
@@ -23,6 +24,7 @@ class AlgorithmSharesController < ApplicationController
     return head :not_found unless algorithm
 
     algorithm.unshare!
+    audit "algorithm.unshared", algorithm
     head :no_content
   end
 

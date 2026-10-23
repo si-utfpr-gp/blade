@@ -11,6 +11,9 @@ class User < ApplicationRecord
   class DomainNotAllowed < StandardError; end
 
   has_many :algorithms, dependent: :destroy
+  has_many :sessions, dependent: :delete_all
+  # Kept, without the user, when an account is deleted on request.
+  has_many :audit_events, dependent: :nullify
 
   validates :login, presence: true, uniqueness: true
   validates :name, presence: true

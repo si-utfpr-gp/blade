@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_20_033941) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_23_120100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -25,6 +25,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_20_033941) do
     t.index "user_id, lower((name)::text)", name: "index_algorithms_on_user_id_and_lower_name", unique: true
     t.index ["share_token"], name: "index_algorithms_on_share_token", unique: true
     t.index ["user_id"], name: "index_algorithms_on_user_id"
+  end
+
+  create_table "audit_events", force: :cascade do |t|
+    t.string "action", null: false
+    t.datetime "created_at", null: false
+    t.jsonb "details", default: {}, null: false
+    t.string "ip_address"
+    t.bigint "subject_id"
+    t.string "subject_type"
+    t.bigint "user_id"
+    t.index ["created_at"], name: "index_audit_events_on_created_at"
+    t.index ["subject_type", "subject_id"], name: "index_audit_events_on_subject_type_and_subject_id"
+    t.index ["user_id"], name: "index_audit_events_on_user_id"
+  end
+
+  create_table "sessions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "ip_address"
+    t.datetime "last_seen_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "user_agent"
+    t.bigint "user_id", null: false
+    t.index ["last_seen_at"], name: "index_sessions_on_last_seen_at"
+    t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -42,4 +66,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_20_033941) do
   end
 
   add_foreign_key "algorithms", "users"
+  add_foreign_key "audit_events", "users", on_delete: :nullify
+  add_foreign_key "sessions", "users", on_delete: :cascade
 end
