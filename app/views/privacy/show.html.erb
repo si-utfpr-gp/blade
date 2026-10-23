@@ -1,0 +1,156 @@
+<% content_for :title, "Privacidade · Blade" %>
+<%
+  contact = "marczal@utfpr.edu.br"
+  repository = "https://github.com/si-utfpr-gp/blade"
+  updated_on = "23/10/2026"
+
+  # 365 days reads as "1 ano", anything else in days.
+  period = lambda do |duration|
+    days = duration.in_days.round
+    days % 365 == 0 ? pluralize(days / 365, "ano", plural: "anos") : pluralize(days, "dia", plural: "dias")
+  end
+
+  retention = [
+    ["Conta (nome, e-mail, foto)", "Enquanto a conta existir. Não apagamos contas paradas: quem volta anos depois encontra seus algoritmos."],
+    ["Algoritmos", "Enquanto a conta existir, ou até você apagá-los."],
+    ["Sessão de login", "Encerrada ao sair, ou após #{period.(DataRetention::SESSION_IDLE)} sem uso."],
+    ["Endereço IP e navegador", "Apagados após #{period.(DataRetention::IP_ADDRESS)}."],
+    ["Registro de ações (auditoria)", "Apagado após #{period.(DataRetention::AUDIT_EVENT)}, já sem o IP."]
+  ]
+  heading = "text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl"
+  body = "mt-4 space-y-4 text-base leading-7 text-slate-700"
+%>
+
+<div class="landing relative overflow-clip bg-background text-foreground">
+  <%= render "shared/site_header", links: [["Início", "/"], ["Blocos", "/blocks"], ["Sobre", "/about"]], current: "/privacy" %>
+
+  <section class="relative z-10 mx-auto max-w-4xl px-4 pb-12 pt-12 sm:px-6 lg:pt-20">
+    <div aria-hidden="true" class="landing-grid pointer-events-none absolute inset-x-0 -top-24 bottom-0 -z-10"></div>
+
+    <p class="font-mono text-sm text-blue-600">/privacy</p>
+    <h1 class="mt-2 text-4xl font-medium tracking-tight text-slate-900 sm:text-6xl">Política de privacidade</h1>
+    <p class="mt-6 max-w-3xl text-lg text-slate-700 sm:text-xl">
+      O que o Blade guarda sobre você, por que guarda e por quanto tempo, conforme a Lei Geral de Proteção de
+      Dados (Lei 13.709/2018).
+    </p>
+    <p class="mt-4 text-sm text-slate-500">Atualizada em <%= updated_on %>.</p>
+  </section>
+
+  <div class="mx-auto max-w-4xl space-y-14 px-4 pb-20 sm:px-6 sm:pb-28">
+    <section aria-labelledby="quem">
+      <h2 id="quem" class="<%= heading %>">Quem é responsável</h2>
+      <div class="<%= body %>">
+        <p>
+          O Blade é um projeto acadêmico e de código aberto do curso de Sistemas de Informação da UTFPR, câmpus Guarapuava.
+          Dúvidas e pedidos sobre seus dados vão para <a href="mailto:<%= contact %>" class="font-medium text-blue-600 hover:text-blue-500"><%= contact %></a>.
+        </p>
+        <p>
+          Como o código é aberto, qualquer pessoa pode conferir no
+          <a href="<%= repository %>" target="_blank" rel="noopener" class="font-medium text-blue-600 hover:text-blue-500">GitHub</a>
+          exatamente o que é coletado e quando é apagado.
+        </p>
+      </div>
+    </section>
+
+    <section aria-labelledby="dados">
+      <h2 id="dados" class="<%= heading %>">Quais dados coletamos</h2>
+      <div class="<%= body %>">
+        <p>
+          <strong class="font-semibold text-slate-900">Sem conta, como visitante,</strong> nada seu é enviado ao servidor.
+          Os algoritmos e rascunhos ficam só no armazenamento do seu navegador.
+        </p>
+        <p><strong class="font-semibold text-slate-900">Ao entrar com o Google,</strong> guardamos:</p>
+        <ul class="list-disc space-y-2 pl-6">
+          <li>nome, e-mail institucional, endereço da foto de perfil e o identificador da conta Google, para saber quem você é e mostrar seus algoritmos;</li>
+          <li>os algoritmos que você salva: nome e diagrama;</li>
+          <li>o endereço IP e o navegador de cada login, para que a sessão possa ser encerrada e para investigar acessos indevidos;</li>
+          <li>um registro de ações: entrada, saída, criação de conta e quando um algoritmo é criado, apagado, compartilhado ou deixa de ser compartilhado. Os salvamentos automáticos não são registrados.</li>
+        </ul>
+        <p>
+          Não coletamos senha (o login é feito pelo Google), não usamos ferramentas de análise, anúncios ou rastreadores
+          e não vendemos nem repassamos seus dados.
+        </p>
+      </div>
+    </section>
+
+    <section aria-labelledby="base-legal">
+      <h2 id="base-legal" class="<%= heading %>">Por que podemos tratar esses dados</h2>
+      <div class="<%= body %>">
+        <p>
+          A conta e os algoritmos existem para prestar o serviço que você pediu ao entrar
+          (LGPD, art. 7º, V). O IP e o registro de ações servem à segurança do sistema e à apuração de acessos indevidos,
+          um legítimo interesse (art. 7º, IX) limitado ao mínimo necessário e apagado nos prazos abaixo.
+        </p>
+      </div>
+    </section>
+
+    <section aria-labelledby="cookies">
+      <h2 id="cookies" class="<%= heading %>">Cookies e armazenamento no navegador</h2>
+      <div class="<%= body %>">
+        <p>
+          O Blade usa um único cookie, essencial: o da sessão, que mantém você logado e protege os formulários contra
+          envios forjados (CSRF). Ele é criptografado, só trafega por HTTPS e some ao sair. Sem ele não há login,
+          por isso não pedimos consentimento para ele.
+        </p>
+        <p>
+          O armazenamento local do navegador guarda o rascunho do diagrama e os algoritmos de visitante. Esses dados não
+          saem do seu computador e podem ser apagados limpando os dados do site no navegador.
+        </p>
+      </div>
+    </section>
+
+    <section aria-labelledby="terceiros">
+      <h2 id="terceiros" class="<%= heading %>">Serviços de terceiros</h2>
+      <div class="<%= body %>">
+        <ul class="list-disc space-y-2 pl-6">
+          <li><strong class="font-semibold text-slate-900">Google:</strong> faz o login e hospeda sua foto de perfil, que o navegador carrega direto dos servidores do Google.</li>
+          <li><strong class="font-semibold text-slate-900">GitHub:</strong> hospeda as fotos da equipe na página Sobre.</li>
+        </ul>
+        <p>
+          Algoritmos compartilhados por link ficam visíveis para qualquer pessoa com o link, sem o seu nome ou e-mail.
+          Você pode desligar o link quando quiser.
+        </p>
+      </div>
+    </section>
+
+    <section aria-labelledby="prazos">
+      <h2 id="prazos" class="<%= heading %>">Por quanto tempo guardamos</h2>
+      <dl class="mt-6 divide-y divide-slate-200 rounded-2xl bg-white ring-1 ring-slate-200">
+        <% retention.each do |data, period_text| %>
+          <div class="grid gap-1 px-5 py-4 sm:grid-cols-[14rem_1fr] sm:gap-6">
+            <dt class="font-semibold text-slate-900"><%= data %></dt>
+            <dd class="text-slate-700"><%= period_text %></dd>
+          </div>
+        <% end %>
+      </dl>
+      <p class="mt-4 text-base leading-7 text-slate-700">
+        A limpeza roda todos os dias, automaticamente. Os registros do servidor, que também anotam o IP de cada acesso,
+        são descartados por rotação em poucos dias.
+      </p>
+    </section>
+
+    <section aria-labelledby="direitos">
+      <h2 id="direitos" class="<%= heading %>">Seus direitos</h2>
+      <div class="<%= body %>">
+        <p>
+          Seus algoritmos podem ser baixados a qualquer momento pelo botão Exportar do builder. Outros pedidos sobre
+          seus dados (LGPD, art. 18) podem ser feitos pelo e-mail
+          <a href="mailto:<%= contact %>" class="font-medium text-blue-600 hover:text-blue-500"><%= contact %></a>.
+        </p>
+      </div>
+    </section>
+
+    <section aria-labelledby="seguranca">
+      <h2 id="seguranca" class="<%= heading %>">Segurança</h2>
+      <div class="<%= body %>">
+        <p>
+          Todo acesso é por HTTPS, só contas institucionais verificadas entram, cada aluno vê apenas os próprios
+          algoritmos e a sessão pode ser encerrada no servidor. Se ocorrer um incidente que afete seus dados,
+          avisaremos você.
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <%= render "shared/site_footer" %>
+</div>
