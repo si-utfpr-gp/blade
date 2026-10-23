@@ -1,1 +1,14 @@
-# See https://www.robotstxt.org/robotstxt.html for documentation on how to use the robots.txt file
+# Blade: https://myblade.dev
+#
+# The public pages are open to every crawler. Shared algorithms (/s/, /embed/)
+# stay crawlable on purpose: they carry a noindex meta tag, and a crawler
+# blocked here would never read it and could index the bare URL instead.
+
+User-agent: *
+Disallow: /algorithms
+Disallow: /auth/
+Disallow: /logout
+Disallow: /up
+Disallow: /rails/
+
+Sitemap: https://myblade.dev/sitemap.xml
