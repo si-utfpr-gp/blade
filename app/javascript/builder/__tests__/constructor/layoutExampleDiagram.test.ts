@@ -4,6 +4,8 @@ import {
   type PositionedExampleNode,
 } from "../../components/constructor/layoutExampleDiagram"
 import { DIAGRAM_EXAMPLES, type IDiagramExample } from "../../interfaces/diagramExamples"
+import { doWhile, ifElse, input, out, proc, program, whileLoop } from "../engine/diagramBuilder"
+import type { RawDiagram } from "../engine/runDiagram"
 
 function getExample(id: string) {
   const example = DIAGRAM_EXAMPLES.find((item) => item.id === id)
@@ -158,5 +160,52 @@ describe("layoutExampleDiagram", () => {
       },
     })
     expect(nodes.map((node) => node.id)).toEqual(["a", "b"])
+  })
+})
+
+// Diagrams a student draws by hand, laid out by the Reorganizar button.
+describe("layoutExampleDiagram — se e laços aninhados", () => {
+  const lay = (diagram: RawDiagram) => {
+    const { nodes } = layoutExampleDiagram({ id: "t", title: "", description: "", category: "", diagram } as IDiagramExample)
+    const byLabel = (label: string) => nodes.find((node) => node.data.label === label) as PositionedExampleNode
+    return { nodes, byLabel }
+  }
+
+  it("um se dentro de um laço abre Verdadeiro à direita e fecha na coluna da decisão", () => {
+    const { byLabel, nodes } = lay(program([["inteiro", "i, n, m"]], [
+      input("n"),
+      proc("i = 0"),
+      whileLoop("i < n", [
+        ifElse("i > m", [proc("m = i")]),
+        proc("i = i + 1"),
+      ]),
+      out("m"),
+    ]))
+    const decision = byLabel("i > m")
+    const join = nodes.find((node) => node.data.label === "Fim do se") as PositionedExampleNode
+
+    expect(centerX(byLabel("m = i"))).toBeGreaterThan(centerX(decision))
+    expectAligned(centerX(join), centerX(decision))
+    expectAligned(centerX(byLabel("i = i + 1")), centerX(decision))
+  })
+
+  it("um laço dentro de outro sai pela coluna da própria condição", () => {
+    const { byLabel } = lay(program([["inteiro", "i, j"]], [
+      proc("i = 0"),
+      whileLoop("i < 3", [
+        proc("j = 0"),
+        whileLoop("j < 3", [proc("j = j + 1")]),
+        proc("i = i + 1"),
+      ]),
+    ]))
+    const inner = byLabel("j < 3")
+
+    expect(centerX(byLabel("j = j + 1"))).toBeGreaterThan(centerX(inner))
+    expectAligned(centerX(byLabel("i = i + 1")), centerX(inner))
+  })
+
+  it("o faça-enquanto sai pela coluna da condição", () => {
+    const { byLabel } = lay(program([["inteiro", "v"]], [doWhile([input("v")], "v != 0"), out("'fim'")]))
+    expectAligned(centerX(byLabel("'fim'")), centerX(byLabel("v != 0")))
   })
 })

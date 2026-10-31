@@ -69,7 +69,7 @@ export function layoutExampleDiagram(example: IDiagramExample): LaidOutExample {
 
   const order = topologicalOrder(rawNodes, ordering, start?.id)
   const rowOf = longestPathRows(order, ordering)
-  const columnOf = assignColumns(order, forward, nodeById, loopBodies)
+  const columnOf = assignColumns(order, forward, rawEdges, nodeById, loopBodies)
 
   // Rows grow to their tallest block; each block is centred in its row and
   // on its column, so the arrows between them run straight.
@@ -231,14 +231,21 @@ function longestPathRows(order: string[], ordering: [string, string][]): Map<str
 function assignColumns(
   order: string[],
   forward: RawEdge[],
+  allEdges: RawEdge[],
   nodeById: Map<string, RawNode>,
   loopBodies: Map<string, Set<string>>,
 ): Map<string, number> {
   const candidates = new Map<string, number[]>()
   const column = new Map<string, number>()
 
+  // The loop a decision is the condition of: one branch stays in the body (in
+  // a do-while, by the arrow back) and the other leaves. An if inside a loop
+  // keeps both branches in the body.
   const loopBodyOf = (decisionId: string) => {
-    for (const body of loopBodies.values()) if (body.has(decisionId)) return body
+    const targets = allEdges.filter((edge) => edge.source === decisionId).map((edge) => edge.target)
+    for (const body of loopBodies.values()) {
+      if (body.has(decisionId) && targets.some((id) => body.has(id)) && targets.some((id) => !body.has(id))) return body
+    }
     return null
   }
 
