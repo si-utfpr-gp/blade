@@ -4,10 +4,10 @@ import { runToEnd, type RawDiagram } from "./runDiagram"
 import { block, choose, expectError, input, out, proc, program } from "./diagramBuilder"
 
 /*
- * Classroom rules for what goes inside a block: the memory block only
- * declares variables with their types, and a process block holds a single
- * instruction. Values are given in process blocks, one per block, so every
- * change shows as its own row in the desk check.
+ * Classroom rules for what goes inside a block: the memory block declares
+ * variables with their types and may give each a starting value, and a
+ * process block holds a single instruction, so every change shows as its own
+ * row in the desk check.
  */
 
 describe("regras dos blocos", () => {
@@ -35,25 +35,40 @@ describe("regras dos blocos", () => {
     expect(run.outputs).toEqual(["a; b"])
   })
 
-  it("a memória só declara: valor inicial é recusado e indica o bloco de processo", () => {
-    // Built by hand: the shared builder turns initial values into process blocks.
-    const diagram: RawDiagram = {
-      nodes: [
-        { id: "n1", type: "startEnd", data: { label: "Início", variant: "start" } },
-        { id: "n2", type: "memory", data: { label: "Memória", rows: [{ type: "inteiro", variables: "soma", initialValue: "0" }] } },
-        { id: "n3", type: "startEnd", data: { label: "Fim", variant: "end" } },
-      ],
-      edges: [
-        { id: "e1", source: "n1", target: "n2" },
-        { id: "e2", source: "n2", target: "n3" },
-      ],
-    }
-    expectError(
-      diagram,
-      [],
-      ERROR_TYPES.INVALID_EXPRESSION,
-      "A memória só declara variáveis. Inicialize 'soma' em um bloco de processo, como 'soma = 0'.",
-    )
+  // Built by hand: the shared builder turns initial values into process blocks.
+  const memoryOnly = (rows: Array<{ type: string; variables: string; initialValue?: string }>): RawDiagram => ({
+    nodes: [
+      { id: "n1", type: "startEnd", data: { label: "Início", variant: "start" } },
+      { id: "n2", type: "memory", data: { label: "Memória", rows } },
+      { id: "n3", type: "startEnd", data: { label: "Fim", variant: "end" } },
+    ],
+    edges: [
+      { id: "e1", source: "n1", target: "n2" },
+      { id: "e2", source: "n2", target: "n3" },
+    ],
+  })
+
+  it("a memória inicializa a variável escrita como 'i = 0', e o teste de mesa mostra o valor", () => {
+    const run = runToEnd(memoryOnly([{ type: "inteiro", variables: "i = 0" }, { type: "real", variables: "soma = 0, media" }]))
+    expect(run.variables).toEqual({ i: "0", soma: "0", media: null })
+    expect(run.steps[1].changes).toEqual(["Declarada: i", "i = 0", "Declarada: soma", "soma = 0", "Declarada: media"])
+  })
+
+  it("em 'num1, num2 , soma = 0' só soma começa com valor", () => {
+    expect(runToEnd(memoryOnly([{ type: "inteiro", variables: "num1, num2 , soma = 0" }])).variables).toEqual({ num1: null, num2: null, soma: "0" })
+  })
+
+  it("cada variável começa com o valor que quiser, ou nula", () => {
+    const run = runToEnd(memoryOnly([{ type: "inteiro", variables: "i = 20, j = nulo, k = 0, m" }]))
+    expect(run.variables).toEqual({ i: "20", j: null, k: "0", m: null })
+  })
+
+  it("a memória aceita o valor inicial guardado à parte", () => {
+    expect(runToEnd(memoryOnly([{ type: "inteiro", variables: "soma", initialValue: "0" }])).variables).toEqual({ soma: "0" })
+  })
+
+  it("o valor inicial da memória respeita o tipo declarado", () => {
+    expectError(memoryOnly([{ type: "inteiro", variables: "i = 'a'" }]), [], ERROR_TYPES.TYPE_MISMATCH, /'i'/)
   })
 
   // The escolha/caso compares a value against a finite list of options, so it

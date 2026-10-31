@@ -192,3 +192,19 @@ function checkVariableName(name: string, declared: string): void {
     throw new Error(`Nome de variável inválido: '${declared}'`)
   }
 }
+
+/**
+ * The variables a memory row declares, each with the value it starts with:
+ * written in the field as 'i = 0' (or 'i = nulo' for none), or kept apart in
+ * the row's initialValue.
+ */
+export function memoryEntries(row: { variables: string; initialValue?: string }): Array<{ name: string; initialValue?: string }> {
+  const shared = row.initialValue?.trim() || undefined
+  // shortcut: splits on every ',', so a text value holding one breaks; parse with quotes if that comes up.
+  return row.variables.split(",").map(entry => entry.trim()).filter(Boolean).map(entry => {
+    const [name, ...value] = entry.split("=")
+    const initialValue = value.length ? value.join("=").trim() : shared
+    // 'i = nulo' says out loud what a bare 'i' already means: no value yet.
+    return { name: name.trim(), initialValue: initialValue?.toLowerCase() === "nulo" ? undefined : initialValue }
+  })
+}

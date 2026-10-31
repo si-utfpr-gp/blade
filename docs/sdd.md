@@ -296,7 +296,7 @@ interface Node {
     rows?: Array<{        // Apenas para type = "memory"
       type: string        // "inteiro" | "real" | "caractere" | "logico"
       variables: string   // "num1, num2, soma" ou "notas[5], i"
-      initialValue?: string // recusado pelo motor: a memória só declara, valores vão em blocos process
+      initialValue?: string // valor inicial de todas as variáveis da linha; "i = 0" em variables também vale
     }>
   }
 }

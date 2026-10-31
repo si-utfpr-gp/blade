@@ -72,6 +72,19 @@ describe("CodeGenerator", () => {
     expect(gen.generate({ lang: "ts" })).toContain("let soma: number = 0;")
   })
 
+  it("generate() inicializa variável escrita como 'i = 0' na memória", () => {
+    const gen = new CodeGenerator(g(
+      [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
+       { id:"n2",type:"memory",position:{x:0,y:80},data:{rows:[{type:"inteiro",variables:"i = 0, n"}]} },
+       { id:"n3",type:"startEnd",position:{x:0,y:200},data:{variant:"end"} }],
+      [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"}]
+    ))
+
+    expect(gen.generate({ lang: "js" })).toContain("let i = 0;")
+    expect(gen.generate({ lang: "ts" })).toContain("let i: number = 0;")
+    expect(gen.generate({ lang: "ts" })).toContain("let n: number;")
+  })
+
   it("generate() converte memory — array", () => {
     const gen = new CodeGenerator(g(
       [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },

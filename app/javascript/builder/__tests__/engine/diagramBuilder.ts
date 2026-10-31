@@ -125,8 +125,8 @@ export const choose = (expression: string, cases: Array<[string, Stmt[]]>, other
 function graph(prefix: string, rows: Row[], stmts: Stmt[]): { nodes: RawNode[]; edges: RawEdge[] } {
   const d = new DiagramBuilder(prefix)
   const start = d.add("startEnd", "Início", { variant: "start" })
-  // The memory block only declares. A row's initial value becomes a process
-  // block right after it, which is where a student gives a starting value.
+  // The memory block may initialize, but these builders keep a row's initial value in a process
+  // block right after it, so tests written before keep their step counts.
   const memory = d.add("memory", "Memória", {
     rows: rows.map(([type, variables]) => ({ type, variables })),
   })

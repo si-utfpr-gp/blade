@@ -1,5 +1,6 @@
 import type { IParserData, IParserNode, IParserRoutineDefinition } from "../parser/types"
 import type { IExecutionStep } from "../interfaces/execution"
+import { memoryEntries } from "./MemoryManager"
 
 type Lang = "js" | "ts"
 
@@ -92,7 +93,7 @@ export class CodeGenerator {
     for (const [, node] of graph.nodes) {
       if (node.type !== "memory") continue
       for (const row of node.rows ?? []) {
-        for (const raw of row.variables.split(",").map(s => s.trim()).filter(Boolean)) {
+        for (const { name: raw } of memoryEntries(row)) {
           if (this.baseVarName(raw) === variable) return row.type
         }
       }
@@ -287,7 +288,7 @@ export class CodeGenerator {
     const lines: string[] = []
 
     for (const row of node.rows) {
-      for (const raw of row.variables.split(",").map(s => s.trim()).filter(Boolean)) {
+      for (const { name: raw, initialValue: initial } of memoryEntries(row)) {
         const arrayMatch = raw.match(/^(\w+)\[(\d+)\]$/)
         if (arrayMatch) {
           const [, name, size] = arrayMatch
@@ -296,9 +297,9 @@ export class CodeGenerator {
             ? `${ind}let ${name}: ${tsType}[] = new Array(${size});`
             : `${ind}let ${name} = new Array(${size});`)
         } else {
-          const initialValue = row.initialValue === undefined
+          const initialValue = initial === undefined
             ? ""
-            : ` = ${this.translateExpression(row.initialValue)}`
+            : ` = ${this.translateExpression(initial)}`
           lines.push(lang === "ts"
             ? `${ind}let ${raw}: ${this.typeToTS(row.type)}${initialValue};`
             : `${ind}let ${raw}${initialValue};`)
@@ -404,7 +405,7 @@ export class CodeGenerator {
     for (const [, node] of this.graph.nodes) {
       if (node.type !== "memory") continue
       for (const row of node.rows ?? []) {
-        for (const raw of row.variables.split(",").map(s => s.trim()).filter(Boolean)) {
+        for (const { name: raw } of memoryEntries(row)) {
           this.varTypes.set(this.baseVarName(raw), row.type)
         }
       }

@@ -52,9 +52,10 @@ motor de execução ignoram esse campo.
 }
 ```
 
-O bloco `memory` só declara variáveis com o tipo. Valores iniciais são dados em blocos `process`
-(por exemplo `contador = 0`), para que cada valor apareça como um passo no teste de mesa; uma linha
-com `initialValue` interrompe a execução com erro.
+O bloco `memory` declara variáveis com o tipo e pode dar o valor inicial direto na linha
+(`"variables": "i = 0, n"`) ou em `initialValue`, que vale para todas as variáveis da linha. O valor
+inicial respeita o tipo declarado e aparece no teste de mesa no passo da memória. Cada variável
+leva o próprio valor: em `"num1, num2, soma = 0"` só `soma` começa com 0, e `i = nulo` (ou só `i`) começa sem valor.
 
 **Tipos de bloco:** `startEnd` (com `variant: "start"|"end"`), `memory`, `input`, `process`,
 `output`, `decision`, `selection`, `subroutine`, `connector`.

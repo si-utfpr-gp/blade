@@ -1,7 +1,7 @@
 import type { ICallStackFrame, IExecutionCheckpoint, IExecutionFrameCheckpoint, IExecutionStep, IPendingDecisionCheckpoint, IPendingInputCheckpoint } from "../interfaces/execution";
 import type { IParserData, IParserNode } from "../parser/types";
 import { ExprEvaluator } from "./ExprEvaluator";
-import { MemoryManager } from "./MemoryManager";
+import { MemoryManager, memoryEntries } from "./MemoryManager";
 import { SnapshotManager } from "./SnapshotManager";
 import { ExplanationGenerator } from "./ExplanationGenerator";
 import { classifyError, ERROR_TYPES, ExecutionError } from "./errors";
@@ -445,24 +445,11 @@ export class ExecutionEngine {
         const frame = this.requireActiveFrame()
         const changes: string[] = []
         node.rows?.forEach(row => {
-            // Classroom rule: the memory block declares; values are given in
-            // process blocks, where the desk check shows them.
-            if (row.initialValue !== undefined && row.initialValue.trim() !== "") {
-                const [first = "variavel"] = row.variables.split(",").map(variable => variable.trim()).filter(Boolean)
-                throw new ExecutionError(
-                    ERROR_TYPES.INVALID_EXPRESSION,
-                    `A memória só declara variáveis. Inicialize '${first}' em um bloco de processo, como '${first} = ${row.initialValue.trim()}'.`,
-                    node.id,
-                )
-            }
-            row.variables
-                .split(",")
-                .map(variable => variable.trim())
-                .filter(Boolean)
-                .forEach(variable => {
-                    this.declare(frame, variable, row.type, node.id)
-                    changes.push(`Declarada: ${variable}`)
-                })
+            memoryEntries(row).forEach(({ name, initialValue }) => {
+                this.declare(frame, name, row.type, node.id)
+                changes.push(`Declarada: ${name}`)
+                if (initialValue !== undefined) changes.push(...frame.expr.assign(`${name} = ${initialValue}`, node.id))
+            })
         })
         return changes
     }
