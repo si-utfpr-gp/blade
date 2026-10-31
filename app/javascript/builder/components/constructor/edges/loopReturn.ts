@@ -15,14 +15,25 @@ export function loopBodyIds(back: FlowEdge, edges: FlowEdge[]): Set<string> {
   const others = edges.filter((edge) => edge.id !== back.id)
   const fromHeader = reach(back.target, others, "forward")
   if (!fromHeader.has(back.source)) return new Set()
+  // A loop is entered only through its connector. The end of an if inside a
+  // loop is reachable around that loop, but the flow gets to its branches
+  // without passing through it, so it closes nothing.
+  if (reachAvoiding(back.target, edges).has(back.source)) return new Set()
 
   const toLatch = reach(back.source, others, "backward")
   return new Set([...fromHeader].filter((id) => toLatch.has(id)))
 }
 
-function reach(start: string, edges: FlowEdge[], direction: "forward" | "backward"): Set<string> {
-  const seen = new Set([start])
-  const queue = [start]
+/** What the flow reaches from the blocks nothing points to, never passing through `blocked`. */
+function reachAvoiding(blocked: string, edges: FlowEdge[]): Set<string> {
+  const targets = new Set(edges.map((edge) => edge.target))
+  const roots = edges.map((edge) => edge.source).filter((id) => !targets.has(id) && id !== blocked)
+  return reach(roots, edges.filter((edge) => edge.source !== blocked && edge.target !== blocked), "forward")
+}
+
+function reach(start: string | string[], edges: FlowEdge[], direction: "forward" | "backward"): Set<string> {
+  const seen = new Set(typeof start === "string" ? [start] : start)
+  const queue = [...seen]
   while (queue.length > 0) {
     const current = queue.shift()!
     for (const edge of edges) {
