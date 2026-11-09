@@ -446,12 +446,23 @@ export class ExecutionEngine {
         const changes: string[] = []
         node.rows?.forEach(row => {
             memoryEntries(row).forEach(({ name, initialValue }) => {
-                this.declare(frame, name, row.type, node.id)
+                this.declare(frame, this.sizedName(frame, name, node.id), row.type, node.id)
                 changes.push(`Declarada: ${name}`)
                 if (initialValue !== undefined) changes.push(...frame.expr.assign(`${name} = ${initialValue}`, node.id))
             })
         })
         return changes
+    }
+
+    /** 'notas[n]' takes its size from n's value now, so a vector can be read in before it is sized. */
+    private sizedName(frame: ExecutionFrame, name: string, blockId: string): string {
+        const match = name.match(/^(\w+)\[(.+)\]$/)
+        if (!match || /^\s*-?\d+\s*$/.test(match[2])) return name
+        const size = frame.expr.value(match[2], blockId)
+        if (typeof size !== "number" || !Number.isInteger(size)) {
+            throw new ExecutionError(ERROR_TYPES.INVALID_EXPRESSION, `Tamanho de array inválido: ${match[2]}`, blockId)
+        }
+        return `${match[1]}[${size}]`
     }
 
     /** Declares a variable, pointing a refused name or type at the block that declared it. */

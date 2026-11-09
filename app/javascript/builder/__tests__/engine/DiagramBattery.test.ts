@@ -11,6 +11,7 @@ import {
   proc,
   program,
   routine,
+  type Stmt,
   whileLoop,
 } from "./diagramBuilder"
 
@@ -435,6 +436,23 @@ describe("bateria — vetores", () => {
       out("notas[1]"),
     ])
     expect(runToEnd(diagram, ["7.5", "8.25", "6"]).outputs).toEqual(["21.75", "8.25"])
+  })
+
+  it("dimensiona o vetor pelo valor lido de n", () => {
+    const sized = (variables: string): Stmt => (d, from) => {
+      const id = d.add("memory", "Memória", { rows: [{ type: "inteiro", variables }] })
+      d.link(from, id)
+      return { id }
+    }
+    const diagram = program([["inteiro", "n, i"]], [
+      input("n"),
+      sized("notas[n]"),
+      proc("i = 0"),
+      whileLoop("i < n", [input("notas[i]"), proc("i = i + 1")]),
+      out("notas[n - 1]"),
+    ])
+    expect(runToEnd(diagram, ["2", "4", "9"]).outputs).toEqual(["9"])
+    expectError(program([["inteiro", "n"]], [proc("n = 0"), sized("v[n]")]), [], "INVALID_EXPRESSION", /Tamanho de array inválido: 0/)
   })
 
   it("índice fora do vetor", () => {

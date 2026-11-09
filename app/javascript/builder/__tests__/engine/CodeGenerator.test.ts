@@ -96,6 +96,16 @@ describe("CodeGenerator", () => {
     expect(code).toContain("let notas = new Array(5);")
   })
 
+  it("generate() converte memory — array de tamanho n", () => {
+    const gen = new CodeGenerator(g(
+      [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },
+       { id:"n2",type:"memory",position:{x:0,y:80},data:{rows:[{type:"inteiro",variables:"notas[n]"}]} },
+       { id:"n3",type:"startEnd",position:{x:0,y:200},data:{variant:"end"} }],
+      [{ id:"e1",source:"n1",target:"n2"},{ id:"e2",source:"n2",target:"n3"}]
+    ))
+    expect(gen.generate()).toContain("let notas = new Array(n);")
+  })
+
   it("generate() converte memory — tipo caractere", () => {
     const gen = new CodeGenerator(g(
       [{ id:"n1",type:"startEnd",position:{x:0,y:0},data:{variant:"start"} },

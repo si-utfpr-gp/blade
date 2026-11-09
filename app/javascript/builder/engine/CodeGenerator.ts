@@ -289,13 +289,13 @@ export class CodeGenerator {
 
     for (const row of node.rows) {
       for (const { name: raw, initialValue: initial } of memoryEntries(row)) {
-        const arrayMatch = raw.match(/^(\w+)\[(\d+)\]$/)
+        const arrayMatch = raw.match(/^(\w+)\[(.+)\]$/)
         if (arrayMatch) {
           const [, name, size] = arrayMatch
           const tsType = this.typeToTS(row.type)
           lines.push(lang === "ts"
-            ? `${ind}let ${name}: ${tsType}[] = new Array(${size});`
-            : `${ind}let ${name} = new Array(${size});`)
+            ? `${ind}let ${name}: ${tsType}[] = new Array(${this.translateExpression(size)});`
+            : `${ind}let ${name} = new Array(${this.translateExpression(size)});`)
         } else {
           const initialValue = initial === undefined
             ? ""
