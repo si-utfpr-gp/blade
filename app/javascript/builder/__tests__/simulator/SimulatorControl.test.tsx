@@ -1,12 +1,12 @@
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, vi } from "vitest"
 import { render, screen, fireEvent } from "@testing-library/react"
 import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
 import SimulatorControl from "../../components/simulator/SimulatorControl"
 
-function renderControl() {
+function renderControl(onStart?: () => void) {
   return render(
     <SimulatorProvider>
-      <SimulatorControl />
+      <SimulatorControl onStart={onStart} />
     </SimulatorProvider>
   )
 }
@@ -43,5 +43,14 @@ describe("SimulatorControl", () => {
     fireEvent.click(screen.getByText("Iniciar Execução"))
     expect(screen.getByRole("combobox", { name: /velocidade/i })).toBeInTheDocument()
     expect(screen.getByTitle("Executar tudo")).toBeInTheDocument()
+  })
+
+  it("uses the synchronized start action when provided", () => {
+    const onStart = vi.fn()
+    renderControl(onStart)
+
+    fireEvent.click(screen.getByText("Iniciar Execução"))
+
+    expect(onStart).toHaveBeenCalledTimes(1)
   })
 })

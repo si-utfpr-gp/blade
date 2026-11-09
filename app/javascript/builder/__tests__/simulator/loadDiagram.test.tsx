@@ -43,7 +43,8 @@ function Probe({ nodes, edges }: { nodes: Node[]; edges: Edge[] }) {
 }
 
 import { TooltipProvider } from "../../components/ui/tooltip"
-import InputDialog from "../../components/simulator/InputDialog"
+import InputDialog, { INPUT_DIALOG_DELAY_MS } from "../../components/simulator/InputDialog"
+import { DIAGRAM_EXAMPLES } from "../../interfaces/diagramExamples"
 
 function renderHarness(nodes: Node[], edges: Edge[]) {
   return render(
@@ -100,13 +101,15 @@ describe("loadDiagram", () => {
 })
 
 describe("input multi-valor (teste de mesa real)", () => {
-  function submitValue(value: string) {
-    const field = screen.getByPlaceholderText(/número inteiro/i)
+  async function submitValue(value: string) {
+    const field = await screen.findByPlaceholderText(/número inteiro/i)
     fireEvent.change(field, { target: { value } })
     fireEvent.click(screen.getByRole("button", { name: "OK" }))
   }
 
-  it("pede um valor por vez e não traça linha fantasma", () => {
+  // The input block is reached first, shown in the desk check and on the
+  // canvas, and only then the dialog asks for the value.
+  it("mostra a entrada no teste de mesa antes de pedir cada valor", async () => {
     renderInteractive(sumNodes, sumEdges)
     fireEvent.click(screen.getByRole("button", { name: "carregar" }))
     fireEvent.click(screen.getByRole("button", { name: /iniciar execução/i }))
@@ -117,27 +120,62 @@ describe("input multi-valor (teste de mesa real)", () => {
     expect(screen.queryByText("Entrada de Dados")).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("button", { name: "Próximo passo" }))
-    expect(screen.getByText(/Valor para 'num1':/)).toBeInTheDocument()
-    expect(screen.getByText(/Histórico — Passo 2/)).toBeInTheDocument()
-
-    submitValue("10")
-    expect(screen.getByText(/Valor para 'num2':/)).toBeInTheDocument()
     expect(screen.getByText(/Histórico — Passo 3/)).toBeInTheDocument()
+    expect(screen.getByText("Entrada (num1)")).toBeInTheDocument()
+    expect(screen.queryByText("Entrada de Dados")).not.toBeInTheDocument()
+    expect(await screen.findByText(/Valor para 'num1':/)).toBeInTheDocument()
 
-    submitValue("20")
+    await submitValue("10")
+    expect(screen.getByText(/Histórico — Passo 3\.1/)).toBeInTheDocument()
+    expect(screen.getByText("Entrada (num2)")).toBeInTheDocument()
+    expect(await screen.findByText(/Valor para 'num2':/)).toBeInTheDocument()
+
+    await submitValue("20")
     expect(screen.queryByText("Entrada de Dados")).not.toBeInTheDocument()
     expect(screen.getByText(/Histórico — Passo 3\.1/)).toBeInTheDocument()
+    expect(screen.getAllByText(/^Entrada \(/)).toHaveLength(2)
   })
 
-  it("navega pelo histórico sem executar e substitui o futuro ao informar novo valor", () => {
+  // A loop asks the same question again; it still waits for the highlight.
+  it("num laço, espera de novo antes de repetir a mesma pergunta", async () => {
+    const example = DIAGRAM_EXAMPLES.find((item) => item.id === "soma-ate-zero")!
+    const nodes = example.diagram.nodes.map((node) => ({ ...node, position: { x: 0, y: 0 } })) as Node[]
+    renderInteractive(nodes, example.diagram.edges as Edge[])
+    fireEvent.click(screen.getByRole("button", { name: "carregar" }))
+    fireEvent.click(screen.getByRole("button", { name: /iniciar execução/i }))
+    for (let i = 0; i < 4; i++) fireEvent.click(screen.getByRole("button", { name: "Próximo passo" }))
+    await submitValue("5")
+
+    // Around the loop until the input block is reached again.
+    for (let i = 0; i < 8 && screen.getAllByText("Entrada (num)").length < 2; i++) {
+      fireEvent.click(screen.getByRole("button", { name: "Próximo passo" }))
+    }
+    expect(screen.getAllByText("Entrada (num)")).toHaveLength(2)
+    expect(screen.queryByText("Entrada de Dados")).not.toBeInTheDocument()
+    expect(await screen.findByText(/Valor para 'num':/)).toBeInTheDocument()
+  })
+
+  it("cancelar a entrada tira do teste de mesa a linha que esperava o valor", async () => {
+    renderInteractive(sumNodes, sumEdges)
+    fireEvent.click(screen.getByRole("button", { name: "carregar" }))
+    fireEvent.click(screen.getByRole("button", { name: /iniciar execução/i }))
+    fireEvent.click(screen.getByRole("button", { name: "Próximo passo" }))
+    fireEvent.click(screen.getByRole("button", { name: "Próximo passo" }))
+    await screen.findByText(/Valor para 'num1':/)
+
+    fireEvent.keyDown(screen.getByPlaceholderText(/número inteiro/i), { key: "Escape" })
+    expect(screen.queryByText("Entrada (num1)")).not.toBeInTheDocument()
+  })
+
+  it("navega pelo histórico sem executar e substitui o futuro ao informar novo valor", async () => {
     renderInteractive(sumNodes, sumEdges)
     fireEvent.click(screen.getByRole("button", { name: "carregar" }))
     fireEvent.click(screen.getByRole("button", { name: /iniciar execução/i }))
 
     fireEvent.click(screen.getByRole("button", { name: "Próximo passo" }))
     fireEvent.click(screen.getByRole("button", { name: "Próximo passo" }))
-    submitValue("10")
-    submitValue("20")
+    await submitValue("10")
+    await submitValue("20")
     expect(screen.getByText("Histórico — Passo 3.1/3")).toBeInTheDocument()
 
     fireEvent.click(screen.getByTitle("Passo anterior"))
@@ -149,8 +187,8 @@ describe("input multi-valor (teste de mesa real)", () => {
 
     fireEvent.click(screen.getByTitle("Passo anterior"))
     fireEvent.click(screen.getByRole("button", { name: "Próximo passo" }))
-    expect(screen.getByText(/Valor para 'num2':/)).toBeInTheDocument()
-    submitValue("30")
+    expect(await screen.findByText(/Valor para 'num2':/)).toBeInTheDocument()
+    await submitValue("30")
 
     expect(screen.getByText("Histórico — Passo 3.1/3")).toBeInTheDocument()
     expect(screen.getAllByText("30")).toHaveLength(2)
@@ -173,12 +211,22 @@ describe("input multi-valor (teste de mesa real)", () => {
       await act(async () => {
         await vi.advanceTimersByTimeAsync(1000)
       })
+      const showDialog = () => act(async () => {
+        await vi.advanceTimersByTimeAsync(INPUT_DIALOG_DELAY_MS)
+      })
+      const typeValue = (value: string) => {
+        fireEvent.change(screen.getByPlaceholderText(/número inteiro/i), { target: { value } })
+        fireEvent.click(screen.getByRole("button", { name: "OK" }))
+      }
+
+      await showDialog()
       expect(screen.getByText(/Valor para 'num1':/)).toBeInTheDocument()
 
-      submitValue("10")
+      typeValue("10")
+      await showDialog()
       expect(screen.getByText(/Valor para 'num2':/)).toBeInTheDocument()
 
-      submitValue("20")
+      typeValue("20")
       expect(screen.queryByText("Entrada de Dados")).not.toBeInTheDocument()
 
       for (let i = 0; i < 3; i++) {

@@ -1,10 +1,13 @@
 import type { ICallStackFrame, IExecutionCheckpoint, IExecutionFrameCheckpoint, IExecutionStep, IPendingDecisionCheckpoint, IPendingInputCheckpoint } from "../interfaces/execution";
 import type { IParserData, IParserNode } from "../parser/types";
 import { ExprEvaluator } from "./ExprEvaluator";
-import { MemoryManager } from "./MemoryManager";
+import { MemoryManager, memoryEntries } from "./MemoryManager";
 import { SnapshotManager } from "./SnapshotManager";
 import { ExplanationGenerator } from "./ExplanationGenerator";
 import { classifyError, ERROR_TYPES, ExecutionError } from "./errors";
+import type { ExpressionValue } from "./ExpressionParser";
+import type { VarType } from "./types";
+import { comparisonMismatch, formatValue, parseLogical, sameValue, typeOfValue } from "./values";
 
 interface ExecutionFrame {
     routineName: string
@@ -58,8 +61,13 @@ export class ExecutionEngine {
         const frame = this.activeFrame()
         if (this._done || !frame?.current) return null
         if (this.snapshots.size >= this.max) {
-            this._err = "Limite de passos excedido"
-            return null
+            const error = new ExecutionError(
+                ERROR_TYPES.MAX_STEPS_EXCEEDED,
+                "Limite de passos excedido",
+                frame.current,
+            )
+            this._err = error.message
+            throw error
         }
 
         const decisionBranch = this.advancePendingDecision()
@@ -73,8 +81,10 @@ export class ExecutionEngine {
 
         const node = active.graph.nodes.get(active.current)
         if (!node) {
-            this._err = `Bloco '${active.current}' não encontrado`
-            return null
+            const message = `Bloco '${active.current}' não encontrado`
+            const error = new ExecutionError(ERROR_TYPES.UNKNOWN_BLOCK, message, active.current)
+            this._err = error.message
+            throw error
         }
 
         try {
@@ -88,8 +98,7 @@ export class ExecutionEngine {
                 return step
             }
 
-            if (this.shouldAdvanceCurrent) this.moveAfter(node)
-            if (step) this.snapshots.store(step, this.checkpoint())
+            this.finishStep(node, step)
             return step
         } catch (e) {
           const structured = e instanceof ExecutionError ? e : classifyError(e, this.activeFrame()?.current ?? null)
@@ -161,8 +170,7 @@ export class ExecutionEngine {
         try {
             this.shouldAdvanceCurrent = true
             const step = this.exec(node)
-            if (this.shouldAdvanceCurrent) this.moveAfter(node)
-            if (step) this.snapshots.store(step, this.checkpoint())
+            this.finishStep(node, step)
             return step
         } catch (e) {
           const structured = e instanceof ExecutionError ? e : classifyError(e, this.activeFrame()?.current ?? null)
@@ -193,6 +201,19 @@ export class ExecutionEngine {
           return null
         default:
           return null
+      }
+    }
+
+    /** Converts an already validated input to the value its declared type holds. */
+    private inputValue(raw: string, type: VarType): ExpressionValue {
+      switch (type) {
+        case "inteiro":
+        case "real":
+          return Number(raw.trim())
+        case "logico":
+          return parseLogical(raw) ?? false
+        case "caractere":
+          return raw
       }
     }
 
@@ -251,7 +272,7 @@ export class ExecutionEngine {
                 const name = pi.names[pi.index]
 
                 if (input === undefined) {
-                    const type = frame.memory.getType(name) ?? "caractere"
+                    const type = frame.expr.typeOf(name) ?? "caractere"
                     const text = this.explanations.generate({
                         nodeType: node.type,
                         nodeLabel: name,
@@ -268,11 +289,14 @@ export class ExecutionEngine {
                     };
                 }
 
-                const declaredType = frame.memory.getType(name) ?? "caractere"
-                if (!frame.memory.has(name)) frame.memory.declare(name, "caractere")
+                // RN09: an input only fills a variable the memory block declared.
+                const declaredType = frame.expr.typeOf(name)
+                if (!declaredType) {
+                    throw new ExecutionError(ERROR_TYPES.UNDECLARED_VARIABLE, `Variável '${name}' não declarada`, node.id)
+                }
                 const validationError = this.validateInput(input, declaredType)
-                if (validationError) throw new Error(validationError)
-                frame.memory.set(name, input)
+                if (validationError) throw new ExecutionError(ERROR_TYPES.TYPE_MISMATCH, validationError, node.id)
+                frame.expr.store(name, this.inputValue(input, declaredType), node.id)
 
                 const remaining = pi.index + 1 < pi.names.length
                 pi.index += 1
@@ -291,7 +315,7 @@ export class ExecutionEngine {
                         inputEntered: true,
                         inputPrompt: `Valor para '${nextName}':`,
                         inputVariable: nextName,
-                        inputType: frame.memory.getType(nextName) ?? "caractere",
+                        inputType: frame.expr.typeOf(nextName) ?? "caractere",
                         ...text,
                     };
                 }
@@ -319,7 +343,17 @@ export class ExecutionEngine {
             }
 
             case "process": {
-                const changes = frame.expr.assign(node.label ?? "", node.id);
+                // Classroom rule: one instruction per process block, so each
+                // change gets its own row in the desk check.
+                const label = node.label ?? ""
+                if (frame.expr.splitStatements(label, node.id).length > 1) {
+                    throw new ExecutionError(
+                        ERROR_TYPES.INVALID_EXPRESSION,
+                        `Um bloco de processo aceita uma única instrução. Separe '${label}' em um bloco para cada instrução.`,
+                        node.id,
+                    )
+                }
+                const changes = frame.expr.assign(label, node.id);
                 const text = this.explanations.generate({
                     nodeType: node.type,
                     nodeLabel: node.label ?? "",
@@ -331,6 +365,13 @@ export class ExecutionEngine {
             case "decision": {
                 const cond = node.label ?? "";
                 const ok = frame.expr.condition(cond, node.id);
+                if (frame.graph.getNextNode(node.id, ok ? "yes" : "no") === null) {
+                    throw new ExecutionError(
+                        ERROR_TYPES.MISSING_CONNECTION,
+                        `Decisão '${cond}': caso ${ok ? "Verdadeiro" : "Falso"} sem ligação`,
+                        node.id,
+                    );
+                }
                 const text = this.explanations.generate({
                     nodeType: node.type,
                     nodeLabel: cond,
@@ -340,6 +381,35 @@ export class ExecutionEngine {
                     nodeId: node.id,
                     nodeLabel: cond,
                     handle: ok ? "yes" : "no",
+                }
+                this.shouldAdvanceCurrent = false
+                return { ...base(), ...text };
+            }
+
+            case "selection": {
+                const expression = node.label ?? "";
+                const value = frame.expr.value(expression, node.id);
+                this.checkSelectionType(expression, value, node.id);
+                const cases = node.cases ?? [];
+                const caseValues = this.selectionCaseValues(node, cases, value);
+                const index = caseValues.findIndex(caseValue => sameValue(caseValue, value));
+                const handle = index === -1 ? "default" : `case-${index}`;
+                const selectedCase = index === -1 ? undefined : cases[index].trim();
+                if (frame.graph.getNextNode(node.id, handle) === null) {
+                    const branch = selectedCase === undefined ? "Falso" : `'${selectedCase}'`;
+                    throw new ExecutionError(ERROR_TYPES.MISSING_CONNECTION, `Escolha: caso ${branch} sem ligação`, node.id);
+                }
+                const text = this.explanations.generate({
+                    nodeType: node.type,
+                    nodeLabel: expression,
+                    expressionResult: formatValue(value),
+                    selectedCase,
+                });
+                frame.pendingDecision = {
+                    nodeId: node.id,
+                    nodeLabel: expression,
+                    handle,
+                    ...(selectedCase !== undefined ? { branchLabel: selectedCase } : {}),
                 }
                 this.shouldAdvanceCurrent = false
                 return { ...base(), ...text };
@@ -375,19 +445,71 @@ export class ExecutionEngine {
         const frame = this.requireActiveFrame()
         const changes: string[] = []
         node.rows?.forEach(row => {
-            row.variables
-                .split(",")
-                .map(variable => variable.trim())
-                .filter(Boolean)
-                .forEach(variable => {
-                    frame.memory.declare(variable, row.type)
-                    changes.push(`Declarada: ${variable}`)
-                    if (row.initialValue !== undefined) {
-                        changes.push(...frame.expr.assign(`${variable} = ${row.initialValue}`, node.id))
-                    }
-                })
+            memoryEntries(row).forEach(({ name, initialValue }) => {
+                this.declare(frame, this.sizedName(frame, name, node.id), row.type, node.id)
+                changes.push(`Declarada: ${name}`)
+                if (initialValue !== undefined) changes.push(...frame.expr.assign(`${name} = ${initialValue}`, node.id))
+            })
         })
         return changes
+    }
+
+    /** 'notas[n]' takes its size from n's value now, so a vector can be read in before it is sized. */
+    private sizedName(frame: ExecutionFrame, name: string, blockId: string): string {
+        const match = name.match(/^(\w+)\[(.+)\]$/)
+        if (!match || /^\s*-?\d+\s*$/.test(match[2])) return name
+        const size = frame.expr.value(match[2], blockId)
+        if (typeof size !== "number" || !Number.isInteger(size)) {
+            throw new ExecutionError(ERROR_TYPES.INVALID_EXPRESSION, `Tamanho de array inválido: ${match[2]}`, blockId)
+        }
+        return `${match[1]}[${size}]`
+    }
+
+    /** Declares a variable, pointing a refused name or type at the block that declared it. */
+    private declare(frame: ExecutionFrame, name: string, type: string, blockId: string | null): void {
+        try {
+            frame.memory.declare(name, type)
+        } catch (error) {
+            const classified = classifyError(error, blockId)
+            throw new ExecutionError(classified.type, classified.message, blockId)
+        }
+    }
+
+    /** Evaluates each case value once and rejects a selection that repeats one. */
+    /**
+     * The escolha/caso compares against a finite list of options, so it takes
+     * integers and characters only. A declared variable answers by its type,
+     * so a real holding 2 is still refused; anything else by its value.
+     */
+    private checkSelectionType(expression: string, value: ExpressionValue, blockId: string): void {
+        const declared = this.requireActiveFrame().expr.typeOf(expression)
+        const kind = declared ?? (
+            typeof value === "boolean" ? "logico"
+                : typeof value === "number" ? (Number.isInteger(value) ? "inteiro" : "real")
+                    : "caractere"
+        )
+        if (kind === "inteiro" || kind === "caractere") return
+        const name = kind === "logico" ? "lógico" : kind
+        throw new ExecutionError(
+            ERROR_TYPES.INVALID_SELECTION,
+            `A escolha só compara valores inteiros ou caracteres, e '${expression.trim()}' é ${name}.`,
+            blockId,
+        )
+    }
+
+    private selectionCaseValues(node: IParserNode, cases: string[], value: ExpressionValue): ExpressionValue[] {
+        const frame = this.requireActiveFrame()
+        const values = cases.map(source => frame.expr.value(source, node.id))
+        values.forEach((caseValue) => {
+            const mismatch = comparisonMismatch(value, caseValue)
+            if (mismatch) throw new ExecutionError(ERROR_TYPES.TYPE_MISMATCH, `Tipo incompatível: ${mismatch}`, node.id)
+        })
+        values.forEach((value, index) => {
+            if (values.findIndex(other => sameValue(other, value)) !== index) {
+                throw new ExecutionError(ERROR_TYPES.INVALID_SELECTION, `Escolha: valor '${cases[index].trim()}' repetido`, node.id)
+            }
+        })
+        return values
     }
 
     private next(node: IParserNode): string | null {
@@ -403,30 +525,77 @@ export class ExecutionEngine {
 
         frame.pendingDecision = null
         frame.current = frame.graph.getNextNode(pending.nodeId, pending.handle)
-        const isTrue = pending.handle === "yes"
         return {
             nodeId: pending.nodeId,
             nodeLabel: pending.nodeLabel,
             nodeType: "branch",
             variables: frame.memory.snapshot(),
-            log: `Caso ${isTrue ? "Verdadeiro" : "Falso"}.`,
-            explanation: `O fluxo segue pelo caso ${isTrue ? "verdadeiro" : "falso"}.`,
-            changes: [`Ramo: ${isTrue ? "VERDADEIRO" : "FALSO"}`],
+            ...this.branchText(pending),
             nextHint: "Avançar.",
             callStack: this.callStack(),
         }
     }
 
+    private branchText(pending: IPendingDecisionCheckpoint): Pick<IExecutionStep, "log" | "explanation" | "changes"> {
+        if (pending.handle.startsWith("case-")) {
+            const value = pending.branchLabel ?? ""
+            return {
+                log: `Caso ${value}.`,
+                explanation: `O fluxo segue pelo caso ${value}.`,
+                changes: [`Ramo: ${value}`],
+            }
+        }
+        if (pending.handle === "default") {
+            return {
+                log: "Caso Falso.",
+                explanation: "Nenhum valor coincidiu; o fluxo segue pelo caso falso.",
+                changes: ["Ramo: FALSO"],
+            }
+        }
+        const isTrue = pending.handle === "yes"
+        return {
+            log: `Caso ${isTrue ? "Verdadeiro" : "Falso"}.`,
+            explanation: `O fluxo segue pelo caso ${isTrue ? "verdadeiro" : "falso"}.`,
+            changes: [`Ramo: ${isTrue ? "VERDADEIRO" : "FALSO"}`],
+        }
+    }
+
+    /**
+     * Records the step and moves past its block. A block with no way out
+     * still gets its step in the desk check, since it ran; the error comes
+     * after, and the flow stops there instead of running the block twice.
+     */
+    private finishStep(node: IParserNode, step: IExecutionStep | null): void {
+        try {
+            if (this.shouldAdvanceCurrent) this.moveAfter(node)
+        } catch (error) {
+            if (step) this.snapshots.store(step, this.checkpoint())
+            throw error
+        }
+        if (step) this.snapshots.store(step, this.checkpoint())
+    }
+
     private moveAfter(node: IParserNode): void {
         const frame = this.requireActiveFrame()
-        frame.current = this.next(node)
-        if (frame.current === null && node.type === "startEnd" && node.variant === "end") {
+        const next = this.next(node)
+        if (next === null && node.type === "startEnd" && node.variant === "end") {
+            frame.current = null
             if (this.frames.length > 1) {
                 this.completeSubroutine()
                 return
             }
             this._done = true
+            return
         }
+        // Only the end block may lead nowhere; anywhere else the flow would
+        // stall with the student pressing Avançar to no effect.
+        frame.current = next
+        if (next === null) throw this.missingExit(node)
+    }
+
+    private missingExit(node: IParserNode): ExecutionError {
+        const name = node.label?.trim() || node.type
+        return new ExecutionError(ERROR_TYPES.MISSING_CONNECTION, `O bloco '${name}' não tem ligação de saída`, node.id)
     }
 
     private enterSubroutine(node: IParserNode): void {
@@ -441,8 +610,13 @@ export class ExecutionEngine {
         const localMemory = new MemoryManager()
         const localExpr = new ExprEvaluator(localMemory)
         routine.parameters.forEach((parameter, index) => {
-            localMemory.declare(parameter, "caractere")
-            localMemory.set(parameter, caller.expr.output(call.args[index], node.id))
+            const value = caller.expr.value(call.args[index], node.id)
+            // A variable passed in keeps its declared type, and a whole number
+            // is an inteiro, so the parameter is not just "any number".
+            const type = caller.expr.typeOf(call.args[index])
+                ?? (typeof value === "number" && Number.isInteger(value) ? "inteiro" : typeOfValue(value))
+            localMemory.declare(parameter, type)
+            localExpr.store(parameter, value, node.id)
         })
 
         this.frames.push({
@@ -455,9 +629,15 @@ export class ExecutionEngine {
             pendingInput: null,
             pendingDecision: null,
             returnTarget: call.returnTarget,
-            returnToNode: caller.graph.getNextNode(node.id),
+            returnToNode: this.returnPoint(caller, node),
             returnVariable: routine.returnVariable,
         })
+    }
+
+    private returnPoint(caller: ExecutionFrame, node: IParserNode): string {
+        const next = caller.graph.getNextNode(node.id)
+        if (next === null) throw this.missingExit(node)
+        return next
     }
 
     private completeSubroutine(): void {
@@ -466,10 +646,11 @@ export class ExecutionEngine {
         if (!finished || !caller) return
         if (finished.returnTarget) {
             if (!finished.returnVariable) throw this.subroutineContract(`Sub-rotina '${finished.routineName}' não possui variável de retorno`, null)
-            const value = finished.memory.get(finished.returnVariable)
-            if (value === null) throw this.subroutineContract(`Retorno da sub-rotina '${finished.routineName}' não inicializado`, null)
-            if (!caller.memory.has(finished.returnTarget)) caller.memory.declare(finished.returnTarget, "caractere")
-            caller.memory.set(finished.returnTarget, value)
+            if (finished.memory.get(finished.returnVariable) === null) {
+                throw this.subroutineContract(`Retorno da sub-rotina '${finished.routineName}' não inicializado`, null)
+            }
+            // RN09: the caller declares the variable that receives the result.
+            caller.expr.store(finished.returnTarget, finished.expr.value(finished.returnVariable, null), null)
         }
         caller.current = finished.returnToNode ?? null
     }

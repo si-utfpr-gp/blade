@@ -134,6 +134,7 @@ Responsável por validar, interpretar, executar e converter os algoritmos constr
 | US16 | Sistema | Converter o diagrama para código JavaScript. | 🔥 Alta |
 | US17 | Sistema | Detectar erros estruturais do algoritmo. | ⚡ Média |
 | US18 | Sistema | Detectar erros durante a execução. | ⚡ Média |
+| US19 | Aluno | Usar um bloco de escolha múltipla (switch/case, "escolha-caso") para desviar o fluxo por vários casos. | 🔥 Alta |
 
 ---
 
@@ -191,7 +192,8 @@ Características da memória:
 
 - **Declaração explícita**: as variáveis são declaradas no bloco `memory` com nome e tipo (`inteiro`, `real`, `caractere`, `logico`);
 - **Inicialização opcional na declaração**: uma linha de `memory` pode informar `initialValue`; sem ele, a variável recebe valor somente por `input` ou `process`;
-- **Tipagem declarativa com execução dinâmica**: o tipo declarado no bloco `memory` serve como documentação e validação, mas o valor é tratado dinamicamente durante a execução;
+- **Tipagem verificada**: o tipo declarado no bloco `memory` define como o valor é lido e quais valores a variável aceita. `inteiro` não recebe valores com casas decimais, `real` recebe apenas números, `logico` apenas `verdadeiro`/`falso` e `caractere` guarda texto, mesmo quando ele contém apenas dígitos (`"12" + "3"` resulta em `"123"`). Uma atribuição ou entrada incompatível interrompe a execução com erro de tipo (RN17);
+- **Apresentação em português**: valores lógicos são exibidos como `verdadeiro`/`falso`, e números reais são exibidos sem ruído de ponto flutuante (`0.1 + 0.2` exibe `0.3`);
 - **Suporte a vetores**: variáveis indexadas são declaradas como `nome[tamanho]` (ex: `notas[5]`);
 - **Imutabilidade de snapshots**: uma vez registrado, um snapshot não pode ser alterado;
 - **Escopo do algoritmo principal**: as variáveis declaradas no diagrama principal compartilham o escopo global desse algoritmo;
@@ -318,6 +320,14 @@ Blocos `startEnd` com `variant = 'start'` possuem apenas aresta de saída. Bloco
 ### RN16
 
 A expressão em blocos `process` pode conter múltiplos statements separados por `;` (ex: `soma = 0; i = 0`), que são executados sequencialmente em um único passo.
+
+### RN17
+
+Todo valor atribuído a uma variável, por `process`, `input`, `initialValue` ou retorno de sub-rotina, deve ser compatível com o tipo declarado. Operações aritméticas exigem operandos numéricos, operadores lógicos (`e`, `ou`, `nao`) exigem operandos lógicos, e a condição de um bloco `decision` deve resultar em `verdadeiro` ou `falso`. A violação interrompe a execução com erro de tipo incompatível.
+
+### RN18
+
+O bloco de escolha múltipla (switch/case) desvia o fluxo para um entre vários casos. Suas regras de entrada, casos, caso padrão e saídas serão definidas na especificação do bloco (US19) e complementam a RN06, que continua valendo para o bloco `decision`.
 
 ---
 

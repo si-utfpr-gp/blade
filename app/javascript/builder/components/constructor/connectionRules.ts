@@ -1,0 +1,136 @@
+import type { Connection, Edge } from "@xyflow/react"
+import type { AlgorithmNode } from "./ConstructorProvider"
+import {
+  getBlockCapabilities,
+  SELECTION_DEFAULT_HANDLE,
+} from "../blocks/blockCapabilities"
+import { getConnectorRole } from "./nodes/connectorRole"
+
+export type ConnectionRejection =
+  | "unknown-node"
+  | "self-connection"
+  | "source-handle-not-allowed"
+  | "target-does-not-accept-incoming"
+  | "target-handle-taken"
+  | "invalid-connector-role"
+
+export type ConnectionValidation =
+  | { valid: true }
+  | { valid: false; reason: ConnectionRejection }
+
+export function decisionBranchLabel(
+  sourceHandle?: string | null,
+): "VERDADEIRO" | "FALSO" | undefined {
+  if (sourceHandle === "yes") return "VERDADEIRO"
+  if (sourceHandle === "no") return "FALSO"
+  return undefined
+}
+
+/**
+ * Label an arrow leaving `source` through `sourceHandle` carries:
+ * VERDADEIRO/FALSO for a decision, the case value (or FALSO) for a selection.
+ */
+export function branchLabel(
+  source: Pick<AlgorithmNode, "data"> | undefined,
+  sourceHandle?: string | null,
+): string | undefined {
+  if (source?.data.blockType === "selection") {
+    // A case's value is drawn at its exit on the block, so its arrow carries
+    // no label; the Falso exit keeps one, like the decision's.
+    return sourceHandle === SELECTION_DEFAULT_HANDLE ? "FALSO" : undefined
+  }
+  return decisionBranchLabel(sourceHandle)
+}
+
+export const CONNECTION_REJECTION_MESSAGE: Record<ConnectionRejection, string> =
+  {
+    "unknown-node": "Bloco de origem ou destino não encontrado.",
+    "self-connection": "Um bloco não pode se conectar a si mesmo.",
+    "source-handle-not-allowed":
+      "Este bloco não permite uma saída a partir deste ponto.",
+    "target-does-not-accept-incoming":
+      "Este bloco não aceita conexões de entrada.",
+    "target-handle-taken": "Este ponto de entrada já possui uma conexão.",
+    "invalid-connector-role":
+      "Esta combinação de conexões não forma um conector válido.",
+  }
+
+interface ValidateParams {
+  connection: Connection
+  nodes: AlgorithmNode[]
+  edges: Edge[]
+  ignoreEdgeId?: string
+}
+
+export function validateConnection({
+  connection,
+  nodes,
+  edges,
+  ignoreEdgeId,
+}: ValidateParams): ConnectionValidation {
+  const relevantEdges = ignoreEdgeId
+    ? edges.filter((edge) => edge.id !== ignoreEdgeId)
+    : edges
+
+  const sourceNode = nodes.find((node) => node.id === connection.source)
+  const targetNode = nodes.find((node) => node.id === connection.target)
+
+  if (!sourceNode || !targetNode) {
+    return { valid: false, reason: "unknown-node" }
+  }
+
+  if (connection.source === connection.target) {
+    return { valid: false, reason: "self-connection" }
+  }
+
+  const sourceCapabilities = getBlockCapabilities(sourceNode.data)
+  const handleAllowed = sourceCapabilities.outgoingHandles.some(
+    (handle) => handle.id === (connection.sourceHandle ?? undefined),
+  )
+
+  if (!handleAllowed) {
+    return { valid: false, reason: "source-handle-not-allowed" }
+  }
+
+  const targetCapabilities = getBlockCapabilities(targetNode.data)
+
+  if (!targetCapabilities.allowsIncoming) {
+    return { valid: false, reason: "target-does-not-accept-incoming" }
+  }
+
+  const targetHandleTaken = relevantEdges.some(
+    (edge) =>
+      edge.target === connection.target &&
+      (edge.targetHandle ?? undefined) ===
+        (connection.targetHandle ?? undefined),
+  )
+
+  const connectorRole =
+    targetNode.data.blockType === "connector" && connection.targetHandle
+      ? getConnectorRole(
+          targetNode.id,
+          [
+            ...relevantEdges,
+            {
+              id: "__preview__",
+              source: connection.source,
+              target: connection.target,
+              targetHandle: connection.targetHandle,
+            } as Edge,
+          ],
+          nodes,
+        )
+      : null
+
+  // A selection join gathers every branch of one selection, so it is the one
+  // place where several arrows may share an entry point.
+  if (targetHandleTaken && connectorRole !== "selectionJoin") {
+    return { valid: false, reason: "target-handle-taken" }
+  }
+
+  if (connectorRole === "invalid") {
+    return { valid: false, reason: "invalid-connector-role" }
+  }
+
+  return { valid: true }
+}

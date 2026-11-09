@@ -6,3 +6,6 @@ import { application } from "./application"
 
 import HelloController from "./hello_controller"
 application.register("hello", HelloController)
+
+import SiteMenuController from "./site_menu_controller"
+application.register("site-menu", SiteMenuController)

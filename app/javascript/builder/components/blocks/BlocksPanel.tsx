@@ -1,21 +1,133 @@
-export interface IBlocksPanelProps {
+import {
+  BLOCK_DEFINITIONS,
+  DRAG_DATA_KEY,
+  DRAG_VARIANT_KEY,
+} from "../blocks/blockDefinitions"
+import { useRef } from "react"
+
+import BlockShapePreview from "./BlockShapePreview"
+import { useBlockPlacement } from "../constructor/BlockPlacement"
+import { useDrawer } from "../layout/DrawerContext"
+import { ExamplesSection } from "../constructor/ExamplesSection"
+import { CanvasActions } from "../constructor/CanvasActions"
+import { useTouchBlockDrag } from "./useTouchBlockDrag"
+
+interface IBlocksPanelProps {
   errors: string[]
 }
 
-export default function BlocksPanel({ errors: _errors }: IBlocksPanelProps) {
+export default function BlocksPanel({ errors }: IBlocksPanelProps) {
+  const { pendingBlock, arm } = useBlockPlacement()
+  const drawer = useDrawer()
+  // A mouse drag ends with a click event too; without this flag a drag would
+  // also arm the block and the next tap would drop a second copy.
+  const draggedRef = useRef(false)
+  const touchDrag = useTouchBlockDrag({
+    // The drawer covers the canvas; it slides away as soon as a block lifts.
+    onLift: () => {
+      if (drawer?.isOpen) drawer.close()
+    },
+  })
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b text-center">
-        <h2 className="text-sm text-[20px] font-bold text-gray-800 uppercase tracking-widest mb-40">
+    <div className="flex h-full flex-col bg-card">
+      {/* One scroll for the blocks and the lists: scrolling apart, the lists
+          got a sliver of a short screen. Novo and Limpar stay below it. */}
+      <div data-testid="sidebar-scroll" className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <div className="border-b border-border p-3">
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           Blocos de Algoritmo
         </h2>
+        <p className="mb-2 text-sm text-gray-700">
+          Arraste itens para a tela
+        </p>
+        <div data-testid="blocks-grid" className="grid grid-cols-2 gap-2">
+          {BLOCK_DEFINITIONS.map((block) => (
+            <div
+              key={
+                block.variant ? `${block.type}-${block.variant}` : block.type
+              }
+              data-testid={`block-tile-${block.type}${block.variant ? `-${block.variant}` : ""}`}
+              draggable
+              onPointerDown={(event) =>
+                touchDrag.onPointerDown(event, { type: block.type, variant: block.variant })
+              }
+              style={{ touchAction: "pan-y" }}
+              onDragStart={(event) => {
+                draggedRef.current = true
+                event.dataTransfer.setData(DRAG_DATA_KEY, block.type)
+                if (block.variant) {
+                  event.dataTransfer.setData(DRAG_VARIANT_KEY, block.variant)
+                }
+                event.dataTransfer.effectAllowed = "move"
+              }}
+              onDragEnd={() => {
+                // Reset after the click that the browser fires post-drag.
+                setTimeout(() => {
+                  draggedRef.current = false
+                })
+              }}
+              role="button"
+              aria-pressed={
+                pendingBlock?.type === block.type &&
+                pendingBlock?.variant === block.variant
+              }
+              onClick={() => {
+                if (draggedRef.current || touchDrag.justDragged.current) return
+                arm(block.type, block.variant)
+                // The drawer covers the canvas, so the block would land
+                // behind it if the menu stayed open.
+                if (drawer?.isOpen) drawer.close()
+              }}
+              title={`${block.label} — ${block.description}`}
+              className={`flex cursor-grab flex-col items-center gap-1 rounded-lg border bg-background p-2 transition-all hover:border-primary/30 hover:shadow-sm active:cursor-grabbing ${
+                pendingBlock?.type === block.type &&
+                pendingBlock?.variant === block.variant
+                  ? "border-primary ring-2 ring-primary/30"
+                  : "border-border"
+              }`}
+            >
+              <BlockShapePreview
+                type={block.type}
+                variant={block.variant}
+                compact
+              />
+              <span className="w-full truncate text-center text-xs font-medium leading-tight text-muted-foreground">
+                {block.label}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="px-3 pb-3">
-        <h3 className="p-4 text-[20px] font-semibold text-gray-400 uppercase tracking-widest text-center mb-2">
-          Exemplo de Algoritmo
-        </h3>
+      {touchDrag.preview}
+
+      <ExamplesSection />
       </div>
+
+      <div className="shrink-0">
+        <CanvasActions />
+      </div>
+
+      {errors.length > 0 && (
+        <div className="mx-2 mb-2 rounded-lg border border-destructive/30 bg-destructive/5 p-2">
+          <h3 className="mb-0.5 text-xs font-semibold text-destructive">
+            ⚠ Validação
+          </h3>
+          <ul className="space-y-0.5">
+            {errors.slice(0, 3).map((error) => (
+              <li key={error} className="text-xs text-destructive/80">
+                {error}
+              </li>
+            ))}
+            {errors.length > 3 && (
+              <li className="text-xs text-destructive/60">
+                +{errors.length - 3} mais...
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
     </div>
   )
 }

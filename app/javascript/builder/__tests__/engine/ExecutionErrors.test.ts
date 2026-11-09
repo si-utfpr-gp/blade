@@ -5,6 +5,7 @@ import {
   checkValidExpression,
   classifyError,
   buildDivByZeroError,
+  userFacingExecutionError,
 } from "../../engine/errors"
 import { ExecutionEngine } from "../../engine/ExecutionEngine"
 import { parse } from "../../parser/parser"
@@ -79,6 +80,28 @@ describe("buildDivByZeroError", () => {
 })
 
 describe("classifyError", () => {
+  it("uses a pedagogical message without exposing the failing block", () => {
+    const message = userFacingExecutionError({
+      type: ERROR_TYPES.UNKNOWN_BLOCK,
+      message: "Bloco 'secret-node' não encontrado",
+      blockId: "secret-node",
+    })
+
+    expect(message).toBe("O motor de execução identificou um problema no seu diagrama. Revise o fluxo e tente novamente.")
+    expect(message).not.toContain("secret-node")
+  })
+
+  it("describes a safety interruption without exposing execution details", () => {
+    const message = userFacingExecutionError({
+      type: ERROR_TYPES.MAX_STEPS_EXCEEDED,
+      message: "Limite de passos excedido no bloco loop-secret",
+      blockId: "loop-secret",
+    })
+
+    expect(message).toBe("A execução foi interrompida por exceder o limite de segurança. Revise o fluxo do seu diagrama.")
+    expect(message).not.toContain("loop-secret")
+  })
+
   it("classifies undeclared variable", () => {
     const err = classifyError(new Error("Variável 'x' não declarada"), "n1")
     expect(err.type).toBe(ERROR_TYPES.UNDECLARED_VARIABLE)

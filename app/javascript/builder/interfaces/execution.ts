@@ -39,6 +39,8 @@ export interface IExplanationContext {
     conditionResult?: boolean;
     changes?: string[];
     subroutineName?: string;
+    /** Value of the case a selection matched, or undefined when it took the Falso branch. */
+    selectedCase?: string;
 }
 
 export interface ISnapshot {
@@ -62,7 +64,10 @@ export interface IPendingInputCheckpoint {
 export interface IPendingDecisionCheckpoint {
   nodeId: string
   nodeLabel: string
-  handle: "yes" | "no"
+  /** "yes"/"no" for a decision, "case-N"/"default" for a selection. */
+  handle: string
+  /** Value shown for the branch a selection took, absent for a decision. */
+  branchLabel?: string
 }
 
 export interface IExecutionFrameCheckpoint {

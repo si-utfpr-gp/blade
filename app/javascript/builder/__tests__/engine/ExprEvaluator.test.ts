@@ -52,10 +52,18 @@ class TestMemory implements IMemory {
   reset(): void { this.data.clear(); this.arrays.clear() }
 }
 
+// Variables are declared with the type their fixture value implies, as a
+// memory block would, since the evaluator reads values by declared type.
+function fixtureType(value: string): string {
+  if (/^-?(?:\d+(?:\.\d+)?|\.\d+)$/.test(value)) return "real"
+  if (value === "true" || value === "false") return "logico"
+  return "caractere"
+}
+
 function setup(vars: Record<string, string>): ExprEvaluator {
   const mem = new TestMemory()
   for (const [k, v] of Object.entries(vars)) {
-    mem.declare(k, "desconhecido")
+    mem.declare(k, fixtureType(v))
     mem.set(k, v)
   }
   return new ExprEvaluator(mem)
@@ -213,12 +221,12 @@ describe("ExprEvaluator", () => {
 
     it("verdadeiro in output", () => {
       const e = setup({})
-      expect(e.output("verdadeiro", null)).toBe("true")
+      expect(e.output("verdadeiro", null)).toBe("verdadeiro")
     })
 
     it("falso in output", () => {
       const e = setup({})
-      expect(e.output("falso", null)).toBe("false")
+      expect(e.output("falso", null)).toBe("falso")
     })
   })
 
@@ -255,10 +263,9 @@ describe("ExprEvaluator", () => {
       expect(e.output("b", null)).toBe("2")
     })
 
-    it("auto-declares undeclared variable", () => {
+    it("rejects assignment to an undeclared variable (RN09)", () => {
       const e = setup({})
-      e.assign("x = 42", null)
-      expect(e.output("x", null)).toBe("42")
+      expect(() => e.assign("x = 42", null)).toThrow("Variável 'x' não declarada")
     })
 
     it("assigns to array index", () => {

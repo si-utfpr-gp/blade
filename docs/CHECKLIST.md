@@ -1,7 +1,7 @@
 # Checklist - Blade
 
 **Versao:** 2.0.0
-**Atualizado em:** 2026-08-25 (execução de sub-rotinas visuais e exemplos JSON atualizados)
+**Atualizado em:** 2026-10-17 (memória tipada, declaração obrigatória e switch/case no escopo)
 
 ---
 
@@ -9,15 +9,16 @@
 
 | # | Issue | Tarefa | Status |
 |---|-------|--------|--------|
-| 1 | — | Editor Visual (Canvas) com React Flow | ⬜ Pendente |
-| 2 | — | Paleta de Blocos para arrastar | ⬜ Pendente |
-| 3 | — | Inserir blocos no canvas | ⬜ Pendente |
-| 4 | — | Conectar blocos (arestas com handles) | ⬜ Pendente |
-| 5 | — | Editar propriedades dos blocos (label, variant, rows) | ⬜ Pendente |
-| 6 | — | Organizar diagrama (mover, selecionar, deletar) | ⬜ Pendente |
+| 1 | [#149](https://github.com/si-utfpr-gp/blade/issues/149) | Editor Visual (Canvas) com React Flow | ✅ Feito |
+| 2 | [#149](https://github.com/si-utfpr-gp/blade/issues/149) | Paleta de Blocos para arrastar | ✅ Feito |
+| 3 | [#149](https://github.com/si-utfpr-gp/blade/issues/149) | Inserir blocos no canvas | ✅ Feito |
+| 4 | [#149](https://github.com/si-utfpr-gp/blade/issues/149) | Conectar blocos (arestas com handles) | ✅ Feito |
+| 5 | [#149](https://github.com/si-utfpr-gp/blade/issues/149) | Editar propriedades dos blocos (label, variant, rows) | ✅ Feito |
+| 6 | [#149](https://github.com/si-utfpr-gp/blade/issues/149) | Organizar diagrama (mover, selecionar, deletar) | ✅ Feito |
 | 7 | — | Validação Estrutural (RN01–RN16) | ⬜ Pendente |
-| 8 | — | Exportar JSON `{ nodes, edges }` para o simulador | ⬜ Pendente |
-| 9 | — | Normalizar JSON do construtor removendo dados visuais antes da execução (`position`, dimensões, seleção) | ⬜ Pendente |
+| 8 | [#164](https://github.com/si-utfpr-gp/blade/issues/164) | Exportar diagrama do Constructor para o Simulator | 🟡 Em andamento |
+| 9 | [#165](https://github.com/si-utfpr-gp/blade/issues/165) | Normalizar JSON removendo metadados visuais | 🟡 Em andamento |
+| 10 | — | Bloco visual de escolha múltipla (switch/case, US19/RN18) com casos e caso padrão | ⬜ Pendente (aguardando especificação) |
 
 ---
 
@@ -31,6 +32,18 @@
 | 4 | Criar o bloco visual `subroutine` para selecionar a função chamada, informar argumentos e variável de retorno | ⬜ Pendente |
 | 5 | Definir e implementar a representação visual do retorno da sub-rotina | ⬜ Pendente |
 | 6 | Exportar o contrato JSON com algoritmo principal e diagramas de sub-rotinas, sem metadados de layout | ⬜ Pendente |
+
+---
+
+## Integração Construtor → Simulador (Caminho Verdadeiro - Sem Validação)
+
+| # | Issue | Tarefa | Status |
+|---|-------|--------|--------|
+| 1 | [#164](https://github.com/si-utfpr-gp/blade/issues/164) | Exportar diagrama do Constructor para o Simulator | 🟡 Em andamento |
+| 2 | [#165](https://github.com/si-utfpr-gp/blade/issues/165) | Normalizar JSON removendo metadados visuais | 🟡 Em andamento |
+| 3 | [#166](https://github.com/si-utfpr-gp/blade/issues/166) | Highlight sincronizado com execução no Canvas | 🟡 Em andamento |
+| 4 | [#167](https://github.com/si-utfpr-gp/blade/issues/167) | Navegação histórica sincronizada | 🟡 Em andamento |
+| 5 | [#168](https://github.com/si-utfpr-gp/blade/issues/168) | Importar exemplos diretamente no Canvas | ⬜ Pendente |
 
 ---
 
@@ -48,11 +61,19 @@
 | 8 | [#58](https://github.com/si-utfpr-gp/blade/issues/58) | Execution Errors detection (div by zero, etc.) | ✅ Feito |
 | 9 | [#59](https://github.com/si-utfpr-gp/blade/issues/59) | User Input During Execution (input block) | ✅ Feito |
 | 10 | [#60](https://github.com/si-utfpr-gp/blade/issues/60) | Navigate to Specific Step in History | ✅ Feito |
-| 11 | [#61](https://github.com/si-utfpr-gp/blade/issues/61) | Builder ↔ Simulator Integration | ⬜ Pendente |
-| 12 | [#62](https://github.com/si-utfpr-gp/blade/issues/62) | Custom Hooks (useExecutionEngine, useParser, useCodeGeneration) | ⬜ Pendente |
-| 13 | — | Aceitar JSON de execução sem `position` nos nós | ✅ Feito |
-| 14 | — | Gerar código JS/TS com inputs tipados, operadores Portugol e `while` para loops simples | ✅ Feito |
-| 15 | — | Avaliador seguro e erros estruturados: `ExprEvaluator` interpreta apenas a AST interna permitida, sem `eval` ou `new Function`; `ExecutionError` preserva `{ type, message, blockId }` até a `ExecutionEngine`. Chamadas, propriedades e payloads de construtor fora da gramática são rejeitados. | ✅ Feito |
+| 11 | [#61](https://github.com/si-utfpr-gp/blade/issues/61) | Builder ↔ Simulator Integration | ✅ Feito |
+<!-- Mantido como referência, mas oculto do checklist ativo:
+| — | [#62](https://github.com/si-utfpr-gp/blade/issues/62) | Custom Hooks (useExecutionEngine, useParser, useCodeGeneration) | ⬜ Pendente |
+-->
+| 12 | — | Aceitar JSON de execução sem `position` nos nós | ✅ Feito |
+| 13 | — | Gerar código JS/TS com inputs tipados, operadores Portugol e `while` para loops simples | ✅ Feito |
+| 14 | — | Avaliador seguro e erros estruturados: `ExprEvaluator` interpreta apenas a AST interna permitida, sem `eval` ou `new Function`; `ExecutionError` preserva `{ type, message, blockId }` até a `ExecutionEngine`. Chamadas, propriedades e payloads de construtor fora da gramática são rejeitados. | ✅ Feito |
+| 15 | — | Proteção contra excesso de passos/loops e mensagens pedagógicas de erro sem expor bloco ou variável ao aluno | ✅ Feito |
+| 16 | — | Memória tipada (RN08/RN17): leitura pelo tipo declarado, `inteiro` sem decimais, `caractere` com dígitos continua texto, lógico lido da entrada respeitado na decisão, `verdadeiro`/`falso` na saída e números sem ruído de ponto flutuante | ✅ Feito |
+| 17 | — | Declaração obrigatória (RN09): atribuição, entrada e retorno de sub-rotina não declaram variáveis automaticamente | ✅ Feito |
+| 18 | — | Entrada direto em posição de vetor (`notas[i]`) | ✅ Feito |
+| 19 | — | Teste de regressão executando todos os exemplos de diagramas até o fim | ✅ Feito |
+| 20 | — | Bloco de escolha múltipla (switch/case, US19/RN18): interpretação, teste de mesa, explicação e geração de código | ⬜ Pendente (aguardando especificação) |
 
 ---
 
@@ -81,7 +102,8 @@
 | SimulatorCode (JS/TS code viewer) | ✅ Feito |
 | SimulatorStatusBar (step counter) | ✅ Feito |
 | Labels em Portugues (nodeTypeLabel) | ✅ Feito |
-| Testes unitarios (19 files, 229 tests) | ✅ Feito |
+| Testes unitários (34 arquivos, 369 testes) | 🟡 Em andamento |
+| Toast de erro de execução com mensagem pedagógica | ✅ Feito |
 
 ---
 
@@ -120,7 +142,7 @@ Campos mínimos por nó: `id`, `type`, `data`. Campos mínimos por aresta: `id`,
 | Documento | Status |
 |-----------|--------|
 | PRD (docs/prd.md) | ✅ Atualizado v2.0.0 |
-| SSD (docs/ssd.md) | ✅ Atualizado v2.0.0 |
+| SDD (docs/sdd.md) | ✅ Atualizado v2.0.0 |
 | Contributing (docs/contributing.md) | ✅ Feito |
 | CHECKLIST.md | ✅ Feito |
 

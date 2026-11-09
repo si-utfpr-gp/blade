@@ -1,0 +1,234 @@
+<% content_for :title, "Blade · Algoritmos em blocos" %>
+<%
+  first_name = @user&.name.to_s.split.first
+  # Press feedback shared by the page's buttons.
+  press = "transition-[color,background-color,box-shadow,scale,translate] duration-150 ease-out active:scale-[0.97]"
+  arrow = '<svg class="h-4 w-4 transition-transform duration-150 ease-out group-hover:translate-x-0.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.64l-3.97-3.97a.75.75 0 111.06-1.06l5.25 5.25a.75.75 0 010 1.06l-5.25 5.25a.75.75 0 11-1.06-1.06l3.97-3.97H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>'.html_safe
+%>
+
+<div class="landing relative overflow-clip bg-background text-foreground">
+  <%# ---------------------------------------------------------------- nav %>
+  <%= render "shared/site_header", links: [["Recursos", "#recursos"], ["Acessos", "#acessos"], ["Perguntas", "#perguntas"], ["Blocos", "/blocks"], ["Sobre", "/about"]] %>
+
+  <%# --------------------------------------------------------------- hero %>
+  <section class="relative z-10 mx-auto max-w-6xl px-4 pb-20 pt-14 text-center sm:px-6 lg:pt-24">
+    <div aria-hidden="true" class="landing-grid pointer-events-none absolute inset-x-0 -top-24 bottom-0 -z-10"></div>
+
+    <h1 class="landing-rise mx-auto max-w-4xl text-[2.6rem] font-medium leading-[1.08] tracking-tight text-slate-900 sm:text-7xl">
+      Algoritmos em blocos,
+      <span class="relative whitespace-nowrap text-blue-600">
+        <%= render "shared/scribble" %>
+        <span class="relative">passo a passo</span>
+      </span>
+    </h1>
+
+    <p class="landing-rise mx-auto mt-6 max-w-2xl text-lg tracking-tight text-slate-700 sm:text-xl" style="animation-delay: 80ms">
+      Monte fluxogramas arrastando blocos, execute cada passo e acompanhe as variáveis no teste de mesa.
+      O Blade ainda mostra o código equivalente em JavaScript e TypeScript.
+    </p>
+
+    <div class="landing-rise mx-auto mt-10 flex max-w-md flex-col items-stretch justify-center gap-3 sm:max-w-none sm:flex-row sm:items-center sm:gap-4" style="animation-delay: 160ms">
+      <% if @user %>
+        <a href="/builder" class="group inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-7 py-4 text-base font-semibold text-white hover:bg-blue-500 <%= press %>">
+          Continuar como <%= first_name %> <%= arrow %>
+        </a>
+        <%= form_with url: "/logout", method: :post, data: { turbo: false }, local: true do %>
+          <button type="submit" class="w-full rounded-full px-7 py-4 text-base text-slate-600 ring-1 ring-slate-200 hover:text-slate-900 hover:ring-slate-300 <%= press %>">
+            Não é você? Sair
+          </button>
+        <% end %>
+      <% else %>
+        <a href="/login" class="group inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-7 py-4 text-base font-semibold text-white hover:bg-blue-500 <%= press %>">
+          Entrar <%= arrow %>
+        </a>
+        <a href="/builder" class="inline-flex items-center justify-center gap-2 rounded-full px-7 py-4 text-base font-semibold text-slate-700 ring-1 ring-slate-300 hover:text-slate-900 hover:ring-slate-400 <%= press %>">
+          Acessar como visitante
+        </a>
+      <% end %>
+    </div>
+    <% unless @user %>
+      <p class="landing-rise mt-5 text-base text-slate-500" style="animation-delay: 200ms">
+        Como visitante você desenha, executa e exporta. Entre como aluno para salvar seus algoritmos.
+      </p>
+    <% end %>
+
+    <%# A real screenshot of the builder, framed like a browser window. %>
+    <div class="landing-rise relative mx-auto mt-16 max-w-5xl" style="animation-delay: 260ms">
+      <div class="overflow-hidden rounded-2xl bg-white shadow-2xl shadow-slate-900/15 ring-1 ring-slate-900/10 sm:rounded-3xl">
+        <div class="flex items-center gap-1.5 border-b border-slate-100 bg-slate-50 px-4 py-2.5" aria-hidden="true">
+          <span class="h-2.5 w-2.5 rounded-full bg-slate-300"></span>
+          <span class="h-2.5 w-2.5 rounded-full bg-slate-300"></span>
+          <span class="h-2.5 w-2.5 rounded-full bg-slate-300"></span>
+          <span class="ml-3 hidden rounded-md bg-white px-3 py-0.5 font-mono text-xs text-slate-400 ring-1 ring-slate-200 sm:inline">blade/builder</span>
+        </div>
+        <%= image_tag "landing/builder.png",
+              alt: "O builder do Blade executando o fatorial, com o fluxograma à esquerda e o teste de mesa no passo 14 à direita",
+              width: 1440, height: 900, class: "block h-auto w-full" %>
+      </div>
+    </div>
+  </section>
+
+  <%# ----------------------------------------------------------- recursos %>
+  <section id="recursos" aria-label="Recursos" class="relative overflow-hidden bg-blue-600 py-20 sm:py-28">
+    <div aria-hidden="true" class="landing-glow pointer-events-none absolute -left-40 -top-40 h-[30rem] w-[30rem] rounded-full" style="--glow: var(--node-process)"></div>
+    <div aria-hidden="true" class="landing-glow pointer-events-none absolute -bottom-40 -right-24 h-[28rem] w-[28rem] rounded-full" style="--glow: var(--node-input); animation-delay: -8s"></div>
+    <div class="relative mx-auto max-w-6xl px-4 sm:px-6">
+      <div class="max-w-2xl md:mx-auto md:text-center">
+        <h2 class="text-4xl tracking-tight text-white md:text-5xl">Tudo para aprender lógica de programação.</h2>
+        <p class="mt-6 text-lg tracking-tight text-blue-100 sm:text-xl">Do primeiro fluxograma à sub-rotina, cada passo da execução fica visível.</p>
+      </div>
+      <div class="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <% [
+             ["Blocos de fluxograma", "Início, memória, entrada, processo, decisão, escolha, saída, sub-rotina e conector.", "--node-process"],
+             ["Teste de mesa", "Avance e volte passo a passo, vendo cada variável mudar e por que o fluxo seguiu cada caminho.", "--node-decision"],
+             ["Código equivalente", "O diagrama vira JavaScript e TypeScript, para ligar o fluxograma ao código.", "--node-input"],
+             ["Importar e exportar", "Leve seus diagramas em JSON, com ou sem conta, e abra os exemplos prontos.", "--node-output"]
+           ].each do |title, text, token| %>
+          <article data-feature class="rounded-2xl bg-white/10 p-6 ring-1 ring-white/15 transition-colors duration-150 hover:bg-white/15">
+            <span class="mb-4 block h-1.5 w-12 rounded-full" style="background: hsl(var(<%= token %>))"></span>
+            <h3 class="text-lg font-semibold text-white"><%= title %></h3>
+            <p class="mt-2 text-base text-blue-100"><%= text %></p>
+          </article>
+        <% end %>
+      </div>
+    </div>
+  </section>
+
+  <%# ------------------------------------------------- por dentro %>
+  <section aria-label="Por dentro do depurador" class="relative mx-auto max-w-6xl px-4 pt-20 sm:px-6 sm:pt-28">
+    <div class="max-w-2xl md:mx-auto md:text-center">
+      <h2 class="text-4xl tracking-tight text-slate-900 md:text-5xl">Por dentro do depurador</h2>
+      <p class="mt-4 text-lg tracking-tight text-slate-700 sm:text-xl">O mesmo fatorial, visto pelo teste de mesa e pelo código.</p>
+    </div>
+    <div class="mt-14 grid gap-8 md:grid-cols-2">
+      <figure>
+        <div class="overflow-hidden rounded-2xl bg-white shadow-xl shadow-slate-900/10 ring-1 ring-slate-900/10">
+          <%= image_tag "landing/teste-de-mesa.png",
+                alt: "Teste de mesa do fatorial: cada passo numerado com os valores de n, fatorial e i",
+                width: 574, height: 600, loading: "lazy", class: "block h-auto w-full" %>
+        </div>
+        <figcaption class="mt-4 text-base text-slate-600"><strong class="font-semibold text-slate-900">Teste de mesa.</strong> Cada passo numerado, com as variáveis que mudaram nele.</figcaption>
+      </figure>
+      <figure>
+        <div class="overflow-hidden rounded-2xl bg-white shadow-xl shadow-slate-900/10 ring-1 ring-slate-900/10">
+          <%= image_tag "landing/codigo.png",
+                alt: "Código JavaScript gerado a partir do fluxograma do fatorial, com o laço while",
+                width: 574, height: 600, loading: "lazy", class: "block h-auto w-full" %>
+        </div>
+        <figcaption class="mt-4 text-base text-slate-600"><strong class="font-semibold text-slate-900">Código.</strong> O diagrama em JavaScript e TypeScript, pronto para comparar.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <%# ----------------------------------------------------------- acessos %>
+  <%# The access topology, drawn with the builder's own blocks: who reaches
+      what, and what an account adds. %>
+  <section id="acessos" aria-label="Acessos" class="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+    <div class="max-w-2xl md:mx-auto md:text-center">
+      <h2 class="text-4xl tracking-tight text-slate-900 md:text-5xl">Como você acessa o Blade</h2>
+      <p class="mt-4 text-lg tracking-tight text-slate-700 sm:text-xl">Entre direto no builder ou use sua conta Google para guardar o que fizer.</p>
+    </div>
+
+    <div class="mt-14 grid gap-6 lg:grid-cols-3">
+      <article class="landing-access rounded-2xl p-7 ring-1 ring-slate-200" style="--c: var(--node-connector)">
+        <p class="font-mono text-sm text-slate-500">/builder</p>
+        <h3 class="mt-2 text-xl font-semibold text-slate-900">Visitante</h3>
+        <ul class="mt-4 space-y-2.5 text-base text-slate-700">
+          <li class="landing-check">Desenhar fluxogramas</li>
+          <li class="landing-check">Executar com teste de mesa</li>
+          <li class="landing-check">Ver o código gerado</li>
+          <li class="landing-check">Importar e exportar JSON</li>
+          <li class="landing-cross">Salvar algoritmos</li>
+        </ul>
+        <a href="/builder" class="group mt-6 inline-flex items-center gap-1.5 text-base font-semibold text-blue-600 transition-colors duration-150 hover:text-blue-500">Acessar como visitante <%= arrow %></a>
+      </article>
+
+      <article class="landing-access rounded-2xl p-7 shadow-xl shadow-blue-600/10 ring-2 ring-blue-600" style="--c: var(--node-start)">
+        <p class="font-mono text-sm text-slate-500">/builder · com conta Google</p>
+        <h3 class="mt-2 text-xl font-semibold text-slate-900">Aluno</h3>
+        <ul class="mt-4 space-y-2.5 text-base text-slate-700">
+          <li class="landing-check">Tudo do visitante</li>
+          <li class="landing-check">Salvar e reabrir algoritmos</li>
+          <li class="landing-check">Lista dos seus algoritmos</li>
+        </ul>
+        <% if @user %>
+          <a href="/builder" class="group mt-6 inline-flex items-center gap-1.5 text-base font-semibold text-blue-600 transition-colors duration-150 hover:text-blue-500">Continuar como <%= first_name %> <%= arrow %></a>
+        <% else %>
+          <a href="/login" class="group mt-6 inline-flex items-center gap-1.5 text-base font-semibold text-blue-600 transition-colors duration-150 hover:text-blue-500">Entrar como aluno <%= arrow %></a>
+        <% end %>
+      </article>
+
+      <article class="landing-access rounded-2xl border border-dashed border-slate-300 p-7" style="--c: var(--node-subroutine)">
+        <p class="font-mono text-sm text-slate-500">/builder/:algoritmo</p>
+        <h3 class="mt-2 flex items-center gap-2 text-xl font-semibold text-slate-900">
+          Área de trabalho
+          <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">em breve</span>
+        </h3>
+        <p class="mt-4 text-base text-slate-700">Cada algoritmo com o próprio endereço, aberto só para quem entrou com a conta.</p>
+      </article>
+    </div>
+  </section>
+
+  <%# ---------------------------------------------------------------- cta %>
+  <section class="relative overflow-hidden bg-linear-to-br from-blue-600 to-blue-700 py-20 sm:py-28">
+    <div aria-hidden="true" class="landing-grid landing-grid-dark pointer-events-none absolute inset-0"></div>
+    <div aria-hidden="true" class="landing-glow pointer-events-none absolute left-1/2 top-1/2 h-[26rem] w-[26rem] -translate-x-1/2 -translate-y-1/2 rounded-full" style="--glow: 213 94% 68%"></div>
+    <div aria-hidden="true" class="landing-glow pointer-events-none absolute -bottom-32 -left-24 h-[22rem] w-[22rem] rounded-full" style="--glow: 199 89% 70%; animation-delay: -9s"></div>
+
+    <%# Two small flowcharts drawn in outline, the dashes running along the
+        arrows the way a step runs through the builder. %>
+    <svg aria-hidden="true" viewBox="0 0 160 340" fill="white" fill-opacity="0.04" stroke="white" stroke-opacity="0.3" stroke-width="1.5" class="landing-cta-chart landing-reveal pointer-events-none absolute left-[7%] top-1/2 hidden h-72 -translate-y-1/2 lg:block">
+      <rect x="30" y="10" width="100" height="36" rx="18" />
+      <path class="landing-flow" d="M80 46v40" />
+      <rect x="25" y="86" width="110" height="48" rx="8" />
+      <path class="landing-flow" d="M80 134v40" />
+      <path d="M80 174l50 40-50 40-50-40z" />
+      <path class="landing-flow" d="M80 254v40" />
+      <rect x="30" y="294" width="100" height="36" rx="18" />
+    </svg>
+    <svg aria-hidden="true" viewBox="0 0 220 290" fill="white" fill-opacity="0.04" stroke="white" stroke-opacity="0.3" stroke-width="1.5" class="landing-cta-chart landing-reveal pointer-events-none absolute right-[7%] top-1/2 hidden h-64 -translate-y-1/2 lg:block">
+      <rect x="60" y="10" width="100" height="40" rx="8" />
+      <path class="landing-flow" d="M110 50v40" />
+      <path d="M110 90l50 40-50 40-50-40z" />
+      <path class="landing-flow" d="M60 130H30v80M160 130h30v80" />
+      <rect x="5" y="210" width="50" height="36" rx="8" />
+      <rect x="165" y="210" width="50" height="36" rx="8" />
+      <path class="landing-flow" d="M30 246v28h160v-28" />
+    </svg>
+
+    <div class="landing-reveal relative mx-auto max-w-lg px-4 text-center">
+      <p class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-blue-50 ring-1 ring-white/20">
+        <span class="relative flex h-2 w-2" aria-hidden="true">
+          <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/70 motion-reduce:animate-none"></span>
+          <span class="relative inline-flex h-2 w-2 rounded-full bg-white"></span>
+        </span>
+        Sem cadastro para começar
+      </p>
+      <h2 class="mt-6 text-4xl font-medium tracking-tight text-white md:text-5xl">Comece agora</h2>
+      <p class="mt-4 text-lg tracking-tight text-blue-100 sm:text-xl">Abra o builder e monte o seu primeiro algoritmo em poucos minutos.</p>
+      <a href="/builder" class="landing-shine group mt-10 inline-flex items-center gap-2 rounded-full bg-white px-7 py-4 text-base font-semibold text-blue-600 shadow-lg shadow-blue-900/25 hover:bg-blue-50 hover:shadow-xl hover:shadow-blue-900/30 <%= press %>">
+        Abrir o builder <%= arrow %>
+      </a>
+    </div>
+  </section>
+
+  <%# ---------------------------------------------------------- perguntas %>
+  <section id="perguntas" aria-label="Perguntas frequentes" class="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+    <h2 class="text-4xl tracking-tight text-slate-900 md:text-5xl">Perguntas frequentes</h2>
+    <div class="mt-10 grid gap-x-10 gap-y-8 md:grid-cols-2">
+      <% [
+           ["Preciso de conta para usar?", "Não. O builder abre sem login: dá para desenhar, executar, ver o código e exportar. A conta serve para salvar."],
+           ["Que conta posso usar?", "Para entrar como aluno, sua conta Google da UTFPR, como @alunos.utfpr.edu.br ou @utfpr.edu.br."],
+           ["Onde ficam meus algoritmos?", "Quem entra com o Google salva os algoritmos na própria conta e os reabre pelo builder."],
+           ["Sem conta eu perco o que fiz?", "Exporte em JSON antes de sair. Depois é só importar o arquivo no builder."],
+         ].each do |question, answer| %>
+        <div>
+          <h3 class="text-xl font-medium leading-7 text-slate-900"><%= question %></h3>
+          <p class="mt-3 text-base leading-7 text-slate-700"><%= answer %></p>
+        </div>
+      <% end %>
+    </div>
+  </section>
+
+  <%= render "shared/site_footer" %>
+</div>

@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+  get "up" => "rails/health#show", as: :rails_health_check
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -8,7 +10,43 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
-  # Defines the root path route ("/")
-  # root "posts#index"
-  get "/", to: "builder#index", as: :builder_index
+  # The landing page presents Blade. /login lets the visitor pick between
+  # signing in as a student (Google) or opening the builder as a guest. The
+  # builder lives at /builder and is open without an account; signing in is
+  # what saves work.
+  root "landing#show"
+  get "/login", to: "sessions#new", as: :login
+  get "/about", to: "about#show", as: :about
+  get "/privacy", to: "privacy#show", as: :privacy
+  get "/blocks", to: "blocks#show", as: :blocks
+  get "/builder", to: "builder#index", as: :builder_index
+  # The OmniAuth request phase has to be a POST with a CSRF token; OmniAuth 2
+  # rejects GET on /auth/:provider (CVE-2015-9284).
+  #
+  # The callback route is declared here because the middleware hands the request
+  # back to the application once it has the credentials, and Rails needs a route
+  # to turn that into a controller action.
+  get "/auth/:provider/callback", to: "sessions#create", as: :auth_callback
+  # Where OmniAuth sends a sign in that did not finish at Google.
+  get "/auth/failure", to: "sessions#failure"
+  # POST works without JavaScript, which is what the header form relies on.
+  # DELETE is accepted too, for callers that can set the method.
+  match "/logout", to: "sessions#destroy", via: [ :post, :delete ], as: :logout
+
+  resources :algorithms, only: [ :index, :create, :show, :update, :destroy ] do
+    # The owner turns the public link on (POST) and off (DELETE).
+    resource :share, only: [ :create, :destroy ], controller: "algorithm_shares"
+  end
+
+  # Public, read-only views of a shared algorithm, reached by its token. Only
+  # /embed may be framed by other sites.
+  get "/s/:token", to: "shared_algorithms#show", as: :shared_algorithm
+  get "/embed/:token", to: "shared_algorithms#embed", as: :embedded_algorithm
+
+  # Everything else, whatever the method, is a 404 from ErrorsController, so
+  # an unknown or probing path never reaches another controller. It has to be
+  # the last route. Rails' own engines (Active Storage and the like, under
+  # /rails) keep their routes.
+  match "*path", to: "errors#not_found", via: :all,
+                 constraints: ->(request) { !request.path.start_with?("/rails/") }
 end

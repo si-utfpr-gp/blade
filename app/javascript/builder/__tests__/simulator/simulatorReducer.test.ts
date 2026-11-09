@@ -78,6 +78,7 @@ describe("simulatorReducer", () => {
     )
     expect(state.error).toBe("Algo deu errado")
     expect(state.isRunning).toBe(false)
+    expect(state.isFinished).toBe(false)
   })
 
   it("SET_OUTPUTS replaces outputs", () => {
@@ -149,6 +150,27 @@ describe("simulatorReducer", () => {
     expect(state.inputPrompt).toBe("Valor para 'x':")
     expect(state.inputVariable).toBe("x")
     expect(state.inputType).toBe("inteiro")
+  })
+
+  // The desk check shows the input row before the dialog asks for its value.
+  it("INPUT_REQUESTED with the waiting step adds it as the current row", () => {
+    const waiting = { ...mockStep, nodeId: "in", nodeType: "input", waitingForInput: true, inputEntered: false }
+    const state = simulatorReducer(
+      { ...initialState, steps: [mockStep], currentStepIndex: 0 },
+      { type: "INPUT_REQUESTED", prompt: "Valor para 'x':", variable: "x", inputType: "inteiro", step: waiting },
+    )
+    expect(state.steps).toEqual([mockStep, waiting])
+    expect(state.currentStepIndex).toBe(1)
+  })
+
+  it("SUBMIT_INPUT drops the waiting row, which the engine replaces with the real step", () => {
+    const waiting = { ...mockStep, nodeId: "in", nodeType: "input", waitingForInput: true, inputEntered: false }
+    const state = simulatorReducer(
+      { ...initialState, steps: [mockStep, waiting], currentStepIndex: 1, awaitingInput: true },
+      { type: "SUBMIT_INPUT" },
+    )
+    expect(state.steps).toEqual([mockStep])
+    expect(state.currentStepIndex).toBe(0)
   })
 
   it("SUBMIT_INPUT clears input state", () => {

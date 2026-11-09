@@ -1,5 +1,6 @@
 import type { IParserData, IParserNode, IParserRoutineDefinition } from "../parser/types"
 import type { IExecutionStep } from "../interfaces/execution"
+import { memoryEntries } from "./MemoryManager"
 
 type Lang = "js" | "ts"
 
@@ -92,7 +93,7 @@ export class CodeGenerator {
     for (const [, node] of graph.nodes) {
       if (node.type !== "memory") continue
       for (const row of node.rows ?? []) {
-        for (const raw of row.variables.split(",").map(s => s.trim()).filter(Boolean)) {
+        for (const { name: raw } of memoryEntries(row)) {
           if (this.baseVarName(raw) === variable) return row.type
         }
       }
@@ -118,7 +119,7 @@ export class CodeGenerator {
     const node = this.graph.nodes.get(nodeId)
     if (!node) return
 
-    const doWhile = this.findDoWhileLoop(nodeId, emitted)
+    const doWhile = this.findDoWhileLoop(nodeId, emitted, stopAt)
     if (doWhile) {
       this.emitDoWhile(doWhile, lines, indent, lang, emitted, stopAt)
       return
@@ -132,6 +133,14 @@ export class CodeGenerator {
     if (node.type === "decision") {
       emitted.add(nodeId)
       this.emitDecision(node, lines, indent, lang, emitted, stopAt)
+      return
+    }
+
+    // Until escolha/caso becomes a switch, stop here: following a single
+    // branch would print a program that disagrees with the desk check.
+    if (node.type === "selection") {
+      emitted.add(nodeId)
+      lines.push(`${this.indent(indent)}// escolha/caso (${node.label ?? ""}) ainda não é convertida para código`)
       return
     }
 
@@ -155,7 +164,9 @@ export class CodeGenerator {
     const condition = this.translateExpression(node.label ?? "false")
     const ind = this.indent(indent)
 
-    if (yesNext && this.pathReaches(yesNext, node.id)) {
+    // A branch only loops back when it returns without leaving the enclosing
+    // loop (stopAt): through it, every block inside reaches every other.
+    if (yesNext && this.pathReaches(yesNext, node.id, stopAt)) {
       lines.push(`${ind}while (${condition}) {`)
       this.emitPath(yesNext, lines, indent + 1, lang, emitted, node.id)
       lines.push(`${ind}}`)
@@ -163,7 +174,7 @@ export class CodeGenerator {
       return
     }
 
-    if (noNext && this.pathReaches(noNext, node.id)) {
+    if (noNext && this.pathReaches(noNext, node.id, stopAt)) {
       lines.push(`${ind}while (!(${condition})) {`)
       this.emitPath(noNext, lines, indent + 1, lang, emitted, node.id)
       lines.push(`${ind}}`)
@@ -171,11 +182,12 @@ export class CodeGenerator {
       return
     }
 
-    const merge = this.findMerge(yesNext, noNext)
+    const merge = this.findMerge(yesNext, noNext, stopAt)
     lines.push(`${ind}if (${condition}) {`)
     this.emitPath(yesNext, lines, indent + 1, lang, emitted, merge)
 
-    if (noNext) {
+    // A false branch that goes straight to the join has nothing to put in an else.
+    if (noNext && noNext !== merge) {
       lines.push(`${ind}} else {`)
       this.emitPath(noNext, lines, indent + 1, lang, emitted, merge)
     }
@@ -187,6 +199,7 @@ export class CodeGenerator {
   private findDoWhileLoop(
     startNodeId: string,
     emitted: Set<string>,
+    stopAt?: string | null,
   ): { body: IParserNode[]; decision: IParserNode; exitNodeId: string } | null {
     const body: IParserNode[] = []
     const visited = new Set<string>()
@@ -206,7 +219,7 @@ export class CodeGenerator {
         if (emitted.has(current.id)) return null
         const yesNext = this.graph.getNextNode(current.id, "yes")
         const noNext = this.graph.getNextNode(current.id, "no")
-        if (body.length === 0 || !yesNext || !noNext || !this.pathReaches(yesNext, startNodeId)) {
+        if (body.length === 0 || !yesNext || !noNext || !this.pathReaches(yesNext, startNodeId, stopAt)) {
           return null
         }
         return { body, decision: current, exitNodeId: noNext }
@@ -275,18 +288,18 @@ export class CodeGenerator {
     const lines: string[] = []
 
     for (const row of node.rows) {
-      for (const raw of row.variables.split(",").map(s => s.trim()).filter(Boolean)) {
-        const arrayMatch = raw.match(/^(\w+)\[(\d+)\]$/)
+      for (const { name: raw, initialValue: initial } of memoryEntries(row)) {
+        const arrayMatch = raw.match(/^(\w+)\[(.+)\]$/)
         if (arrayMatch) {
           const [, name, size] = arrayMatch
           const tsType = this.typeToTS(row.type)
           lines.push(lang === "ts"
-            ? `${ind}let ${name}: ${tsType}[] = new Array(${size});`
-            : `${ind}let ${name} = new Array(${size});`)
+            ? `${ind}let ${name}: ${tsType}[] = new Array(${this.translateExpression(size)});`
+            : `${ind}let ${name} = new Array(${this.translateExpression(size)});`)
         } else {
-          const initialValue = row.initialValue === undefined
+          const initialValue = initial === undefined
             ? ""
-            : ` = ${this.translateExpression(row.initialValue)}`
+            : ` = ${this.translateExpression(initial)}`
           lines.push(lang === "ts"
             ? `${ind}let ${raw}: ${this.typeToTS(row.type)}${initialValue};`
             : `${ind}let ${raw}${initialValue};`)
@@ -392,35 +405,42 @@ export class CodeGenerator {
     for (const [, node] of this.graph.nodes) {
       if (node.type !== "memory") continue
       for (const row of node.rows ?? []) {
-        for (const raw of row.variables.split(",").map(s => s.trim()).filter(Boolean)) {
+        for (const { name: raw } of memoryEntries(row)) {
           this.varTypes.set(this.baseVarName(raw), row.type)
         }
       }
     }
   }
 
-  /** Returns true when a branch eventually reaches a target node; used for loop detection. */
-  private pathReaches(from: string | null, target: string, seen = new Set<string>()): boolean {
+  /**
+   * Returns true when a branch eventually reaches a target node without
+   * passing through `blocked`; used for loop detection.
+   */
+  private pathReaches(from: string | null, target: string, blocked?: string | null, seen = new Set<string>()): boolean {
     if (!from) return false
     if (from === target) return true
-    if (seen.has(from)) return false
+    if (from === blocked || seen.has(from)) return false
     seen.add(from)
 
     for (const edge of this.graph.getOutgoing(from)) {
-      if (this.pathReaches(edge.target, target, seen)) return true
+      if (this.pathReaches(edge.target, target, blocked, seen)) return true
     }
     return false
   }
 
-  /** Finds a simple convergence node shared by the yes/no branches of a decision. */
-  private findMerge(a: string | null, b: string | null): string | null {
+  /**
+   * Finds a simple convergence node shared by the yes/no branches of a
+   * decision, without walking past the enclosing loop (stopAt): through it,
+   * each branch would reach the other and look like its own merge point.
+   */
+  private findMerge(a: string | null, b: string | null, stopAt?: string | null): string | null {
     if (!a || !b) return null
-    const aOrder = this.reachableOrder(a)
-    const bReachable = new Set(this.reachableOrder(b))
+    const aOrder = this.reachableOrder(a, stopAt)
+    const bReachable = new Set(this.reachableOrder(b, stopAt))
     return aOrder.find(id => bReachable.has(id)) ?? null
   }
 
-  private reachableOrder(start: string): string[] {
+  private reachableOrder(start: string, stopAt?: string | null): string[] {
     const result: string[] = []
     const seen = new Set<string>()
     const queue = [start]
@@ -430,6 +450,7 @@ export class CodeGenerator {
       if (!id || seen.has(id)) continue
       seen.add(id)
       result.push(id)
+      if (id === stopAt) continue
       for (const edge of this.graph.getOutgoing(id)) queue.push(edge.target)
     }
 

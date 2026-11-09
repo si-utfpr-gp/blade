@@ -1,8 +1,7 @@
-@import "tailwindcss";
-@import "@xyflow/react/dist/style.css";
-
+@import '@xyflow/react/dist/style.css' layer(base);
+@import 'tailwindcss';
 @theme {
-  --color-background: hsl(0 0% 100%);
+  --color-background: hsl(30 40% 100%);
   --color-foreground: hsl(222.2 84% 4.9%);
   --color-card: hsl(0 0% 100%);
   --color-card-foreground: hsl(222.2 84% 4.9%);
@@ -22,4 +21,286 @@
   --color-input: hsl(214.3 31.8% 91.4%);
   --color-ring: hsl(221.2 83.2% 53.3%);
   --radius: 0.5rem;
+
+  /* Breakpoint in rem, matching Tailwind's md. Kept explicit so the drawer
+     threshold in useMediaQuery and the CSS stay in agreement. */
+  --breakpoint-md: 48rem;
+}
+
+@layer base {
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 220 25% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 25% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 25% 12%;
+
+    --primary: 210 90% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 170 55% 45%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 15% 93%;
+    --muted-foreground: 220 10% 46%;
+
+    --accent: 35 95% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 18% 87%;
+    --input: 210 18% 87%;
+    --ring: 210 90% 50%;
+
+    --radius: 0.75rem;
+
+    /* Custom tokens — paleta semântica dos blocos:
+       decisão > saída > processo > entrada > sub-rotina >
+       início > fim > memória > conector (hierarquia de atenção) */
+    --node-start: 150 45% 42%;
+--node-process: 255 65% 55%;
+  --node-decision: 32 90% 52%;
+    --node-selection: 22 85% 50%;
+    --node-memory: 215 20% 50%;
+    --node-end: 8 60% 48%;
+    --node-input: 190 80% 45%;
+    --node-output: 325 75% 55%;
+    --node-connector: 0 0% 62%;
+    --node-subroutine: 225 40% 40%;
+    --node-error: 0 80% 55%;
+
+    --canvas-bg: 210 20% 96%;
+    --canvas-grid: 210 15% 88%;
+    --sidebar-bg: 0 0% 100%;
+
+    --font-body: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 25% 12%;
+    --sidebar-primary: 210 90% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 15% 93%;
+    --sidebar-accent-foreground: 220 25% 12%;
+    --sidebar-border: 210 18% 87%;
+    --sidebar-ring: 210 90% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+  }
+}
+
+@layer components {
+  .node-base {
+    @apply flex items-center justify-center text-sm font-medium transition-all duration-200;
+    font-family: var(--font-body);
+    min-width: 140px;
+    min-height: 50px;
+  }
+  .node-label-input {
+    @apply bg-transparent text-center border-none outline-none w-full;
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  .react-flow__node-input,
+  .react-flow__node-output {
+    --xy-node-border-default: none;
+    --xy-node-background-color-default: transparent;
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    width: auto !important;
+  }
+
+  .react-flow__node-input.selected .node-base,
+  .react-flow__node-output.selected .node-base {
+    box-shadow: none;
+  }
+
+  /* Connecting on a touch screen. The dots stay small, but a finger hits an
+     invisible ring around them, and the dot tapped first, which a tap on
+     another dot connects to, stands out until then. */
+  @media (pointer: coarse) {
+    .react-flow__handle {
+      width: 12px;
+      height: 12px;
+    }
+    .react-flow__handle::after {
+      content: "";
+      position: absolute;
+      inset: -14px;
+      border-radius: 9999px;
+    }
+  }
+  .react-flow__handle.clickconnecting {
+    box-shadow: 0 0 0 5px hsl(var(--ring) / 0.4);
+    animation: handle-waiting 0.9s ease-in-out infinite alternate;
+  }
+  @keyframes handle-waiting {
+    to { box-shadow: 0 0 0 10px hsl(var(--ring) / 0.15); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .react-flow__handle.clickconnecting {
+      animation: none;
+    }
+  }
+
+  /* Copy button feedback in the Código tab: the icon pops, the button glows. */
+  .copy-pop {
+    animation: copy-pop 360ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .copy-flash {
+    animation: copy-flash 700ms ease-out;
+  }
+  @keyframes copy-pop {
+    0% { transform: scale(0.6) rotate(-12deg); opacity: 0; }
+    60% { transform: scale(1.15) rotate(4deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0); }
+  }
+  @keyframes copy-flash {
+    0% { box-shadow: 0 0 0 0 hsl(var(--node-start) / 0.4); }
+    100% { box-shadow: 0 0 0 5px hsl(var(--node-start) / 0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .copy-pop,
+    .copy-flash {
+      animation: none;
+    }
+  }
+
+  /* Landing page (sessions/new) ------------------------------------------ */
+
+  /* The builder canvas dot grid, fading out at the edges. */
+  .landing-grid {
+    background-image: radial-gradient(hsl(var(--canvas-grid)) 1.2px, transparent 1.2px);
+    background-size: 22px 22px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 35%, #000 40%, transparent 100%);
+  }
+  .landing-grid-dark {
+    background-image: radial-gradient(rgb(255 255 255 / 0.12) 1.2px, transparent 1.2px);
+  }
+
+  /* Soft colour field in one of the block colours (--glow). The gradient is
+     soft enough on its own; a blur filter on a drifting layer is costly. */
+  .landing-glow {
+    background: radial-gradient(circle, hsl(var(--glow) / 0.45), transparent 70%);
+    animation: landing-drift 18s ease-in-out infinite alternate;
+  }
+
+  .landing-rise { animation: landing-rise 500ms cubic-bezier(.23, 1, .32, 1) both; }
+
+  /* Closing call to action: outline flowcharts with dashes running along the
+     arrows, and a light that sweeps across the button on hover. */
+  .landing-cta-chart .landing-flow { stroke-opacity: 0.55; }
+
+  /* The arrows of a decorative flowchart: dashes that run toward the next
+     block. The stroke colour comes from the chart. */
+  .landing-flow {
+    fill: none;
+    stroke-dasharray: 4 6;
+    animation: landing-flow 1s linear infinite;
+  }
+
+  /* The title underline draws itself in from the left once the title lands. */
+  .landing-scribble { animation: landing-scribble 700ms cubic-bezier(.23, 1, .32, 1) 350ms both; }
+  @keyframes landing-scribble { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+  .landing-shine { position: relative; overflow: hidden; }
+  .landing-shine::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(110deg, transparent 35%, hsl(217 91% 60% / 0.2) 50%, transparent 65%);
+    transform: translateX(-100%);
+  }
+  /* Sweeps in slowly, resets at once when the pointer leaves. */
+  @media (hover: hover) and (pointer: fine) {
+    .landing-shine:hover::after {
+      transform: translateX(100%);
+      transition: transform 700ms cubic-bezier(.23, 1, .32, 1);
+    }
+  }
+
+  /* Rises as it scrolls into view, where the browser can tie motion to scroll;
+     elsewhere it is simply there. */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .landing-reveal {
+        animation: landing-rise linear both;
+        animation-timeline: view();
+        animation-range: entry 10% cover 35%;
+      }
+    }
+  }
+
+  /* Access cards carry the colour of the block they stand for (--c). */
+  .landing-access { position: relative; overflow: hidden; background: #fff; }
+  .landing-access::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    border-radius: 1rem 0 0 1rem;
+    background: hsl(var(--c));
+  }
+  .landing-check, .landing-cross { display: flex; gap: .5rem; align-items: baseline; }
+  .landing-check::before { content: "✓"; color: hsl(var(--node-start)); font-weight: 700; }
+  .landing-cross { color: hsl(215 16% 47%); text-decoration: line-through; }
+  .landing-cross::before { content: "✕"; color: hsl(var(--node-end)); font-weight: 700; text-decoration: none; }
+
+  @keyframes landing-rise { from { opacity: 0; transform: translateY(14px); } }
+  @keyframes landing-flow { to { stroke-dashoffset: -20; } }
+  @keyframes landing-drift { to { transform: translate(40px, 30px) scale(1.1); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .landing-glow, .landing-rise, .landing-flow, .landing-scribble {
+      animation: none;
+    }
+  }
+
+  /* The section links glide instead of jumping, and the section title lands
+     below the sticky header rather than hidden under it. */
+  @media (prefers-reduced-motion: no-preference) {
+    html:has(.landing) { scroll-behavior: smooth; }
+  }
+  /* Clears the sticky header (about 4rem) with some room to spare. */
+  .landing section[id], .landing article[id] { scroll-margin-top: 5.5rem; }
+
+  /* Mobile menu of the public pages: a <details>, so it works without
+     JavaScript. The summary swaps between the hamburger and a close icon. */
+  .site-menu > summary::-webkit-details-marker { display: none; }
+  .site-menu .site-menu-close,
+  .site-menu[open] .site-menu-open { display: none; }
+  .site-menu[open] .site-menu-close { display: block; }
+  /* The panel grows out of the hamburger, in the top right corner. */
+  .site-menu-panel { transform-origin: top right; }
+  .site-menu[open] .site-menu-panel { animation: site-menu-in 180ms cubic-bezier(.23, 1, .32, 1) both; }
+  @keyframes site-menu-in { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
+  @media (prefers-reduced-motion: reduce) {
+    .site-menu[open] .site-menu-panel { animation-name: site-menu-fade; }
+  }
+  @keyframes site-menu-fade { from { opacity: 0; } }
+
+  /* Execution highlight animation */
+  @keyframes node-pulse {
+    0%, 100% { box-shadow: 0 0 0 3px hsl(var(--secondary)), 0 0 8px hsl(var(--secondary) / 0.3); }
+    50% { box-shadow: 0 0 0 5px hsl(var(--secondary)), 0 0 16px hsl(var(--secondary) / 0.5); }
+  }
+  .react-flow__node.selected .node-base {
+    box-shadow: 0 0 0 2px hsl(var(--ring) / 0.3);
+  }
 }

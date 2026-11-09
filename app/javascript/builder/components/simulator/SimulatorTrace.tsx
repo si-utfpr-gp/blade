@@ -3,7 +3,6 @@ import {
   Info,
   HelpCircle,
   Monitor,
-  AlertTriangle,
   CheckCircle2,
   Variable as VarIcon,
 } from "lucide-react";
@@ -12,6 +11,7 @@ import { useSimulator } from "./SimulatorContext";
 import { nodeTypeLabel } from "./labels";
 import { displayStepNumber, mainStepCount } from "./tracePresentation";
 import type { IExecutionStep, IVariable } from "../../interfaces";
+import { isWaitingForInput } from "../../interfaces/simulator";
 
 function getAllVarNames(steps: IExecutionStep[], upTo: number): string[] {
   const names = new Set<string>();
@@ -39,6 +39,7 @@ function formatValue(v: IVariable | undefined): string {
 }
 
 export function traceCellDisplay(step: IExecutionStep, varName: string): string | null {
+  if (isWaitingForInput(step) && step.inputVariable === varName) return "?";
   if (!wasChanged(step, varName)) return null;
   const variable = step.variables.find((sv) => sv.name === varName);
   return variable ? formatValue(variable) : null;
@@ -46,7 +47,10 @@ export function traceCellDisplay(step: IExecutionStep, varName: string): string 
 
 export function traceInstruction(step: IExecutionStep): string {
   const log = step.log.replace(/\.$/, "");
-  if (step.nodeType === "input") return "Entrada";
+  if (step.nodeType === "input") {
+    const variable = log.match(/^(?:Solicitando|Lendo) (.+)$/)?.[1];
+    return variable ? `Entrada (${variable})` : "Entrada";
+  }
   if (step.nodeType === "process") {
     const selfAddition = log.match(/^([A-Za-z_]\w*(?:\[[^\]]+\])?)\s*=\s*\1\s*\+\s*([^;]+)$/);
     const expression = selfAddition
@@ -54,6 +58,7 @@ export function traceInstruction(step: IExecutionStep): string {
       : log;
     return `Processo (${expression})`;
   }
+  if (step.nodeType === "selection") return `Condição (${step.nodeLabel})`;
   if (step.nodeType !== "decision") return log;
 
   const [condition] = log.split(" → ");
@@ -317,12 +322,6 @@ export default function SimulatorTrace() {
             )}
           </div>
         </div>
-
-        {error && (
-          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
-            <p className="flex items-center gap-1.5 text-xs text-destructive font-medium"><AlertTriangle className="w-3.5 h-3.5" /> {error}</p>
-          </div>
-        )}
 
         {isFinished && !error && (
           <div className="rounded-lg border border-emerald-300/70 bg-emerald-50/60 p-3 text-center ">

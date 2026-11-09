@@ -1,11 +1,26 @@
 import type { Node, Edge } from "@xyflow/react"
 
+export interface IParserInputNode {
+    id: string;
+    type?: string;
+    data?: Record<string, unknown>;
+}
+
+export interface IParserInputEdge {
+    id: string;
+    source: string;
+    target: string;
+    sourceHandle?: string | null;
+    targetHandle?: string | null;
+}
+
 export interface IParserNode {
     id: string;
     type: string;
     variant?: "start" | "end"
     label?: string
     rows?: Array<{ type: string; variables: string; initialValue?: string }>
+    cases?: string[]
 }
 
 export interface IParserEdge {
