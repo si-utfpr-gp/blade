@@ -90,20 +90,13 @@ describe("centerDropPosition", () => {
   })
 })
 
-// A bundled example can be rearranged to read it better, but its content
-// stays as shipped; a running simulation freezes everything.
 describe("canvasPermissions", () => {
-  it("deixa tudo livre num diagrama próprio parado", () => {
-    expect(canvasPermissions({ running: false, isExample: false })).toEqual({ canMove: true, canEdit: true })
-  })
-
-  it("num exemplo, deixa mover os blocos mas não editar nem apagar", () => {
-    expect(canvasPermissions({ running: false, isExample: true })).toEqual({ canMove: true, canEdit: false })
+  it("deixa o lock do diagrama tratar a origem quando não está executando", () => {
+    expect(canvasPermissions({ running: false })).toEqual({ canMove: true, canEdit: true })
   })
 
   it("com a execução em andamento, trava tudo", () => {
-    expect(canvasPermissions({ running: true, isExample: false })).toEqual({ canMove: false, canEdit: false })
-    expect(canvasPermissions({ running: true, isExample: true })).toEqual({ canMove: false, canEdit: false })
+    expect(canvasPermissions({ running: true })).toEqual({ canMove: false, canEdit: false })
   })
 })
 

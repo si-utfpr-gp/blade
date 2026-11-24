@@ -31,11 +31,12 @@ function HeaderNameInput() {
 // Stands in for a saved algorithm being opened: blocks on the canvas, a name
 // in the field and an identity that later saves would update in place.
 function Probe() {
-  const { nodes, loadCanvasNodes, addNode } = useConstructor()
+  const { nodes, loadCanvasNodes, addNode, clearCanvas, editLocked } = useConstructor()
   const { origin, markSaved, markExample } = useDiagramOrigin()
   return (
     <div>
       <span data-testid="node-count">{nodes.length}</span>
+      <span data-testid="canvas-locked">{String(editLocked)}</span>
       <span data-testid="origin-kind">{origin.kind}</span>
       <button
         type="button"
@@ -66,6 +67,9 @@ function Probe() {
       </button>
       <button type="button" onClick={() => markExample("contador")}>
         marcar-exemplo
+      </button>
+      <button type="button" onClick={clearCanvas}>
+        clear-direct
       </button>
     </div>
   )
@@ -185,14 +189,26 @@ describe("CanvasActions — Limpar sobre um exemplo", () => {
     vi.unstubAllGlobals()
   })
 
-  it("deixa uma tela editável, já que o exemplo é somente leitura", () => {
+  it("trava Limpar no exemplo, mas Novo Algoritmo abre uma tela editável", () => {
     renderActions()
     fireEvent.click(screen.getByRole("button", { name: "abrir-salvo" }))
     fireEvent.click(screen.getByRole("button", { name: "marcar-exemplo" }))
 
-    fireEvent.click(screen.getByRole("button", { name: /^limpar$/i }))
+    const clearButton = screen.getByRole("button", { name: /^limpar$/i })
+    expect(clearButton).toBeDisabled()
+    expect(screen.getByTestId("canvas-locked")).toHaveTextContent("true")
+
+    fireEvent.click(clearButton)
+    fireEvent.click(screen.getByRole("button", { name: "clear-direct" }))
+
+    expect(screen.getByTestId("node-count").textContent).toBe("1")
+    expect(screen.getByTestId("origin-kind").textContent).toBe("example")
+
+    fireEvent.click(screen.getByRole("button", { name: /novo algoritmo/i }))
 
     expect(screen.getByTestId("origin-kind").textContent).toBe("blank")
+    expect(screen.getByTestId("canvas-locked")).toHaveTextContent("false")
+    expect(screen.getByTestId("node-count").textContent).toBe("0")
   })
 })
 

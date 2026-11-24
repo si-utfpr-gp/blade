@@ -1,13 +1,22 @@
 import { ControlButton } from "@xyflow/react"
 import { Lock, LockOpen } from "lucide-react"
 import { useConstructor } from "./ConstructorProvider"
+import { useDiagramOrigin } from "./DiagramOrigin"
 
 function useEditLockToggle() {
   const { editLocked, setEditLocked } = useConstructor()
+  const { isReadOnly } = useDiagramOrigin()
   return {
     editLocked,
-    label: editLocked ? "Destravar edição" : "Travar edição",
-    toggle: () => setEditLocked(!editLocked),
+    disabled: isReadOnly,
+    label: isReadOnly
+      ? "Diagrama somente leitura"
+      : editLocked
+        ? "Destravar edição"
+        : "Travar edição",
+    toggle: () => {
+      if (!isReadOnly) setEditLocked(!editLocked)
+    },
     Icon: editLocked ? Lock : LockOpen,
   }
 }
@@ -18,10 +27,11 @@ function useEditLockToggle() {
  * deleted. This one locks the whole diagram through the constructor.
  */
 export function EditLockControlButton() {
-  const { editLocked, label, toggle, Icon } = useEditLockToggle()
+  const { editLocked, disabled, label, toggle, Icon } = useEditLockToggle()
   return (
     <ControlButton
       onClick={toggle}
+      disabled={disabled}
       aria-label={label}
       aria-pressed={editLocked}
       title={label}
@@ -35,11 +45,12 @@ export function EditLockControlButton() {
 
 /** The same lock in the phone's floating tools menu. */
 export function EditLockMenuButton() {
-  const { editLocked, label, toggle, Icon } = useEditLockToggle()
+  const { editLocked, disabled, label, toggle, Icon } = useEditLockToggle()
   return (
     <button
       type="button"
       onClick={toggle}
+      disabled={disabled}
       aria-label={label}
       aria-pressed={editLocked}
       title={label}

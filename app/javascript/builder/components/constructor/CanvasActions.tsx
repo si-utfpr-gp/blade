@@ -24,15 +24,14 @@ export function CanvasActions() {
   // afterwards empties that same algorithm, which is what the student asked
   // for by erasing rather than by starting over.
   //
-  // An example is the exception: it is read only content shipped with the app,
-  // not work belonging to a saved algorithm, so erasing it has to leave an
-  // editable canvas behind rather than a locked empty one.
   const handleClear = () =>
-    guard(() => {
-      clearCanvas()
-      reset()
-      if (origin.kind !== "saved") markBlank()
-    })
+    editLocked
+      ? undefined
+      : guard(() => {
+          clearCanvas()
+          reset()
+          if (origin.kind !== "saved") markBlank()
+        })
 
   return (
     <div className="space-y-2 border-t border-border p-2">

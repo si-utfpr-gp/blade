@@ -33,18 +33,18 @@ export function followOffsetY({
 }
 
 /**
- * What the canvas lets the student do. A running simulation freezes the
- * diagram; a bundled example can be rearranged to read it better, but its
- * content stays as shipped, so nothing is added, removed or rewired.
+ * What the canvas lets the student do while a simulation is running. The
+ * effective edit lock is managed by ConstructorProvider.
  */
 export function canvasPermissions({
   running,
-  isExample,
 }: {
   running: boolean
-  isExample: boolean
 }): { canMove: boolean; canEdit: boolean } {
-  return { canMove: !running, canEdit: !running && !isExample }
+  return {
+    canMove: !running,
+    canEdit: !running,
+  }
 }
 
 /**

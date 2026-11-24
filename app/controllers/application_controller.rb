@@ -23,7 +23,19 @@ class ApplicationController < ActionController::Base
   def current_session
     return @current_session if defined?(@current_session)
 
-    @current_session = Session.active.find_by(id: session[:user_session_id])&.tap(&:seen!)
+    session_id = session[:user_session_id]
+    return @current_session = nil unless session_id
+
+    @current_session = Session.active.find_by(id: session_id)
+    if @current_session
+      @current_session.seen!
+    else
+      # A stale authenticated cookie must not fall through to the development
+      # user or keep advertising the expired account as signed in.
+      session.delete(:user_session_id)
+      session[:signed_out] = true
+    end
+    @current_session
   end
 
   def audit(action, subject = nil, details = {})
