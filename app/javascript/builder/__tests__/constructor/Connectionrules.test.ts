@@ -43,6 +43,19 @@ describe("validateConnection", () => {
     expect(result).toEqual({ valid: true })
   })
 
+  it("rejects a second outgoing connection from a single-output block", () => {
+    const nodes = [node("n1", "process"), node("n2", "output"), node("n3", "output")]
+    const edges: Edge[] = [{ id: "e1", source: "n1", target: "n2" }]
+
+    expect(
+      validateConnection({
+        connection: connection("n1", "n3"),
+        nodes,
+        edges,
+      }),
+    ).toEqual({ valid: false, reason: "source-handle-taken" })
+  })
+
   it("rejects when the source or target node cannot be found ('unknown-node')", () => {
     const nodes = [node("n1", "process")]
 
@@ -122,6 +135,26 @@ describe("validateConnection", () => {
         connection: connection("n1", "n3", "no"),
         nodes,
         edges: [],
+      }),
+    ).toEqual({ valid: true })
+  })
+
+  it("allows each distinct decision output handle to be connected once", () => {
+    const nodes = [node("n1", "decision"), node("n2", "process"), node("n3", "output"), node("n4", "output")]
+    const edges: Edge[] = [{ id: "e1", source: "n1", target: "n2", sourceHandle: "yes" }]
+
+    expect(
+      validateConnection({
+        connection: connection("n1", "n3", "yes"),
+        nodes,
+        edges,
+      }),
+    ).toEqual({ valid: true })
+    expect(
+      validateConnection({
+        connection: connection("n1", "n4", "no"),
+        nodes,
+        edges,
       }),
     ).toEqual({ valid: true })
   })
@@ -235,6 +268,20 @@ describe("validateConnection", () => {
       expect(result).toEqual({ valid: true })
     })
 
+    it("does not count the edge being replaced against its source handle", () => {
+      const nodes = [node("n1", "process"), node("n2", "output"), node("n3", "output")]
+      const edges: Edge[] = [{ id: "e1", source: "n1", target: "n2" }]
+
+      expect(
+        validateConnection({
+          connection: connection("n1", "n3"),
+          nodes,
+          edges,
+          ignoreEdgeId: "e1",
+        }),
+      ).toEqual({ valid: true })
+    })
+
     it("still rejects if another edge occupies the target handle", () => {
       const nodes = [
         node("n1", "process"),
@@ -283,6 +330,7 @@ describe("validateConnection", () => {
       "unknown-node",
       "self-connection",
       "source-handle-not-allowed",
+      "source-handle-taken",
       "target-does-not-accept-incoming",
       "target-handle-taken",
       "invalid-connector-role",

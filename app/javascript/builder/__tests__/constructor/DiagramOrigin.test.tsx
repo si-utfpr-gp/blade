@@ -137,7 +137,7 @@ describe("diagrama de exemplo é somente leitura", () => {
     expect(button).toBeDisabled()
   })
 
-  it("destrava ao limpar a tela", async () => {
+  it("mantém o exemplo travado ao tentar limpar e destrava num novo algoritmo", async () => {
     renderBuilder()
     await waitFor(() =>
       expect(
@@ -152,7 +152,12 @@ describe("diagrama de exemplo é somente leitura", () => {
       expect(screen.getByTestId("canvas-lock")).toHaveTextContent("locked"),
     )
 
+    expect(screen.getByRole("button", { name: /limpar/i })).toBeDisabled()
     fireEvent.click(screen.getByRole("button", { name: /limpar/i }))
+
+    expect(screen.getByTestId("canvas-lock")).toHaveTextContent("locked")
+
+    fireEvent.click(screen.getByRole("button", { name: /novo algoritmo/i }))
 
     await waitFor(() =>
       expect(screen.getByTestId("canvas-lock")).toHaveTextContent("editable"),

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest"
 import { render, screen, fireEvent } from "@testing-library/react"
+import { useState } from "react"
 import { SimulatorProvider } from "../../components/simulator/SimulatorContext"
 import {
   ConstructorProvider,
@@ -55,6 +56,48 @@ function renderProvider() {
   )
 }
 
+function ReconnectProbe() {
+  const { edges, isValidConnection, loadCanvasNodes, onReconnectStart } = useConstructor()
+  const [valid, setValid] = useState(false)
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() =>
+          loadCanvasNodes(
+            [
+              { id: "start", type: "startEnd", data: { variant: "start" }, position: { x: 0, y: 0 } },
+              { id: "target", type: "process", data: {}, position: { x: 0, y: 100 } },
+              { id: "next", type: "process", data: {}, position: { x: 0, y: 200 } },
+            ],
+            [{ id: "e1", source: "start", target: "target" }],
+          )
+        }
+      >
+        load-reconnect-diagram
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          const edge = edges.find((item) => item.id === "e1")
+          if (!edge) return
+          onReconnectStart(new MouseEvent("mousedown"), edge)
+          setValid(isValidConnection({
+            source: "start",
+            target: "next",
+            sourceHandle: null,
+            targetHandle: null,
+          }))
+        }}
+      >
+        reconnect-to-next
+      </button>
+      <span data-testid="reconnect-valid">{String(valid)}</span>
+    </div>
+  )
+}
+
 describe("ConstructorProvider addNode", () => {
   it("inicia sem nenhum bloco", () => {
     renderProvider()
@@ -89,6 +132,23 @@ describe("ConstructorProvider onConnect", () => {
     fireEvent.click(screen.getByRole("button", { name: "add-process" }))
     fireEvent.click(screen.getByRole("button", { name: "connect-yes" }))
     expect(screen.getByTestId("edge-labels").textContent).toBe("VERDADEIRO")
+  })
+})
+
+describe("ConstructorProvider reconnect validation", () => {
+  it("ignores the edge being reconnected while React Flow validates its new connection", () => {
+    render(
+      <SimulatorProvider>
+        <ConstructorProvider>
+          <ReconnectProbe />
+        </ConstructorProvider>
+      </SimulatorProvider>,
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "load-reconnect-diagram" }))
+    fireEvent.click(screen.getByRole("button", { name: "reconnect-to-next" }))
+
+    expect(screen.getByTestId("reconnect-valid").textContent).toBe("true")
   })
 })
 

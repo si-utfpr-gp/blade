@@ -81,3 +81,9 @@ export function useDiagramOrigin(): IDiagramOriginContextValue {
   }
   return context
 }
+
+// ConstructorProvider can also be used without DiagramOriginProvider in
+// focused tests and standalone tools; those canvases have no origin lock.
+export function useDiagramReadOnly(): boolean {
+  return useContext(DiagramOriginContext)?.isReadOnly ?? false
+}

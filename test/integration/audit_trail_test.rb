@@ -62,6 +62,11 @@ class AuditTrailTest < ActionDispatch::IntegrationTest
     travel DataRetention::SESSION_IDLE + 1.day do
       get algorithms_url, as: :json
       assert_response :unauthorized
+      assert_nil session[:user_session_id], "an expired session ID should be cleared"
+
+      get builder_index_url
+      assert_response :success
+      assert_select "#builder[data-signed-in='false']"
     end
   end
 

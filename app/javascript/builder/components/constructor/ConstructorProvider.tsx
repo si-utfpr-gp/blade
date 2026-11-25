@@ -16,6 +16,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -38,6 +39,7 @@ import {
   type ConnectionRejection,
 } from "./connectionRules"
 import { diagramSignature } from "./diagramSignature"
+import { useDiagramReadOnly } from "./DiagramOrigin"
 import { serializeDiagramForSave } from "./serializeDiagram"
 import { recenterOnMeasuredSize, type PlannedCenters } from "./recenterOnMeasuredSize"
 import { layoutExampleDiagram } from "./layoutExampleDiagram"
@@ -95,7 +97,7 @@ interface ConstructorContextValue {
 
   onReconnect: (oldEdge: Edge, newConnection: Connection) => void
 
-  onReconnectStart: () => void
+  onReconnectStart: (event: MouseEvent | TouchEvent, edge: Edge) => void
 
   onReconnectEnd: (event: MouseEvent | TouchEvent, edge: Edge) => void
 
@@ -182,6 +184,7 @@ const initialNodes: AlgorithmNode[] = []
 const initialEdges: Edge[] = []
 
 export function ConstructorProvider({ children }: { children: ReactNode }) {
+  const originLocked = useDiagramReadOnly()
   const [nodes, setNodes, applyNodeChanges] = useNodesState(initialNodes)
   const [diagramLoadCount, setDiagramLoadCount] = useState(0)
 
@@ -191,15 +194,22 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
 
   const [connectionError, setConnectionError] = useState<string | null>(null)
   const edgeReconnectSuccessful = useRef(true)
+  const reconnectingEdgeId = useRef<string | null>(null)
   const pendingCenters = useRef<PlannedCenters | null>(null)
-  const [editLocked, setEditLockedState] = useState(false)
+  const [userEditLocked, setEditLockedState] = useState(false)
+  const editLocked = userEditLocked || originLocked
   // React Flow's change handlers read the lock at call time, so a drag that
   // was under way when the lock went on stops at once.
   const editLockedRef = useRef(false)
   const setEditLocked = useCallback((locked: boolean) => {
-    editLockedRef.current = locked
     setEditLockedState(locked)
-  }, [])
+    editLockedRef.current = locked || originLocked
+  }, [originLocked])
+  // The origin can change independently (opening an example or a saved file),
+  // so synchronous guards always mirror the effective lock.
+  useLayoutEffect(() => {
+    editLockedRef.current = editLocked
+  }, [editLocked])
 
   // The dirty check compares the current diagram against the state it had when
   // it was loaded or last saved. Comparing fingerprints instead of toggling a
@@ -272,8 +282,9 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
     window.setTimeout(() => setConnectionError(null), 3000)
   }, [])
 
-  const onReconnectStart = useCallback(() => {
+  const onReconnectStart = useCallback((_event: MouseEvent | TouchEvent, edge: Edge) => {
     edgeReconnectSuccessful.current = false
+    reconnectingEdgeId.current = edge.id
   }, [])
 
   const onConnect = useCallback(
@@ -344,6 +355,7 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
         setEdges((currentEdges) => currentEdges.filter((e) => e.id !== edge.id))
       }
       edgeReconnectSuccessful.current = true
+      reconnectingEdgeId.current = null
     },
     [setEdges],
   )
@@ -361,7 +373,10 @@ export function ConstructorProvider({ children }: { children: ReactNode }) {
         connection: asConnection,
         nodes,
         edges,
-        ignoreEdgeId: "id" in connection ? connection.id : undefined,
+        ignoreEdgeId:
+          ("id" in connection ? connection.id : undefined) ??
+          reconnectingEdgeId.current ??
+          undefined,
       }).valid
     },
     [nodes, edges],
