@@ -10,6 +10,7 @@ export type ConnectionRejection =
   | "unknown-node"
   | "self-connection"
   | "source-handle-not-allowed"
+  | "source-handle-taken"
   | "target-does-not-accept-incoming"
   | "target-handle-taken"
   | "invalid-connector-role"
@@ -48,6 +49,7 @@ export const CONNECTION_REJECTION_MESSAGE: Record<ConnectionRejection, string> =
     "self-connection": "Um bloco não pode se conectar a si mesmo.",
     "source-handle-not-allowed":
       "Este bloco não permite uma saída a partir deste ponto.",
+    "source-handle-taken": "Este ponto de saída já possui uma conexão.",
     "target-does-not-accept-incoming":
       "Este bloco não aceita conexões de entrada.",
     "target-handle-taken": "Este ponto de entrada já possui uma conexão.",
@@ -90,6 +92,20 @@ export function validateConnection({
 
   if (!handleAllowed) {
     return { valid: false, reason: "source-handle-not-allowed" }
+  }
+
+  // Blocks with one output handle can route to only one next block. Blocks
+  // with distinct branch handles (decision/selection) keep their own exits.
+  const sourceHandleTaken =
+    sourceCapabilities.outgoingHandles.length === 1 &&
+    relevantEdges.some(
+      (edge) =>
+        edge.source === connection.source &&
+        (edge.sourceHandle ?? undefined) ===
+          (connection.sourceHandle ?? undefined),
+    )
+  if (sourceHandleTaken) {
+    return { valid: false, reason: "source-handle-taken" }
   }
 
   const targetCapabilities = getBlockCapabilities(targetNode.data)

@@ -129,6 +129,17 @@ describe("botão de travar a edição", () => {
     expect(screen.getByRole("button", { name: /limpar/i })).toBeDisabled()
   })
 
+  it("mostra o cadeado ativo automaticamente quando carrega um exemplo", () => {
+    render(<BuilderPage />)
+    fireEvent.click(screen.getByRole("button", { name: /abrir menu de blocos/i }))
+    fireEvent.click(screen.getByRole("button", { name: /^Exemplos/i }))
+    fireEvent.click(screen.getByRole("button", { name: /^Par ou Ímpar/i }))
+
+    const lockButton = screen.getByRole("button", { name: /diagrama somente leitura/i })
+    expect(lockButton).toHaveAttribute("aria-pressed", "true")
+    expect(lockButton).toBeDisabled()
+  })
+
   it("também trava pelo menu do botão flutuante no celular", () => {
     window.matchMedia = ((query: string) => ({
       matches: !query.includes("min-width"),

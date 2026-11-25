@@ -208,7 +208,7 @@ describe("BuilderPage — menu de blocos no celular", () => {
     }
   })
 
-  it("num exemplo, os blocos podem ser movidos mas não apagados", () => {
+  it("num exemplo, os blocos não podem ser movidos nem apagados", () => {
     const { container } = render(<BuilderPage />)
     fireEvent.click(screen.getByRole("button", { name: /abrir menu de blocos/i }))
     fireEvent.click(screen.getByRole("button", { name: /^Exemplos/i }))
@@ -216,7 +216,7 @@ describe("BuilderPage — menu de blocos no celular", () => {
 
     const nodes = container.querySelectorAll(".react-flow__node")
     expect(nodes.length).toBeGreaterThan(0)
-    nodes.forEach((node) => expect(node).toHaveClass("draggable"))
+    nodes.forEach((node) => expect(node).not.toHaveClass("draggable"))
 
     fireEvent.contextMenu(nodes[0], { clientX: 100, clientY: 100 })
     expect(screen.queryByText("Excluir")).not.toBeInTheDocument()

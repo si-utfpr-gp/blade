@@ -36,7 +36,6 @@ import { diagramSignature } from "./diagramSignature"
 import { usePanePlacement } from "./usePanePlacement"
 import { useBlockPlacement } from "./BlockPlacement"
 import { PlacementHint } from "./PlacementHint"
-import { useDiagramOrigin } from "./DiagramOrigin"
 import { useIsDesktop } from "../layout/useMediaQuery"
 import { useInspector } from "../layout/InspectorContext"
 import { useDrawer } from "../layout/DrawerContext"
@@ -93,17 +92,13 @@ export default function ConstructorCanvas({
     }
   }, [simulatorState.error, signature, resetRun])
 
-  const { isReadOnly } = useDiagramOrigin()
-
-  // A running simulation freezes everything; a bundled example can still be
-  // rearranged, but not edited.
+  // Simulation locking is independent from the shared origin/manual edit lock.
   const { canMove, canEdit } = canvasPermissions({
     running: isCanvasLocked(
       simulatorState.isStarted,
       simulatorState.isFinished,
       simulatorState.error !== null,
     ),
-    isExample: isReadOnly,
   })
   // The student's own lock freezes the diagram like a running simulation.
   const locked = !canEdit || editLocked
